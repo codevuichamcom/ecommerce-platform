@@ -1,0 +1,63 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.project
+.classpath
+.settings/
+.factorypath
+.apt_generated/
+out/
+bin/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+hs_err_pid*
+
+# Spring Boot
+*.original
+HELP.md
+
+# Local config (NEVER commit secrets)
+**/application-local.yml
+**/application-local.yaml
+**/application-secret.yml
+.env
+.env.local
+
+# Docker volumes (when bind-mounted)
+infra/data/
+
+# Frontend
+node_modules/
+dist/
+.turbo/
+.next/
+
+# Coverage / test
+coverage/
+*.lcov
+*.exec
+.surefire-*/
+
+# Claude Code — personal settings (skill definitions OK to commit)
+.claude/settings.local.json
+.claude/.credentials*
+
+# Leadership docs có thể chứa info nhạy cảm Sotatek — tự quyết commit hay không
+# (xóa dòng dưới nếu muốn share)
+# docs/leadership/incidents.md

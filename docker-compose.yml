@@ -1,0 +1,103 @@
+# ============================================================
+#  Local development infra cho Ecommerce Platform
+#  Chạy:    docker compose up -d
+#  Tắt:     docker compose down
+#  Reset DB:docker compose down -v   (XÓA SẠCH volumes)
+# ============================================================
+#
+#  CHỦ Ý KỸ THUẬT:
+#  1. Mỗi service KHÔNG dùng chung database — mỗi microservice
+#     có schema riêng (auth_db, product_db, order_db, ...).
+#     Đây là rule cứng của microservice: KHÔNG share DB.
+#  2. Postgres dùng init script để tạo nhiều DB trong 1 instance
+#     (tiết kiệm RAM khi dev local; production sẽ là 1 cluster
+#     riêng / service hoặc shared cluster nhiều schema).
+#  3. Kafka chạy KRaft mode (no Zookeeper) — đơn giản hơn.
+#  4. Healthcheck đầy đủ để service container chờ hạ tầng sẵn
+#     sàng (sẽ dùng ở Day 2 khi compose service Java).
+# ============================================================
+
+name: ecom
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ecom-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ecom
+      POSTGRES_PASSWORD: ecom
+      # CSV danh sách DB sẽ được tạo bởi init script
+      POSTGRES_MULTIPLE_DATABASES: auth_db,product_db,inventory_db,cart_db,order_db,payment_db,notification_db,analytics_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infra/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ecom"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: ecom-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  kafka:
+    image: bitnami/kafka:3.8
+    container_name: ecom-kafka
+    restart: unless-stopped
+    ports:
+      - "9092:9092"   # external listener (host)
+      - "9094:9094"   # internal (other containers)
+    environment:
+      # KRaft mode (single-node, OK cho dev)
+      KAFKA_ENABLE_KRAFT: "yes"
+      KAFKA_CFG_NODE_ID: "0"
+      KAFKA_CFG_PROCESS_ROLES: "controller,broker"
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: "0@kafka:9093"
+      KAFKA_CFG_LISTENERS: "PLAINTEXT://:9094,CONTROLLER://:9093,EXTERNAL://:9092"
+      KAFKA_CFG_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9094,EXTERNAL://localhost:9092"
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT"
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+    volumes:
+      - kafka-data:/bitnami/kafka
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9094 --list || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: ecom-kafka-ui
+    restart: unless-stopped
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: ecom-local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9094
+      DYNAMIC_CONFIG_ENABLED: "true"
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  redis-data:
+  kafka-data:

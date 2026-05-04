@@ -1,0 +1,18 @@
+# Auto-detect text files, normalize to LF on commit
+* text=auto eol=lf
+
+# Shell scripts MUST be LF (Postgres docker-entrypoint chokes on CRLF)
+*.sh        text eol=lf
+gradlew     text eol=lf
+
+# Windows-only files keep CRLF
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+
+# Binary
+*.jar       binary
+*.png       binary
+*.jpg       binary
+*.gif       binary
+*.ico       binary
+*.zip       binary
