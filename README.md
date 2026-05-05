@@ -12,6 +12,7 @@
 | Mở session AI mới  | [`CLAUDE.md`](CLAUDE.md) — context bootstrap cho Claude                             |
 | Xem tiến độ        | [`docs/ROADMAP.md`](docs/ROADMAP.md) — 40-day plan + checklist                      |
 | **Mục lục docs**   | **[`docs/README.md`](docs/README.md) — hub trung tâm + lộ trình đọc theo persona**  |
+| **Learn hiệu quả** | **[`docs/learning-guide.md`](docs/learning-guide.md) — 3-phase per day ritual + weekly mock** |
 | Onboarding tech    | Tiếp tục đọc README này                                                             |
 
 ## Tech stack
@@ -121,6 +122,26 @@ Tới Day 2 sẽ có service đầu tiên (`auth-service`) để chạy:
 | 7    | 38–40  | CV polish + portfolio pitch + final mock + retro               |
 
 Plan chi tiết + checklist: **[`docs/ROADMAP.md`](docs/ROADMAP.md)** (cập nhật mỗi sprint).
+
+## Learning rhythm (code → concept → interview)
+
+**Daily** (3-phase ritual):
+1. **CODE** (75% day) — morning/afternoon, build production-grade (trigger `/day X`)
+2. **UNDERSTAND** (20% day) — evening, read lessons + ADR + "approaches compared"
+3. **COMMUNICATE** (5% day) — before bed, answer interview Q or explain to rubber duck
+
+**Weekly** (end of week mock):
+- Day 7, 14, 21, 30, 37, 39: mock interview (interactive, 5-7 Q covering the week)
+- Weak point → supplement learning next week
+
+**Milestones**:
+- Week 1-3: core services + performance (Day 1-21)
+- Week 4: data layer + system design prep (Day 22-25)
+- Week 5: frontend full-stack (Day 26-30)
+- Week 6: system design whiteboard problems (Day 31-37)
+- Week 7: final mock + portfolio (Day 38-40)
+
+→ **Full guide**: [`docs/learning-guide.md`](docs/learning-guide.md) (3-phase detail + pitfalls + artifacts)
 
 ## Documentation philosophy
 

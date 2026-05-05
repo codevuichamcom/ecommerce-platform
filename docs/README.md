@@ -162,11 +162,12 @@ graph LR
 
 > Status: ✅ done · 🚧 partial · ⏳ planned
 
-### 📅 2.1. Roadmap & meta
+### 📅 2.1. Roadmap & meta & learning
 
 | Doc | Status | Mô tả |
 | --- | ------ | ----- |
 | [`ROADMAP.md`](ROADMAP.md) | ✅ | 40-day plan + sprint checklist + status snapshot. **Source of truth tiến độ.** |
+| [`learning-guide.md`](learning-guide.md) | ✅ | 3-phase daily ritual (code → understand → communicate) + weekly mock + pitfalls. **Mục tiêu học hiệu quả.** |
 
 ### 🏗️ 2.2. Architecture (`architecture/`)
 
