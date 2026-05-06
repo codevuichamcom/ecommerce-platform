@@ -31,6 +31,14 @@ Glob: docs/interview/day-${X-1}-*.md (chain context day trước)
 - [ ] Day X status `⏳ pending`? Nếu `✅ done` → hỏi: rebuild / skip / continue.
 - [ ] Day X-1 đã ✅? Nếu chưa → cảnh báo "đang skip ahead, có ổn không?".
 - [ ] Skeleton docs có sẵn? Liệt kê paths để Phase 5 fill.
+- [ ] **Branch hiện tại = `master` + working tree clean?** Nếu không → cảnh báo trước khi tạo branch.
+
+**Tạo branch day** (sau khi verify clean) — chạy ở Phase 1 trước khi output plan:
+```
+git checkout master && git pull --ff-only
+git checkout -b day-NN-<slug>     # slug ngắn theo topic ROADMAP, vd day-02-auth
+```
+Slug rule: từ tên section ROADMAP, lowercase, dash-separate, ≤3 từ (auth, inventory-ddd, cart-redis, kafka-setup, cache, sql-tuning, ...).
 
 **Output Phase 1** (1 đoạn ngắn ≤80 từ):
 > "Day X — [tên] · Status [pending/done] · Skeleton có sẵn: [list] · Modernity: [tech] · Day X-1: [done/in-progress]. Tiếp tục?"
@@ -158,10 +166,48 @@ Update 4 nơi theo thứ tự:
 4. **`docs/README.md` §2 Index**:
    - Cho mỗi doc Phase 5 build: đổi status `⏳ Day X` → `✅`
 
-### Phase 7 — Suggest commit message
+### Phase 7 — Suggest commit message + PR description
 
-Output 1 commit message conventional theo CLAUDE.md §7. KHÔNG auto-commit
-(đợi user gõ `/commit` hoặc "commit cho tôi").
+Output 2 thứ. KHÔNG auto-commit, KHÔNG auto-push, KHÔNG auto-create PR.
+
+**(a) Commit message** conventional theo CLAUDE.md §7.
+
+**(b) PR description** — template cố định (Tonny copy-paste khi tạo PR):
+
+```markdown
+## Day NN — <topic>
+
+### 🎯 Mục tiêu
+<1-3 bullet copy từ Phase 2 §1>
+
+### 💻 Code thay đổi
+**Added** (N file mới):
+- `path/to/File.java` — <1 dòng why>
+- ...
+
+**Modified** (N file):
+- `path/to/Existing.java` — <thay đổi gì + why>
+
+**Removed**: <nếu có>
+
+### 📚 Docs đã build
+- [lesson NN](docs/lessons/NN-x.md) — <1 dòng>
+- [issue NN](docs/issues/NN-x.md) — <1 dòng>
+- [interview day NN](docs/interview/day-NN-x.md)
+- [ADR NNN](docs/decisions/NNN-x.md) <nếu có>
+
+### ✅ Test result
+- Build: `./gradlew :services:<svc>:build` ✅ / ❌
+- Unit test: N pass / N fail
+- Integration test (Testcontainers): N pass / N fail
+- Manual smoke (nếu có): <endpoint test outcome>
+
+### 🧠 Lessons-learned
+<2-3 bullet ngắn — gì học được, gì sẽ làm khác lần sau>
+
+### 📋 ROADMAP checklist
+Day NN tick `✅ done · YYYY-MM-DD` ở [docs/ROADMAP.md](docs/ROADMAP.md).
+```
 
 Format (tham khảo skill `/commit`):
 
@@ -170,6 +216,14 @@ Format (tham khảo skill `/commit`):
 
 <body 2-4 bullet — focus WHY>
 ```
+
+**Workflow sau Phase 7** (Tonny tự làm):
+```
+/commit                                  # skill commit stage + tạo commit
+git push -u origin day-NN-<slug>
+gh pr create --base master --title "Day NN — <topic>" --body "$(<pr-body.md)"
+```
+Skill KHÔNG chạy 3 lệnh trên tự động — Tonny review xong mới gõ.
 
 **Hint type theo nature day**:
 - Day có service mới (auth, product, ...): `feat(<scope>)`
@@ -212,10 +266,12 @@ Skill ASK ở Phase 1 hoặc Phase 2 (KHÔNG assume default):
 1. **NEVER** auto-build sau Phase 2. Phase 3 confirm gate là bắt buộc.
 2. **NEVER** skip Phase 6 post-flight. Day "build xong" mà không tick ROADMAP = chưa done.
 3. **NEVER** auto-commit. Đợi user gõ `/commit`.
-4. **NEVER** bịa Leadership incident. Chỉ append khi user share thật.
-5. **NEVER** dictate code style — delegate CLAUDE.md.
-6. **NEVER** rebuild day đã `✅` mà không hỏi user.
-7. Khi build fail → fix root cause. KHÔNG `--no-verify` / disable test.
+4. **NEVER** auto-push branch hoặc auto-`gh pr create`. Phase 7 chỉ output template.
+5. **NEVER** commit thẳng vào `master`. Day branch là bắt buộc từ Day 2.
+6. **NEVER** bịa Leadership incident. Chỉ append khi user share thật.
+7. **NEVER** dictate code style — delegate CLAUDE.md.
+8. **NEVER** rebuild day đã `✅` mà không hỏi user.
+9. Khi build fail → fix root cause. KHÔNG `--no-verify` / disable test.
 
 ---
 
