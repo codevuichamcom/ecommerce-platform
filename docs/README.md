@@ -142,6 +142,10 @@ graph LR
 4. [`leadership/incidents.md`](leadership/incidents.md) — review STAR stories
 5. [`review/ai-junior-traps.md`](review/ai-junior-traps.md) — review checklist
 
+### 🌅 Persona D-bis — Mỗi sáng / mở session (5 giây)
+
+→ **[`daily.md`](daily.md) — cheatsheet 1 trang.** Morning startup / Evening wrap-up / Saturday mock / Pre-interview / Resume after break.
+
 ### 🤖 Persona D — Claude session mới (bootstrap)
 
 1. [`/CLAUDE.md`](../CLAUDE.md) — context bootstrap (đọc đầu tiên, mục 1-9)
@@ -166,6 +170,7 @@ graph LR
 
 | Doc | Status | Mô tả |
 | --- | ------ | ----- |
+| [`daily.md`](daily.md) | ✅ | **Cheatsheet 1 trang — mở mỗi sáng.** Morning / Evening / Saturday / Pre-interview / Resume. |
 | [`ROADMAP.md`](ROADMAP.md) | ✅ | 40-day plan + sprint checklist + status snapshot. **Source of truth tiến độ.** |
 | [`learning-guide.md`](learning-guide.md) | ✅ | 3-phase daily ritual (code → understand → communicate) + weekly mock + pitfalls. **Mục tiêu học hiệu quả.** |
 

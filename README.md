@@ -9,10 +9,11 @@
 
 | Mục đích           | Đọc gì                                                                              |
 | ------------------ | ----------------------------------------------------------------------------------- |
-| Mở session AI mới  | [`CLAUDE.md`](CLAUDE.md) — context bootstrap cho Claude                             |
+| **Mỗi sáng / mở session** | **[`docs/daily.md`](docs/daily.md) — cheatsheet 1 trang, mở 5 giây thấy hết** |
 | Xem tiến độ        | [`docs/ROADMAP.md`](docs/ROADMAP.md) — 40-day plan + checklist                      |
-| **Mục lục docs**   | **[`docs/README.md`](docs/README.md) — hub trung tâm + lộ trình đọc theo persona**  |
-| **Learn hiệu quả** | **[`docs/learning-guide.md`](docs/learning-guide.md) — 3-phase per day ritual + weekly mock** |
+| Learn hiệu quả     | [`docs/learning-guide.md`](docs/learning-guide.md) — 3-phase ritual + weekly mock   |
+| Mục lục docs       | [`docs/README.md`](docs/README.md) — hub trung tâm + lộ trình đọc theo persona      |
+| Mở session AI mới  | [`CLAUDE.md`](CLAUDE.md) — context bootstrap cho Claude (tự load, KHÔNG đọc tay)    |
 | Onboarding tech    | Tiếp tục đọc README này                                                             |
 
 ## Tech stack
