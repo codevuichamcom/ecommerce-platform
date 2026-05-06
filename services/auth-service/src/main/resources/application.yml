@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: auth-service
+
+  # Virtual Threads (Java 21 / Loom) — IO-bound endpoint scale tốt hơn
+  # nhiều mà không phải viết reactive. BCrypt là CPU-bound nên VT không
+  # tăng tốc hash, chỉ tăng concurrent throughput.
+  threads:
+    virtual:
+      enabled: true
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/auth_db
+    username: ecom
+    password: ecom
+
+  jpa:
+    hibernate:
+      ddl-auto: validate    # schema do Flyway own, JPA chỉ validate
+    open-in-view: false     # Day 17 sẽ giải thích lý do disable OSIV
+    properties:
+      hibernate:
+        jdbc.time_zone: UTC
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+server:
+  port: 8081
+
+# JWT secret — dev only. Prod: lấy từ Vault / AWS Secrets Manager.
+# 32+ bytes cho HS256 (jjwt 0.12 enforce minimum key length).
+auth:
+  jwt:
+    secret: "${AUTH_JWT_SECRET:dev-only-jwt-secret-change-me-in-prod-2026-05-04}"
+    issuer: "ecom-auth"
+    access-token-ttl: PT15M     # 15 minutes
+    refresh-token-ttl: P7D      # 7 days
+
+logging:
+  level:
+    com.ecom.auth: DEBUG
+    org.springframework.security: INFO

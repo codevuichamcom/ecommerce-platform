@@ -30,7 +30,7 @@ lombok-mapstruct-binding  = "0.2.0"
 jjwt                      = "0.12.6"
 
 # Test
-testcontainers            = "1.20.4"
+testcontainers            = "1.21.3"
 mockito                   = "5.14.2"
 
 [libraries]
@@ -63,8 +63,11 @@ testcontainers-postgres   = { module = "org.testcontainers:postgresql" }
 testcontainers-kafka      = { module = "org.testcontainers:kafka" }
 testcontainers-junit      = { module = "org.testcontainers:junit-jupiter" }
 
+# Spring Boot Testcontainers integration (@ServiceConnection — Boot 3.1+)
+spring-boot-testcontainers = { module = "org.springframework.boot:spring-boot-testcontainers" }
+
 [bundles]
-testcontainers-default = ["testcontainers-junit", "testcontainers-postgres"]
+testcontainers-default = ["testcontainers-junit", "testcontainers-postgres", "spring-boot-testcontainers"]
 
 [plugins]
 spring-boot              = { id = "org.springframework.boot",         version.ref = "spring-boot" }
