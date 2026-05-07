@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: product-service
+
+  threads:
+    virtual:
+      enabled: true
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/product_db
+    username: ecom
+    password: ecom
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc.time_zone: UTC
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+server:
+  port: 8082
+
+# JWT shared secret với auth-service. Day 7 refactor sang JWKS hoặc shared
+# common-lib JwtVerifier. KHÔNG để khác secret giữa services — token issue
+# bởi auth-service sẽ verify fail ở đây.
+auth:
+  jwt:
+    secret: "${AUTH_JWT_SECRET:dev-only-jwt-secret-change-me-in-prod-2026-05-04}"
+    issuer: "ecom-auth"
+
+logging:
+  level:
+    com.ecom.product: DEBUG
+    org.springframework.security: INFO

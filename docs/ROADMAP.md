@@ -13,12 +13,12 @@
 
 | Field             | Value                                       |
 | ----------------- | ------------------------------------------- |
-| Last updated      | 2026-05-06                                  |
-| Current sprint    | **Day 2 ✅ Done** (auth-service: JWT stateless + refresh rotation atomic + virtual threads) |
-| Next up           | **Day 3 — Product Service**                 |
-| Sprints completed | 2 / 40                                      |
-| Services built    | 1 / 9 (`common-lib` ✅, `auth-service` ✅, gateway/product/... ⏳) |
-| Docs created      | 11                                          |
+| Last updated      | 2026-05-07                                  |
+| Current sprint    | **Day 3 ✅ Done** (product-service: CRUD + category, JSONB attributes, MapStruct DTO, offset pagination + sort whitelist, JWT shared secret) |
+| Next up           | **Day 4 — Inventory Service (DDD)**         |
+| Sprints completed | 3 / 40                                      |
+| Services built    | 2 / 9 (`common-lib` ✅, `auth-service` ✅, `product-service` ✅, gateway/... ⏳) |
+| Docs created      | 15                                          |
 | Build tool        | **Gradle 8.11.1 (Kotlin DSL + Version Catalog) — Wrapper present** |
 | Spring Boot       | **3.4.5**                                   |
 | Blockers          | none                                        |
@@ -56,8 +56,8 @@ gantt
     section Week 1 — Core
     Day 1 Foundation              :done,    d1, 2026-05-03, 1d
     Day 2 Auth                    :done,    d2, 2026-05-06, 1d
-    Day 3 Product                 :active,  d3, after d2, 1d
-    Day 4 Inventory DDD           :         d4, after d3, 1d
+    Day 3 Product                 :done,    d3, 2026-05-07, 1d
+    Day 4 Inventory DDD           :active,  d4, after d3, 1d
     Day 5 Cart Redis              :         d5, after d4, 1d
     Day 6 Order DDD               :         d6, after d5, 1d
     Day 7 Refactor + Mock         :crit,    d7, after d6, 1d
@@ -163,17 +163,21 @@ gantt
 
 ---
 
-### ⏳ Day 3 — Product service
+### ✅ Day 3 — Product service
 
-**Status**: pending
+**Status**: done · 2026-05-07
 
-- [ ] CRUD product + category
-- [ ] Search (LIKE basic, Day 16 sẽ tune index, Day 22 sẽ migrate sang ES)
-- [ ] Pagination offset-based + DTO mapping (MapStruct)
-- [ ] Flyway: `products`, `categories`, `product_attributes` (chuẩn bị migrate Mongo Day 23)
-- [ ] Doc: `lessons/03-pagination-offset-vs-cursor.md`
-- [ ] Doc: `performance/03-product-search-indexing.md`
-- [ ] Doc: `interview/day-03-product.md`
+- [x] CRUD product + category
+- [x] Search (LIKE basic, Day 16 sẽ tune index, Day 22 sẽ migrate sang ES)
+- [x] Pagination offset-based + DTO mapping (MapStruct) + sort whitelist + size cap 100
+- [x] Flyway: `products`, `categories` (JSONB `attributes` qua `@JdbcTypeCode(SqlTypes.JSON)` — chuẩn bị migrate Mongo Day 23)
+- [x] JWT shared secret với auth-service, `@PreAuthorize("hasRole('ADMIN')")` cho write endpoint, public GET
+- [x] DTO record + MapStruct compile-time, `open-in-view: false` chống entity leak
+- [x] Integration test Testcontainers gated `RUN_PRODUCT_INTEGRATION_TESTS=true` (assert `hibernateLazyInitializer` doesNotExist)
+- [x] Doc: [`lessons/03-pagination-offset-vs-cursor.md`](lessons/03-pagination-offset-vs-cursor.md)
+- [x] Doc: [`performance/03-product-search-indexing.md`](performance/03-product-search-indexing.md)
+- [x] Doc: [`issues/03-entity-leak-in-response.md`](issues/03-entity-leak-in-response.md)
+- [x] Doc: [`interview/day-03-product.md`](interview/day-03-product.md)
 
 ---
 
@@ -755,3 +759,4 @@ gantt
 - **2026-05-04 morning** · ~2h · Day 1 cleanup — fix Maven leftover, generate Gradle Wrapper, fix `repositories` conflict, add `.gitattributes`. Build green.
 - **2026-05-04 evening** · ~1h · Roadmap revamp — 30→40 day, thêm Week 4 (data layer NoSQL+ES) + Week 6 (system design intensive). Update Gantt + dependency map.
 - **2026-05-06** · Day 2 — `auth-service` deliverable: JWT stateless (HS256, 15min) + refresh rotation atomic UPDATE + virtual threads bật + Records DTO + Testcontainers `@ServiceConnection` skeleton. 5 docs (ADR-002, lesson 02, issue 02 race condition, issue 02b testcontainers compat, interview day-02). Smoke test 6/6 pass; integration test skip default trên local Windows do Docker Desktop 29.x. Branch `day-02-auth`.
+- **2026-05-07** · Day 3 — `product-service` deliverable: CRUD product + category, JSONB `attributes` qua `@JdbcTypeCode(SqlTypes.JSON)`, MapStruct DTO record (anti entity-leak), offset pagination + sort whitelist + size cap 100, JWT shared secret với auth-service. 4 docs (lesson 03 pagination offset vs cursor, perf 03 search indexing, issue 03 entity-leak 9-section, interview day-03 + bối cảnh giả lập ShopVN/PM Linh/Tech Lead Hùng). Build green; integration test skip default. Branch `day-03-product`.
