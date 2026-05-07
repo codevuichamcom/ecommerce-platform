@@ -139,7 +139,24 @@ Nếu build fail → fix root cause, KHÔNG `--no-verify` / skip test.
 | ADR | Status / Date / Decision / Context / ≥3 Alternatives / Chosen+Rationale / Trade-offs / Consequences / Related |
 | Issue | 9 section: Problem / Symptoms / Root cause / **Approaches compared (≥3)** / **Chosen+Why** / Fix / Prevention / Trade-off accepted / Related |
 | Lesson | TL;DR / Khi nào dùng / Khi nào KHÔNG / Cạm bẫy / (Approaches compared nếu có) / Trả lời phỏng vấn / Related |
-| Interview | Q → Strong answer (Việt+English term) → Follow-up traps + Senior mindset + AI Playbook + Tech Lead Lens (nếu day trigger) |
+| Interview | **🏢 Bối cảnh giả lập** (persist Phase 2 §2) → Q → Strong answer (Việt+English term) → Follow-up traps + Senior mindset + AI Playbook + Tech Lead Lens (nếu day trigger) |
+
+**Bối cảnh giả lập rule** (BẮT BUỘC từ Day 3 trở đi, Day 2 đã backfill):
+Phần 2 của Phase 2 ("🏢 Task mô phỏng công ty thật") output ở chat KHÔNG được trôi mất. Phase 5 phải persist vào đầu `interview/day-NN-*.md` ngay sau frontmatter, dạng bullet block 5-7 dòng:
+
+```
+## 🏢 Bối cảnh giả lập (task mô phỏng công ty thật)
+
+- **Company**: <fictional name + giai đoạn>
+- **Role giao việc**: <ai giao + background>
+- **Bạn**: <role + ownership scope>
+- **Reviewer**: <ai review + soi gì>
+- **Deadline**: <số ngày + demo gì>
+- **Constraint thực tế**: <2-3 ràng buộc kỹ thuật/tổ chức>
+- **Definition of Done**: <3-5 tiêu chí ký nhận>
+```
+
+Mục đích: 6 tháng sau đọc lại `interview/day-NN-*.md` vẫn diễn lại được context để storytelling phỏng vấn ("ở project X, CTO ép tôi 3 ngày deliver auth, ràng buộc Y, tôi chọn Z vì..."). Nếu chỉ có Q&A thuần thì interview drill khô — không retell được story.
 
 **Skeleton fill rule**: nếu Phase 1 phát hiện skeleton có sẵn (vd `04b-transaction-isolation.md` cho Day 4) → fill mọi `(TODO)` placeholder, đổi `Status: ⏳ Skeleton` → `✅ Done`.
 
