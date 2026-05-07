@@ -32,9 +32,10 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 include("common-lib")
 
+include("services:auth-service")
+
 // Services sẽ uncomment khi bắt đầu build:
 // include("services:gateway-service")
-// include("services:auth-service")
 // include("services:product-service")
 // include("services:inventory-service")
 // include("services:cart-service")

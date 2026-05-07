@@ -109,6 +109,12 @@ ecommerce-platform/
 - **File creation**: tạo trực tiếp vào folder workspace của Tonny (`D:\Develop\MySelf\ecommerce-platform`).
 - **Code scope**: deep-but-narrow — production-grade ở core, stub phần phụ với `// TODO` có giải thích.
 - **Commit messages**: cuối mỗi DAY suggest 1 commit message format conventional (`feat(scope): ...`, `chore(foundation): ...`).
+- **Branch & PR per day** (BẮT BUỘC từ Day 2 trở đi):
+  - Mỗi day build trên 1 branch riêng `day-NN-<slug>` (vd: `day-02-auth`, `day-04-inventory-ddd`, `day-15-cache`). Tạo từ `master` ở Phase 1.
+  - KHÔNG commit thẳng vào `master`. `master` chỉ nhận merge từ PR.
+  - Cuối day → tạo PR target `master` với title `Day NN — <topic>` + description gồm: **Mục tiêu · Code thay đổi (file list + 1 dòng why) · Docs đã build (link) · Test result · Lessons-learned · Roadmap checklist tick**.
+  - Format description chuẩn ở `.claude/skills/day/SKILL.md` Phase 7.
+  - Không auto-merge — Tonny tự review + merge để giữ cảm giác "PR review thật" (cho phỏng vấn nói được "tôi merge sau khi self-review").
 - **Mock interview style**: Style A — interactive, brutally honest, đóng vai senior interviewer.
 - **Frontend**: dồn về Week 5 (Day 26-30).
 - **40-day structure**: Week 1 Core (D1-7) · Week 2 Kafka (D8-14) · Week 3 Performance (D15-21) · Week 4 Data layer — ES + Mongo + decision matrix (D22-25) · Week 5 Frontend (D26-30) · Week 6 System Design intensive (D31-37) · Week 7 Final mock + retro (D38-40).

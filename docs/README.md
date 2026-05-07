@@ -37,7 +37,7 @@ graph LR
     D1[Day 1<br/>Foundation]:::done
 
     subgraph Week1[Week 1 — Core]
-        D2[Day 2<br/>Auth]:::planned
+        D2[Day 2<br/>Auth]:::done
         D3[Day 3<br/>Product]:::planned
         D4[Day 4<br/>Inventory DDD]:::planned
         D5[Day 5<br/>Cart Redis]:::planned
@@ -192,7 +192,7 @@ graph LR
 | Doc | Status | Mô tả |
 | --- | ------ | ----- |
 | [`decisions/001-why-hybrid-architecture.md`](decisions/001-why-hybrid-architecture.md) | ✅ | Tại sao Hybrid Layered + DDD per service (3-điểm criteria) |
-| `decisions/002-jwt-vs-session.md` | ⏳ Day 2 | Quyết định auth: JWT stateless vs session-based |
+| [`decisions/002-jwt-vs-session.md`](decisions/002-jwt-vs-session.md) | ✅ | Quyết định auth: JWT stateless + refresh rotation DB-hashed (4 alternatives compared) |
 | `decisions/003-ddd-for-order-inventory-payment.md` | ⏳ Day 4 | Cụ thể hóa ADR-001 cho 3 service DDD |
 | `decisions/004-feign-vs-http-interface.md` | ⏳ Day 8 | Spring 6.1 HTTP Interface vs OpenFeign |
 | `decisions/005-outbox-vs-cdc.md` | ⏳ Day 13 | Outbox pattern vs Debezium CDC |
@@ -207,7 +207,7 @@ graph LR
 | Doc | Status | Mô tả |
 | --- | ------ | ----- |
 | [`lessons/01-monorepo-vs-polyrepo.md`](lessons/01-monorepo-vs-polyrepo.md) | ✅ | Monorepo / polyrepo trade-off, scale-up trigger |
-| `lessons/02-jwt-vs-session.md` | ⏳ Day 2 | JWT mechanics, refresh token rotation, blacklist |
+| [`lessons/02-jwt-vs-session.md`](lessons/02-jwt-vs-session.md) | ✅ | JWT vs session, when/when-not, 7 cạm bẫy, 4 interview Q |
 | `lessons/03-pagination-offset-vs-cursor.md` | ⏳ Day 3 | Offset vs keyset pagination |
 | `lessons/04-optimistic-locking.md` | ⏳ Day 4 | `@Version`, retry pattern, vs pessimistic |
 | `lessons/04b-transaction-isolation.md` | ⏳ Day 4 | 4 isolation levels, dirty/non-repeatable/phantom read, Postgres default READ COMMITTED |
@@ -246,7 +246,8 @@ graph LR
 
 | Doc | Status | Mô tả |
 | --- | ------ | ----- |
-| `issues/02-token-refresh-race-condition.md` | ⏳ Day 2 | 2 request refresh đồng thời → 1 thắng, 1 logout |
+| [`issues/02-token-refresh-race-condition.md`](issues/02-token-refresh-race-condition.md) | ✅ | 2 request refresh đồng thời → atomic UPDATE chống lost update (4 approaches compared) |
+| [`issues/02b-testcontainers-docker-desktop-29.md`](issues/02b-testcontainers-docker-desktop-29.md) | ✅ | Testcontainers fail trên Docker Desktop 29.x Windows — root cause + workaround (5 approaches) |
 | `issues/04-overselling-stock.md` | ⏳ Day 4 | Concurrent reserve không atomic → bán quá tồn kho |
 | `issues/09-eventual-consistency-order.md` | ⏳ Day 9 | Order created nhưng inventory consumer chưa thấy |
 | `issues/10-duplicate-payment-callback.md` | ⏳ Day 10 | Gateway retry → callback 2 lần → trừ tiền 2 lần |
@@ -281,7 +282,7 @@ graph LR
 | Doc | Status | Mô tả |
 | --- | ------ | ----- |
 | [`interview/day-01-foundation.md`](interview/day-01-foundation.md) | ✅ | Monorepo / Hybrid / DB-per-service / ApiResponse / MDC + AI Playbook + Tech Lead Lens |
-| `interview/day-02-auth.md` | ⏳ Day 2 | JWT / refresh / Spring Security / virtual threads |
+| [`interview/day-02-auth.md`](interview/day-02-auth.md) | ✅ | JWT / BCrypt / refresh rotation / virtual threads / Records — 5 Q&A + AI Playbook |
 | `interview/day-03-product.md` | ⏳ Day 3 | CRUD / pagination / search / MapStruct |
 | `interview/day-04-inventory.md` | ⏳ Day 4 | Optimistic lock / Aggregate / domain event |
 | `interview/day-05-cart.md` | ⏳ Day 5 | Redis vs DB / TTL / merge anonymous → user |

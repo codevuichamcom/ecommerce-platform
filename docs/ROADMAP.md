@@ -13,12 +13,12 @@
 
 | Field             | Value                                       |
 | ----------------- | ------------------------------------------- |
-| Last updated      | 2026-05-04                                  |
-| Current sprint    | **Day 1 ✅ Done** (cleanup — Maven removed, Gradle Wrapper added) |
-| Next up           | **Day 2 — Auth Service**                    |
-| Sprints completed | 1 / 40                                      |
-| Services built    | 0 / 9 (`common-lib` ✅, gateway/auth/... ⏳)  |
-| Docs created      | 6                                           |
+| Last updated      | 2026-05-06                                  |
+| Current sprint    | **Day 2 ✅ Done** (auth-service: JWT stateless + refresh rotation atomic + virtual threads) |
+| Next up           | **Day 3 — Product Service**                 |
+| Sprints completed | 2 / 40                                      |
+| Services built    | 1 / 9 (`common-lib` ✅, `auth-service` ✅, gateway/product/... ⏳) |
+| Docs created      | 11                                          |
 | Build tool        | **Gradle 8.11.1 (Kotlin DSL + Version Catalog) — Wrapper present** |
 | Spring Boot       | **3.4.5**                                   |
 | Blockers          | none                                        |
@@ -55,8 +55,8 @@ gantt
 
     section Week 1 — Core
     Day 1 Foundation              :done,    d1, 2026-05-03, 1d
-    Day 2 Auth                    :active,  d2, 2026-05-04, 1d
-    Day 3 Product                 :         d3, after d2, 1d
+    Day 2 Auth                    :done,    d2, 2026-05-06, 1d
+    Day 3 Product                 :active,  d3, after d2, 1d
     Day 4 Inventory DDD           :         d4, after d3, 1d
     Day 5 Cart Redis              :         d5, after d4, 1d
     Day 6 Order DDD               :         d6, after d5, 1d
@@ -140,25 +140,26 @@ gantt
 
 ---
 
-### ⏳ Day 2 — Auth service
+### ✅ Day 2 — Auth service
 
-**Status**: pending
+**Status**: done · 2026-05-06
 
 **🆕 Modernity introduces**: Virtual Threads (`spring.threads.virtual.enabled=true`), Records cho DTO, Testcontainers `@ServiceConnection`.
 
-- [ ] `auth-service` Spring Boot scaffold + Flyway migration cho `users`, `refresh_tokens`
-- [ ] Bật virtual threads, kiểm tra `Thread.currentThread().isVirtual()` trong endpoint
-- [ ] `POST /auth/register` — BCrypt hash, validate
-- [ ] `POST /auth/login` — issue JWT (15min) + refresh token
-- [ ] `POST /auth/refresh` — rotate refresh, blacklist old
-- [ ] `GET /auth/me` — JWT-protected
-- [ ] Exception → ApiResponse via common-lib
-- [ ] Integration test với Testcontainers Postgres + `@ServiceConnection`
-- [ ] Test: register / login / refresh happy + invalid credentials + expired token
-- [ ] Doc: `lessons/02-jwt-vs-session.md`
-- [ ] Doc: `issues/02-token-refresh-race-condition.md`
-- [ ] Doc: `interview/day-02-auth.md`
-- [ ] ADR: `decisions/002-jwt-vs-session.md`
+- [x] `auth-service` Spring Boot scaffold + Flyway migration cho `users`, `refresh_tokens`
+- [x] Bật virtual threads, kiểm tra `Thread.currentThread().isVirtual()` trong endpoint (`/auth/me`)
+- [x] `POST /auth/register` — BCrypt hash (cost=10), validate `@Size(8..72)` chống BCrypt 72-byte trap
+- [x] `POST /auth/login` — issue JWT (15min) + refresh token (7d, SHA-256 hash trong DB)
+- [x] `POST /auth/refresh` — rotate refresh token, atomic UPDATE chống race
+- [x] `GET /auth/me` — JWT-protected, return virtual thread flag
+- [x] Exception → ApiResponse via common-lib (JwtAuthenticationFilter handle BusinessException)
+- [x] Integration test với Testcontainers Postgres + `@ServiceConnection` (skip default trên local Windows do Docker Desktop 29.x compat — xem [issue 02b](issues/02b-testcontainers-docker-desktop-29.md); enable bằng `RUN_AUTH_INTEGRATION_TESTS=true`)
+- [x] Smoke test thực tế (curl + docker compose Postgres): 6 scenario PASS — register / login / /me virtualThread / refresh rotation / duplicate email / wrong password
+- [x] Doc: [`lessons/02-jwt-vs-session.md`](lessons/02-jwt-vs-session.md)
+- [x] Doc: [`issues/02-token-refresh-race-condition.md`](issues/02-token-refresh-race-condition.md)
+- [x] Doc: [`issues/02b-testcontainers-docker-desktop-29.md`](issues/02b-testcontainers-docker-desktop-29.md)
+- [x] Doc: [`interview/day-02-auth.md`](interview/day-02-auth.md)
+- [x] ADR: [`decisions/002-jwt-vs-session.md`](decisions/002-jwt-vs-session.md)
 
 ---
 
@@ -753,3 +754,4 @@ gantt
 - **2026-05-03** · ~6h · Day 1 done — gradle migration, common-lib, docs (4 file).
 - **2026-05-04 morning** · ~2h · Day 1 cleanup — fix Maven leftover, generate Gradle Wrapper, fix `repositories` conflict, add `.gitattributes`. Build green.
 - **2026-05-04 evening** · ~1h · Roadmap revamp — 30→40 day, thêm Week 4 (data layer NoSQL+ES) + Week 6 (system design intensive). Update Gantt + dependency map.
+- **2026-05-06** · Day 2 — `auth-service` deliverable: JWT stateless (HS256, 15min) + refresh rotation atomic UPDATE + virtual threads bật + Records DTO + Testcontainers `@ServiceConnection` skeleton. 5 docs (ADR-002, lesson 02, issue 02 race condition, issue 02b testcontainers compat, interview day-02). Smoke test 6/6 pass; integration test skip default trên local Windows do Docker Desktop 29.x. Branch `day-02-auth`.
