@@ -4,6 +4,26 @@
 
 ---
 
+## 🏢 Bối cảnh giả lập (task mô phỏng công ty thật)
+
+- **Company**: ShopFast — ecommerce startup Việt Nam giai đoạn pre-Series A, đang build platform microservice thay cho monolith PHP cũ.
+- **Role giao việc**: CTO (ex-Shopee Tech Lead). Sprint planning đầu tuần, ép deliver auth foundation vì 8 service khác đều block chờ identity layer.
+- **Bạn**: Senior Backend Engineer, own auth-service end-to-end (design + code + ops handoff). Solo trên service này, không có team.
+- **Reviewer**: Tech Lead + 1 Security Engineer. Security đặc biệt soi: revoke flow, password hash cost, refresh storage, error message leak (user enumeration).
+- **Deadline**: 3 ngày calendar (~12h focused work). Demo cuối Day 3: register / login / refresh chạy được trên Postgres thật + present trade-off với Security trong 10 phút.
+- **Constraint thực tế**:
+  - Frontend (React SPA, mobile sau) đã chốt `Authorization: Bearer` — không session cookie.
+  - Compliance Việt Nam chưa ép revoke instant (không phải banking) → JWT stateless OK, hybrid cho panic case.
+  - Hạ tầng đã có Postgres + Docker Compose, **chưa có Redis** (Day 5 mới setup) → mọi giải pháp dựa Redis bị reject ở Day 2.
+- **Definition of Done** (CTO ký):
+  1. 4 endpoint pass smoke test trên Postgres thật.
+  2. Refresh rotation atomic — chứng minh chống race 2 tab (atomic UPDATE hoặc test).
+  3. Password BCrypt + token storage hash, không plaintext nào trong DB.
+  4. 1 ADR + ≥1 issue doc (trade-off đã chọn, alternatives đã reject) — Tech Lead đọc trước review.
+  5. Virtual threads bật, verify bằng endpoint trả `Thread.isVirtual()=true`.
+
+---
+
 ## Q1. Bạn có dùng JWT cho service auth không? Tại sao chọn JWT thay vì session?
 
 **Strong answer**:
