@@ -14,11 +14,11 @@
 | Field             | Value                                       |
 | ----------------- | ------------------------------------------- |
 | Last updated      | 2026-05-09                                  |
-| Current sprint    | **Day 4 ✅ Done** (inventory-service DDD: Stock aggregate, optimistic lock `@Version` + `@Retryable`, 100-thread no-oversell test, ADR-003 DDD criteria) |
-| Next up           | **Day 5 — Cart Service (Redis)**            |
-| Sprints completed | 4 / 40                                      |
-| Services built    | 3 / 9 (`common-lib` ✅, `auth-service` ✅, `product-service` ✅, `inventory-service` ✅, gateway/cart/order/payment/notification/analytics ⏳) |
-| Docs created      | 20                                          |
+| Current sprint    | **Day 5 ✅ Done** (cart-service Redis-primary: Hash + HINCRBY atomic, anonymous→user merge sum-quantity, TTL 7d refresh-on-mutate, ADR-004) |
+| Next up           | **Day 6 — Order Service (DDD)**             |
+| Sprints completed | 5 / 40                                      |
+| Services built    | 4 / 9 (`common-lib` ✅, `auth-service` ✅, `product-service` ✅, `inventory-service` ✅, `cart-service` ✅, gateway/order/payment/notification/analytics ⏳) |
+| Docs created      | 25                                          |
 | Build tool        | **Gradle 8.11.1 (Kotlin DSL + Version Catalog) — Wrapper present** |
 | Spring Boot       | **3.4.5**                                   |
 | Blockers          | none                                        |
@@ -58,8 +58,8 @@ gantt
     Day 2 Auth                    :done,    d2, 2026-05-06, 1d
     Day 3 Product                 :done,    d3, 2026-05-07, 1d
     Day 4 Inventory DDD           :done,    d4, 2026-05-09, 1d
-    Day 5 Cart Redis              :active,  d5, after d4, 1d
-    Day 6 Order DDD               :         d6, after d5, 1d
+    Day 5 Cart Redis              :done,    d5, 2026-05-09, 1d
+    Day 6 Order DDD               :active,  d6, after d5, 1d
     Day 7 Refactor + Mock         :crit,    d7, after d6, 1d
 
     section Week 2 — Kafka
@@ -201,15 +201,23 @@ gantt
 
 ---
 
-### ⏳ Day 5 — Cart service
+### ✅ Day 5 — Cart service
 
-**Status**: pending
+**Status**: done · 2026-05-09
 
-- [ ] Redis-backed cart (Hash structure, TTL 7 ngày)
-- [ ] Add / update / remove / clear
-- [ ] Optimistic merge khi user login (anonymous cart → user cart)
-- [ ] Doc: `lessons/05-redis-cart-vs-db-cart.md`
-- [ ] Doc: `interview/day-05-cart.md`
+- [x] Redis-backed cart (Hash structure, TTL 7 ngày, refresh-on-mutate only)
+- [x] Add / update / remove / clear / get — 5 endpoint + 6th `/cart/merge`
+- [x] Anonymous → user cart merge với rule **sum quantity per SKU**, anon DEL after merge
+- [x] HINCRBY atomic field-level (chống lost-update khi 2 tab cùng add 1 SKU)
+- [x] Hard cap `maxQtyPerItem=999` + `maxItemsPerCart=100` chống abuse, rollback decrement nếu vượt
+- [x] JWT verify reuse pattern từ product-service; cart endpoint cho phép anonymous via header `X-Cart-Token`
+- [x] Concurrency IT 100-thread (gated `RUN_CART_INTEGRATION_TESTS=true`) + merge IT (3 scenario)
+- [x] 4 unit test PASS (CartId sealed pattern matching + namespace key)
+- [x] Doc: [`lessons/05-redis-cart-vs-db-cart.md`](lessons/05-redis-cart-vs-db-cart.md)
+- [x] Doc: [`lessons/05b-redis-data-structures.md`](lessons/05b-redis-data-structures.md)
+- [x] Doc: [`issues/05-cart-merge-conflict-on-login.md`](issues/05-cart-merge-conflict-on-login.md) — 9-section, 4 approaches
+- [x] Doc: [`interview/day-05-cart.md`](interview/day-05-cart.md) — bối cảnh ShopVN/Anh Hùng + AI Playbook
+- [x] ADR: [`decisions/004-redis-primary-for-cart.md`](decisions/004-redis-primary-for-cart.md) — 4 alternatives compared
 
 ---
 
@@ -763,3 +771,4 @@ gantt
 - **2026-05-06** · Day 2 — `auth-service` deliverable: JWT stateless (HS256, 15min) + refresh rotation atomic UPDATE + virtual threads bật + Records DTO + Testcontainers `@ServiceConnection` skeleton. 5 docs (ADR-002, lesson 02, issue 02 race condition, issue 02b testcontainers compat, interview day-02). Smoke test 6/6 pass; integration test skip default trên local Windows do Docker Desktop 29.x. Branch `day-02-auth`.
 - **2026-05-07** · Day 3 — `product-service` deliverable: CRUD product + category, JSONB `attributes` qua `@JdbcTypeCode(SqlTypes.JSON)`, MapStruct DTO record (anti entity-leak), offset pagination + sort whitelist + size cap 100, JWT shared secret với auth-service. 4 docs (lesson 03 pagination offset vs cursor, perf 03 search indexing, issue 03 entity-leak 9-section, interview day-03 + bối cảnh giả lập ShopVN/PM Linh/Tech Lead Hùng). Build green; integration test skip default. Branch `day-03-product`.
 - **2026-05-09** · Day 4 — `inventory-service` DDD deliverable: Aggregate `Stock` enforce invariant `reserved ≤ quantity` ở constructor + method (factory `Stock.create`, no public setter), `@Version` optimistic lock kế thừa BaseEntity, `@Retryable(OptimisticLockingFailureException, maxAttempts=4, REQUIRES_NEW)` exp backoff. Domain event `StockReserved`/`StockReleased` qua `@DomainEvents` (Spring Data hook nguyên thủy thay vì AbstractAggregateRoot vì single inheritance). DB CHECK constraint defense-in-depth. 9/9 unit test pass; 100-thread concurrency IT gated `RUN_INVENTORY_INTEGRATION_TESTS=true`. 5 docs: ADR-003 (DDD 3-điểm criteria), lesson 04 optimistic-locking, lesson 04b transaction-isolation (fill skeleton), issue 04 overselling 9-section (4 approach), interview day-04 + AI Playbook + Tech Lead Lens. Branch `day-04-inventory-ddd`.
+- **2026-05-09** · Day 5 — `cart-service` Redis-primary deliverable: 6 endpoint (get/add/update/remove/clear/merge), Redis Hash structure `cart:{anon|user}:{id}` field=SKU value=qty, **HINCRBY** atomic field-level chống lost-update, TTL 7d refresh-on-mutate (KHÔNG ở read), anonymous→user merge với rule **sum quantity per SKU** + cap by `maxQtyPerItem` rollback decrement. Sealed `CartId` (Anonymous/User) namespace tách biệt. Build green; 4/4 unit test PASS; 2 IT (concurrency + merge) gated `RUN_CART_INTEGRATION_TESTS=true`. 5 docs: ADR-004 Redis-primary (4 alternatives PG/PG+cache/Redis/Redis+snapshot), lesson 05 redis-vs-db, lesson 05b data-structures (Hash vs String JSON), issue 05 merge-conflict 9-section, interview day-05 + AI Playbook + bối cảnh ShopVN. Branch `day-05-cart-redis`.

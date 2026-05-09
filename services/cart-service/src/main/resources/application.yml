@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: cart-service
+
+  # Cart endpoints là IO-bound thuần (Redis call < 1ms). Virtual threads
+  # cho concurrent throughput cao mà không cần reactive complexity.
+  threads:
+    virtual:
+      enabled: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2s
+      # Lettuce mặc định (non-blocking, share connection an toàn với
+      # virtual threads — Jedis pool-per-thread tệ hơn ở VT scale).
+
+server:
+  port: 8083
+
+# JWT secret PHẢI giống auth-service (HMAC HS256 shared key).
+# Day 7 plan: refactor lên common-lib hoặc chuyển sang JWKS public-key.
+auth:
+  jwt:
+    secret: "${AUTH_JWT_SECRET:dev-only-jwt-secret-change-me-in-prod-2026-05-04}"
+    issuer: "ecom-auth"
+
+cart:
+  # Cart sống 7 ngày — match user expectation (Tiki/Shopee đều ~7d).
+  # Refresh TTL mỗi mutation; read KHÔNG refresh để cart idle thực sự expire.
+  ttl: P7D
+  # Hard cap qty/SKU để chống abuse (bot thêm 1M item làm vỡ Redis memory).
+  max-qty-per-item: 999
+  # Hard cap distinct SKU/cart — chống flood key.
+  max-items-per-cart: 100
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    com.ecom.cart: DEBUG
