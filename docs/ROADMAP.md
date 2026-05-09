@@ -13,12 +13,12 @@
 
 | Field             | Value                                       |
 | ----------------- | ------------------------------------------- |
-| Last updated      | 2026-05-07                                  |
-| Current sprint    | **Day 3 ✅ Done** (product-service: CRUD + category, JSONB attributes, MapStruct DTO, offset pagination + sort whitelist, JWT shared secret) |
-| Next up           | **Day 4 — Inventory Service (DDD)**         |
-| Sprints completed | 3 / 40                                      |
-| Services built    | 2 / 9 (`common-lib` ✅, `auth-service` ✅, `product-service` ✅, gateway/... ⏳) |
-| Docs created      | 15                                          |
+| Last updated      | 2026-05-09                                  |
+| Current sprint    | **Day 4 ✅ Done** (inventory-service DDD: Stock aggregate, optimistic lock `@Version` + `@Retryable`, 100-thread no-oversell test, ADR-003 DDD criteria) |
+| Next up           | **Day 5 — Cart Service (Redis)**            |
+| Sprints completed | 4 / 40                                      |
+| Services built    | 3 / 9 (`common-lib` ✅, `auth-service` ✅, `product-service` ✅, `inventory-service` ✅, gateway/cart/order/payment/notification/analytics ⏳) |
+| Docs created      | 20                                          |
 | Build tool        | **Gradle 8.11.1 (Kotlin DSL + Version Catalog) — Wrapper present** |
 | Spring Boot       | **3.4.5**                                   |
 | Blockers          | none                                        |
@@ -57,8 +57,8 @@ gantt
     Day 1 Foundation              :done,    d1, 2026-05-03, 1d
     Day 2 Auth                    :done,    d2, 2026-05-06, 1d
     Day 3 Product                 :done,    d3, 2026-05-07, 1d
-    Day 4 Inventory DDD           :active,  d4, after d3, 1d
-    Day 5 Cart Redis              :         d5, after d4, 1d
+    Day 4 Inventory DDD           :done,    d4, 2026-05-09, 1d
+    Day 5 Cart Redis              :active,  d5, after d4, 1d
     Day 6 Order DDD               :         d6, after d5, 1d
     Day 7 Refactor + Mock         :crit,    d7, after d6, 1d
 
@@ -181,21 +181,23 @@ gantt
 
 ---
 
-### ⏳ Day 4 — Inventory service (DDD)
+### ✅ Day 4 — Inventory service (DDD)
 
-**Status**: pending
+**Status**: done · 2026-05-09
 
 **🆕 Modernity introduces**: Sealed types cho domain state, optimistic locking + retry pattern.
 
-- [ ] Aggregate `Stock` với `quantity`, `reserved`
-- [ ] `reserve(sku, qty)` + `release(sku, qty)` — optimistic lock via `@Version`
-- [ ] Domain event `StockReserved` / `StockReleased` (publish Day 9)
-- [ ] Concurrency test: simulate 100 thread reserve cùng 1 sku → no oversell
-- [ ] Doc: `lessons/04-optimistic-locking.md`
-- [ ] Doc: `lessons/04b-transaction-isolation.md` — 4 isolation levels + Postgres default + anomaly demo (gap problem)
-- [ ] Doc: `issues/04-overselling-stock.md` — full format (Approaches compared: optimistic / pessimistic / queue / DB-level lock)
-- [ ] Doc: `interview/day-04-inventory.md`
-- [ ] ADR: `decisions/003-ddd-for-order-inventory-payment.md`
+- [x] Aggregate `Stock` với `quantity`, `reserved` — invariant `reserved ≤ quantity` enforce trong aggregate
+- [x] `reserve(sku, qty)` + `release(sku, qty)` — optimistic lock via `@Version` (kế thừa BaseEntity) + `@Retryable(OptimisticLockingFailureException, REQUIRES_NEW, exp backoff 50→500ms)`
+- [x] Domain event `StockReserved` / `StockReleased` qua `@DomainEvents` + `@AfterDomainEventPublication` (publish Day 9 wire Kafka outbox)
+- [x] Concurrency test 100 thread reserve cùng 1 sku stock=50 → đúng 50 success, 50 fail `InsufficientStockException`, no oversell (gated `RUN_INVENTORY_INTEGRATION_TESTS=true`)
+- [x] DB-level CHECK constraint defense-in-depth: `reserved ≥ 0`, `quantity ≥ 0`, `reserved ≤ quantity`
+- [x] 9 unit test pass cho Stock invariant (factory, reserve, release, confirm, edge cases)
+- [x] Doc: [`lessons/04-optimistic-locking.md`](lessons/04-optimistic-locking.md)
+- [x] Doc: [`lessons/04b-transaction-isolation.md`](lessons/04b-transaction-isolation.md) — 4 isolation levels + Postgres MVCC vs MySQL next-key lock
+- [x] Doc: [`issues/04-overselling-stock.md`](issues/04-overselling-stock.md) — 9-section, Approaches compared (optimistic / pessimistic / Redis Lua / SERIALIZABLE)
+- [x] Doc: [`interview/day-04-inventory.md`](interview/day-04-inventory.md) — bối cảnh ShopVN/Anh Hùng + AI Playbook + Tech Lead Lens
+- [x] ADR: [`decisions/003-ddd-for-order-inventory-payment.md`](decisions/003-ddd-for-order-inventory-payment.md) — 3-điểm criteria DDD vs Layered
 
 ---
 
@@ -760,3 +762,4 @@ gantt
 - **2026-05-04 evening** · ~1h · Roadmap revamp — 30→40 day, thêm Week 4 (data layer NoSQL+ES) + Week 6 (system design intensive). Update Gantt + dependency map.
 - **2026-05-06** · Day 2 — `auth-service` deliverable: JWT stateless (HS256, 15min) + refresh rotation atomic UPDATE + virtual threads bật + Records DTO + Testcontainers `@ServiceConnection` skeleton. 5 docs (ADR-002, lesson 02, issue 02 race condition, issue 02b testcontainers compat, interview day-02). Smoke test 6/6 pass; integration test skip default trên local Windows do Docker Desktop 29.x. Branch `day-02-auth`.
 - **2026-05-07** · Day 3 — `product-service` deliverable: CRUD product + category, JSONB `attributes` qua `@JdbcTypeCode(SqlTypes.JSON)`, MapStruct DTO record (anti entity-leak), offset pagination + sort whitelist + size cap 100, JWT shared secret với auth-service. 4 docs (lesson 03 pagination offset vs cursor, perf 03 search indexing, issue 03 entity-leak 9-section, interview day-03 + bối cảnh giả lập ShopVN/PM Linh/Tech Lead Hùng). Build green; integration test skip default. Branch `day-03-product`.
+- **2026-05-09** · Day 4 — `inventory-service` DDD deliverable: Aggregate `Stock` enforce invariant `reserved ≤ quantity` ở constructor + method (factory `Stock.create`, no public setter), `@Version` optimistic lock kế thừa BaseEntity, `@Retryable(OptimisticLockingFailureException, maxAttempts=4, REQUIRES_NEW)` exp backoff. Domain event `StockReserved`/`StockReleased` qua `@DomainEvents` (Spring Data hook nguyên thủy thay vì AbstractAggregateRoot vì single inheritance). DB CHECK constraint defense-in-depth. 9/9 unit test pass; 100-thread concurrency IT gated `RUN_INVENTORY_INTEGRATION_TESTS=true`. 5 docs: ADR-003 (DDD 3-điểm criteria), lesson 04 optimistic-locking, lesson 04b transaction-isolation (fill skeleton), issue 04 overselling 9-section (4 approach), interview day-04 + AI Playbook + Tech Lead Lens. Branch `day-04-inventory-ddd`.
