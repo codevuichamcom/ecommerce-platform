@@ -39,7 +39,7 @@ graph LR
     subgraph Week1[Week 1 — Core]
         D2[Day 2<br/>Auth]:::done
         D3[Day 3<br/>Product]:::done
-        D4[Day 4<br/>Inventory DDD]:::planned
+        D4[Day 4<br/>Inventory DDD]:::done
         D5[Day 5<br/>Cart Redis]:::planned
         D6[Day 6<br/>Order DDD]:::planned
         D7[Day 7<br/>Mock W1]:::planned
@@ -193,7 +193,7 @@ graph LR
 | --- | ------ | ----- |
 | [`decisions/001-why-hybrid-architecture.md`](decisions/001-why-hybrid-architecture.md) | ✅ | Tại sao Hybrid Layered + DDD per service (3-điểm criteria) |
 | [`decisions/002-jwt-vs-session.md`](decisions/002-jwt-vs-session.md) | ✅ | Quyết định auth: JWT stateless + refresh rotation DB-hashed (4 alternatives compared) |
-| `decisions/003-ddd-for-order-inventory-payment.md` | ⏳ Day 4 | Cụ thể hóa ADR-001 cho 3 service DDD |
+| `decisions/003-ddd-for-order-inventory-payment.md` | ✅ | 3-điểm criteria DDD vs Layered, mapping 9 service |
 | `decisions/004-feign-vs-http-interface.md` | ⏳ Day 8 | Spring 6.1 HTTP Interface vs OpenFeign |
 | `decisions/005-outbox-vs-cdc.md` | ⏳ Day 13 | Outbox pattern vs Debezium CDC |
 | `decisions/006-postgres-vs-elasticsearch-search.md` | ⏳ Day 22 | Postgres GIN/full-text vs Elasticsearch cho product search |
@@ -209,8 +209,8 @@ graph LR
 | [`lessons/01-monorepo-vs-polyrepo.md`](lessons/01-monorepo-vs-polyrepo.md) | ✅ | Monorepo / polyrepo trade-off, scale-up trigger |
 | [`lessons/02-jwt-vs-session.md`](lessons/02-jwt-vs-session.md) | ✅ | JWT vs session, when/when-not, 7 cạm bẫy, 4 interview Q |
 | [`lessons/03-pagination-offset-vs-cursor.md`](lessons/03-pagination-offset-vs-cursor.md) | ✅ | Offset vs keyset pagination, 4 approaches, interview answer |
-| `lessons/04-optimistic-locking.md` | ⏳ Day 4 | `@Version`, retry pattern, vs pessimistic |
-| `lessons/04b-transaction-isolation.md` | ⏳ Day 4 | 4 isolation levels, dirty/non-repeatable/phantom read, Postgres default READ COMMITTED |
+| `lessons/04-optimistic-locking.md` | ✅ | `@Version`, retry pattern, vs pessimistic |
+| `lessons/04b-transaction-isolation.md` | ✅ | 4 isolation levels, MVCC vs next-key lock, Postgres `REPEATABLE READ` snapshot |
 | `lessons/05-redis-cart-vs-db-cart.md` | ⏳ Day 5 | Redis hash structure cho cart, TTL strategy |
 | `lessons/06-aggregate-root.md` | ⏳ Day 6 | Aggregate boundary, transactional consistency |
 | `lessons/06b-sealed-types-state-machine.md` | ⏳ Day 6 | Java 21 sealed interface cho state machine |
@@ -249,7 +249,7 @@ graph LR
 | [`issues/02-token-refresh-race-condition.md`](issues/02-token-refresh-race-condition.md) | ✅ | 2 request refresh đồng thời → atomic UPDATE chống lost update (4 approaches compared) |
 | [`issues/02b-testcontainers-docker-desktop-29.md`](issues/02b-testcontainers-docker-desktop-29.md) | ✅ | Testcontainers fail trên Docker Desktop 29.x Windows — root cause + workaround (5 approaches) |
 | [`issues/03-entity-leak-in-response.md`](issues/03-entity-leak-in-response.md) | ✅ | Return JPA entity từ controller → `LazyInitializationException` + schema leak (4 approaches: OSIV / JOIN FETCH / DTO+MapStruct / `@JsonIgnore`) |
-| `issues/04-overselling-stock.md` | ⏳ Day 4 | Concurrent reserve không atomic → bán quá tồn kho |
+| `issues/04-overselling-stock.md` | ✅ | Concurrent reserve không atomic → bán quá tồn kho (4 approach) |
 | `issues/09-eventual-consistency-order.md` | ⏳ Day 9 | Order created nhưng inventory consumer chưa thấy |
 | `issues/10-duplicate-payment-callback.md` | ⏳ Day 10 | Gateway retry → callback 2 lần → trừ tiền 2 lần |
 | `issues/12-poison-message.md` | ⏳ Day 12 | Message lặp throw → blocks consumer → DLT giải pháp |
@@ -285,7 +285,7 @@ graph LR
 | [`interview/day-01-foundation.md`](interview/day-01-foundation.md) | ✅ | Monorepo / Hybrid / DB-per-service / ApiResponse / MDC + AI Playbook + Tech Lead Lens |
 | [`interview/day-02-auth.md`](interview/day-02-auth.md) | ✅ | JWT / BCrypt / refresh rotation / virtual threads / Records — 5 Q&A + AI Playbook |
 | [`interview/day-03-product.md`](interview/day-03-product.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (pagination / DTO / JSONB vs EAV vs Mongo / PUT vs PATCH / MapStruct) + AI Playbook |
-| `interview/day-04-inventory.md` | ⏳ Day 4 | Optimistic lock / Aggregate / domain event |
+| `interview/day-04-inventory.md` | ✅ | Optimistic lock / Aggregate / domain event + AI Playbook + Tech Lead Lens |
 | `interview/day-05-cart.md` | ⏳ Day 5 | Redis vs DB / TTL / merge anonymous → user |
 | `interview/day-06-order.md` | ⏳ Day 6 | Aggregate root / sealed status / orchestration |
 | `interview/week-01-mock.md` | ⏳ Day 7 | Mock interview tổng kết Week 1 |
