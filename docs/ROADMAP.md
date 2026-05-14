@@ -13,12 +13,12 @@
 
 | Field             | Value                                       |
 | ----------------- | ------------------------------------------- |
-| Last updated      | 2026-05-09                                  |
-| Current sprint    | **Day 5 ✅ Done** (cart-service Redis-primary: Hash + HINCRBY atomic, anonymous→user merge sum-quantity, TTL 7d refresh-on-mutate, ADR-004) |
-| Next up           | **Day 6 — Order Service (DDD)**             |
-| Sprints completed | 5 / 40                                      |
-| Services built    | 4 / 9 (`common-lib` ✅, `auth-service` ✅, `product-service` ✅, `inventory-service` ✅, `cart-service` ✅, gateway/order/payment/notification/analytics ⏳) |
-| Docs created      | 25                                          |
+| Last updated      | 2026-05-15                                  |
+| Current sprint    | **Day 6 ✅ Done** (order-service DDD: Order aggregate + sealed `OrderStatus` exhaustive switch + sync orchestration cart→inventory.reserve + compensation rollback, 14/14 test PASS) |
+| Next up           | **Day 7 — Refactor + Week 1 Mock Interview**|
+| Sprints completed | 6 / 40                                      |
+| Services built    | 5 / 9 (`common-lib` ✅, `auth-service` ✅, `product-service` ✅, `inventory-service` ✅, `cart-service` ✅, `order-service` ✅, gateway/payment/notification/analytics ⏳) |
+| Docs created      | 30                                          |
 | Build tool        | **Gradle 8.11.1 (Kotlin DSL + Version Catalog) — Wrapper present** |
 | Spring Boot       | **3.4.5**                                   |
 | Blockers          | none                                        |
@@ -221,20 +221,26 @@ gantt
 
 ---
 
-### ⏳ Day 6 — Order service (DDD)
+### ✅ Day 6 — Order service (DDD)
 
-**Status**: pending
+**Status**: done · 2026-05-15
 
 **🆕 Modernity introduces**: Sealed interface cho `OrderStatus` + exhaustive pattern matching switch (Java 21).
 
-- [ ] Aggregate `Order` + entity `OrderItem` + VO `Money`, `Address`
-- [ ] Sealed interface `OrderStatus` permits PendingPayment / Paid / Shipped / Delivered / Cancelled
-- [ ] Pattern matching switch cho transition rule
-- [ ] `placeOrder()` orchestrate cart → inventory.reserve → save
-- [ ] Doc: `architecture/order-domain.md`
-- [ ] Doc: `lessons/06-aggregate-root.md`
-- [ ] Doc: `lessons/06b-sealed-types-state-machine.md`
-- [ ] Doc: `interview/day-06-order.md`
+- [x] Aggregate `Order` + entity `OrderItem` + VO `Money`, `Address` (record `@Embeddable`)
+- [x] Sealed interface `OrderStatus` permits PendingPayment / Paid / Shipped / Delivered / Cancelled (mỗi permit có data riêng)
+- [x] Pattern matching switch cho transition rule + `isTerminal()` — KHÔNG có `default ->` branch (exhaustive guarantee)
+- [x] `placeOrder()` orchestrate cart → loop inventory.reserve → save Order — try-catch compensation pattern, best-effort release với log `ORPHAN-RESERVATION`
+- [x] Persistence: 2 column `status_type VARCHAR + status_data JSONB` qua `@PostLoad`/`@PrePersist` + `OrderStatusSerializer` (exhaustive switch)
+- [x] Idempotency key partial unique index `(user_id, idempotency_key) WHERE idempotency_key IS NOT NULL`
+- [x] DB CHECK constraints defense-in-depth: status_type IN whitelist, amount ≥ 0
+- [x] 9 unit test Aggregate (create / addItem / place empty cart / transition valid+invalid / terminal mutate / domain event) PASS
+- [x] 5 unit test sealed status JSON round-trip PASS — toJson + fromDb cho cả 5 permit
+- [x] Doc: [`architecture/order-domain.md`](architecture/order-domain.md) — classDiagram + stateDiagram + sequenceDiagram orchestration
+- [x] Doc: [`lessons/06-aggregate-root.md`](lessons/06-aggregate-root.md) — Aggregate boundary, 5 cạm bẫy, 3-approach comparison
+- [x] Doc: [`lessons/06b-sealed-types-state-machine.md`](lessons/06b-sealed-types-state-machine.md) — sealed vs enum, exhaustive switch, persistence pattern
+- [x] Doc: [`issues/06-orchestration-rollback.md`](issues/06-orchestration-rollback.md) — 9-section, 4 approaches (sync compensate / saga choreography / saga orchestration / 2PC)
+- [x] Doc: [`interview/day-06-order.md`](interview/day-06-order.md) — bối cảnh ShopVN/Anh Hùng + 5 Q&A + AI Playbook + Tech Lead Lens
 
 ---
 
@@ -771,4 +777,5 @@ gantt
 - **2026-05-06** · Day 2 — `auth-service` deliverable: JWT stateless (HS256, 15min) + refresh rotation atomic UPDATE + virtual threads bật + Records DTO + Testcontainers `@ServiceConnection` skeleton. 5 docs (ADR-002, lesson 02, issue 02 race condition, issue 02b testcontainers compat, interview day-02). Smoke test 6/6 pass; integration test skip default trên local Windows do Docker Desktop 29.x. Branch `day-02-auth`.
 - **2026-05-07** · Day 3 — `product-service` deliverable: CRUD product + category, JSONB `attributes` qua `@JdbcTypeCode(SqlTypes.JSON)`, MapStruct DTO record (anti entity-leak), offset pagination + sort whitelist + size cap 100, JWT shared secret với auth-service. 4 docs (lesson 03 pagination offset vs cursor, perf 03 search indexing, issue 03 entity-leak 9-section, interview day-03 + bối cảnh giả lập ShopVN/PM Linh/Tech Lead Hùng). Build green; integration test skip default. Branch `day-03-product`.
 - **2026-05-09** · Day 4 — `inventory-service` DDD deliverable: Aggregate `Stock` enforce invariant `reserved ≤ quantity` ở constructor + method (factory `Stock.create`, no public setter), `@Version` optimistic lock kế thừa BaseEntity, `@Retryable(OptimisticLockingFailureException, maxAttempts=4, REQUIRES_NEW)` exp backoff. Domain event `StockReserved`/`StockReleased` qua `@DomainEvents` (Spring Data hook nguyên thủy thay vì AbstractAggregateRoot vì single inheritance). DB CHECK constraint defense-in-depth. 9/9 unit test pass; 100-thread concurrency IT gated `RUN_INVENTORY_INTEGRATION_TESTS=true`. 5 docs: ADR-003 (DDD 3-điểm criteria), lesson 04 optimistic-locking, lesson 04b transaction-isolation (fill skeleton), issue 04 overselling 9-section (4 approach), interview day-04 + AI Playbook + Tech Lead Lens. Branch `day-04-inventory-ddd`.
+- **2026-05-15** · Day 6 — `order-service` DDD deliverable: Aggregate `Order` + entity `OrderItem` + VO `Money`/`Address` record `@Embeddable`. Sealed `OrderStatus` permits PendingPayment/Paid/Shipped/Delivered/Cancelled — mỗi permit record với data riêng. Exhaustive switch ở `transitionTo()` + `isTerminal()` **không** có `default ->` (compile-time guarantee thêm permit sẽ break build). Persistence 2 column `status_type VARCHAR + status_data JSONB` qua `OrderStatusSerializer` exhaustive switch + JPA `@PostLoad`/`@PrePersist`. `PlaceOrderUseCase` orchestrate cart-service → loop inventory.reserve → save Order; try-catch compensation pattern track `reserved` list, fail mid-way → release N-1 prior, fail at save → release ALL; `releaseReservation()` best-effort log `ORPHAN-RESERVATION`. Idempotency key partial unique index. RestClient (chưa Feign — Day 8 mới so sánh HTTP Interface). 14/14 unit test PASS (9 aggregate + 5 sealed JSON round-trip), build green 1m43s. 5 docs: architecture/order-domain (3 mermaid diagram), lessons 06 aggregate-root + 06b sealed-types, issue 06 orchestration-rollback 9-section (4 approaches), interview day-06 + AI Playbook + Tech Lead Lens. Branch `day-06-order-ddd`.
 - **2026-05-09** · Day 5 — `cart-service` Redis-primary deliverable: 6 endpoint (get/add/update/remove/clear/merge), Redis Hash structure `cart:{anon|user}:{id}` field=SKU value=qty, **HINCRBY** atomic field-level chống lost-update, TTL 7d refresh-on-mutate (KHÔNG ở read), anonymous→user merge với rule **sum quantity per SKU** + cap by `maxQtyPerItem` rollback decrement. Sealed `CartId` (Anonymous/User) namespace tách biệt. Build green; 4/4 unit test PASS; 2 IT (concurrency + merge) gated `RUN_CART_INTEGRATION_TESTS=true`. 5 docs: ADR-004 Redis-primary (4 alternatives PG/PG+cache/Redis/Redis+snapshot), lesson 05 redis-vs-db, lesson 05b data-structures (Hash vs String JSON), issue 05 merge-conflict 9-section, interview day-05 + AI Playbook + bối cảnh ShopVN. Branch `day-05-cart-redis`.

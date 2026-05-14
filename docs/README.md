@@ -41,7 +41,7 @@ graph LR
         D3[Day 3<br/>Product]:::done
         D4[Day 4<br/>Inventory DDD]:::done
         D5[Day 5<br/>Cart Redis]:::done
-        D6[Day 6<br/>Order DDD]:::planned
+        D6[Day 6<br/>Order DDD]:::done
         D7[Day 7<br/>Mock W1]:::planned
     end
 
@@ -181,7 +181,7 @@ graph LR
 | Doc | Status | Mô tả |
 | --- | ------ | ----- |
 | [`architecture/system-overview.md`](architecture/system-overview.md) | ✅ | Sơ đồ 9 microservice, communication topology, infra stack |
-| [`architecture/order-domain.md`](architecture/order-domain.md) | ⏳ Day 6 | Aggregate Order + sealed `OrderStatus` state machine |
+| [`architecture/order-domain.md`](architecture/order-domain.md) | ✅ | Aggregate Order + sealed `OrderStatus` state machine + sync orchestration sequence |
 | [`architecture/event-driven-flow.md`](architecture/event-driven-flow.md) | ⏳ Day 8 | Kafka topics, producer/consumer topology, ordering guarantees |
 | `architecture/data-ownership-map.md` | ⏳ Day 25 | Polyglot persistence: ai owns Postgres / Redis / Mongo / ES, sync direction |
 
@@ -214,8 +214,8 @@ graph LR
 | `lessons/04b-transaction-isolation.md` | ✅ | 4 isolation levels, MVCC vs next-key lock, Postgres `REPEATABLE READ` snapshot |
 | [`lessons/05-redis-cart-vs-db-cart.md`](lessons/05-redis-cart-vs-db-cart.md) | ✅ | Redis-primary vs PG vs PG+cache, 4 approaches, when not to use |
 | [`lessons/05b-redis-data-structures.md`](lessons/05b-redis-data-structures.md) | ✅ | Hash vs String JSON vs Sorted Set cho cart, atomicity field-level |
-| `lessons/06-aggregate-root.md` | ⏳ Day 6 | Aggregate boundary, transactional consistency |
-| `lessons/06b-sealed-types-state-machine.md` | ⏳ Day 6 | Java 21 sealed interface cho state machine |
+| [`lessons/06-aggregate-root.md`](lessons/06-aggregate-root.md) | ✅ | Aggregate boundary, 5 cạm bẫy, 3-approach comparison, "1 tx 1 aggregate" rule |
+| [`lessons/06b-sealed-types-state-machine.md`](lessons/06b-sealed-types-state-machine.md) | ✅ | Sealed vs enum, exhaustive switch (JEP 441), persistence 2-column pattern |
 | `lessons/08-kafka-basics.md` | ⏳ Day 8 | Producer/consumer config, idempotent producer |
 | `lessons/08b-feign-vs-http-interface.md` | ⏳ Day 8 | Trade-off declarative HTTP client |
 | `lessons/09-distributed-tracing-otel.md` | ⏳ Day 9 | Micrometer Tracing + W3C traceparent |
@@ -253,6 +253,7 @@ graph LR
 | [`issues/03-entity-leak-in-response.md`](issues/03-entity-leak-in-response.md) | ✅ | Return JPA entity từ controller → `LazyInitializationException` + schema leak (4 approaches: OSIV / JOIN FETCH / DTO+MapStruct / `@JsonIgnore`) |
 | `issues/04-overselling-stock.md` | ✅ | Concurrent reserve không atomic → bán quá tồn kho (4 approach) |
 | [`issues/05-cart-merge-conflict-on-login.md`](issues/05-cart-merge-conflict-on-login.md) | ✅ | Anonymous → user cart merge: sum / overwrite / prompt — 4 approaches |
+| [`issues/06-orchestration-rollback.md`](issues/06-orchestration-rollback.md) | ✅ | Order persisted nhưng inventory không rollback — 4 approaches (sync compensate / saga choreography / saga orchestration / 2PC) |
 | `issues/09-eventual-consistency-order.md` | ⏳ Day 9 | Order created nhưng inventory consumer chưa thấy |
 | `issues/10-duplicate-payment-callback.md` | ⏳ Day 10 | Gateway retry → callback 2 lần → trừ tiền 2 lần |
 | `issues/12-poison-message.md` | ⏳ Day 12 | Message lặp throw → blocks consumer → DLT giải pháp |
@@ -290,7 +291,7 @@ graph LR
 | [`interview/day-03-product.md`](interview/day-03-product.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (pagination / DTO / JSONB vs EAV vs Mongo / PUT vs PATCH / MapStruct) + AI Playbook |
 | `interview/day-04-inventory.md` | ✅ | Optimistic lock / Aggregate / domain event + AI Playbook + Tech Lead Lens |
 | [`interview/day-05-cart.md`](interview/day-05-cart.md) | ✅ | Redis vs DB / Hash vs JSON / TTL refresh / merge / Redis crash — 5 Q&A + AI Playbook |
-| `interview/day-06-order.md` | ⏳ Day 6 | Aggregate root / sealed status / orchestration |
+| [`interview/day-06-order.md`](interview/day-06-order.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (aggregate boundary / sealed vs enum / orchestration rollback / exhaustive switch / 1 tx 1 aggregate) + AI Playbook + Tech Lead Lens |
 | `interview/week-01-mock.md` | ⏳ Day 7 | Mock interview tổng kết Week 1 |
 | `interview/day-09-order-flow.md` | ⏳ Day 9 | Event-driven / OTel / consumer idempotency |
 | `interview/day-13-outbox.md` | ⏳ Day 13 | Outbox / relay / dual write problem |

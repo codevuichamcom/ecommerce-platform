@@ -36,10 +36,10 @@ include("services:auth-service")
 include("services:product-service")
 include("services:inventory-service")
 include("services:cart-service")
+include("services:order-service")
 
 // Services sẽ uncomment khi bắt đầu build:
 // include("services:gateway-service")
-// include("services:order-service")
 // include("services:payment-service")
 // include("services:notification-service")
 // include("services:analytics-service")
