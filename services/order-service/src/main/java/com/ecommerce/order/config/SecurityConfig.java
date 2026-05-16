@@ -1,7 +1,6 @@
 package com.ecommerce.order.config;
 
-import com.ecommerce.order.security.JwtAuthenticationFilter;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import com.ecom.common.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -23,9 +22,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  *   <li>{@code POST /orders/{id}/cancel} — auth required, role USER (own)
  *       hoặc ADMIN.</li>
  * </ul>
+ *
+ * <p>Day 7: filter auto-config qua common-lib {@code SecurityAutoConfiguration}.
  */
 @Configuration
-@EnableConfigurationProperties(JwtProperties.class)
 @EnableMethodSecurity
 public class SecurityConfig {
 

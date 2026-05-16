@@ -1,7 +1,6 @@
 package com.ecom.product.config;
 
-import com.ecom.product.security.JwtAuthenticationFilter;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import com.ecom.common.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -20,9 +19,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * <p>Public read: GET /products, /products/{id}, /products/slug/{slug},
  * /categories, /categories/{id}. Mọi write require auth + role check
  * ở method level.
+ *
+ * <p>Day 7: filter + verifier + props auto-config qua common-lib
+ * {@code SecurityAutoConfiguration} — service chỉ inject filter vào chain.
  */
 @Configuration
-@EnableConfigurationProperties(JwtProperties.class)
 @EnableMethodSecurity
 public class SecurityConfig {
 

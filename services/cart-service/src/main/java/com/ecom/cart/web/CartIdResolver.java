@@ -1,9 +1,9 @@
 package com.ecom.cart.web;
 
 import com.ecom.cart.domain.CartId;
-import com.ecom.cart.security.AuthUserPrincipal;
 import com.ecom.common.exception.BusinessException;
 import com.ecom.common.exception.ErrorCode;
+import com.ecom.common.security.AuthUserPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

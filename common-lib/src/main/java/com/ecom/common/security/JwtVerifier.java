@@ -1,6 +1,5 @@
-package com.ecom.cart.security;
+package com.ecom.common.security;
 
-import com.ecom.cart.config.JwtProperties;
 import com.ecom.common.exception.BusinessException;
 import com.ecom.common.exception.ErrorCode;
 import io.jsonwebtoken.Claims;
@@ -8,23 +7,27 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 /**
- * Mirror của product-service JwtVerifier. Day 7 sẽ lift sang common-lib
- * để loại duplicate giữa các service (rule of three: auth/product/cart).
+ * Verify HS256 JWT issued bởi auth-service. Shared HMAC secret.
+ *
+ * <p>KHÔNG check tokenVersion — verify-only service trust signature + exp.
+ * Nếu cần force invalidate sớm thì rút ngắn access TTL ở auth-service
+ * (đang 15min) hoặc chuyển sang JWKS asymmetric (RS256).
+ *
+ * <p>Throw {@link BusinessException} với {@link ErrorCode#AUTH_TOKEN_EXPIRED}
+ * hoặc {@link ErrorCode#AUTH_TOKEN_INVALID} — caller (filter) map sang 401.
  */
-@Component
 public class JwtVerifier {
 
     private final SecretKey signingKey;
-    private final JwtProperties props;
+    private final JwtVerifyProperties props;
 
-    public JwtVerifier(JwtProperties props) {
+    public JwtVerifier(JwtVerifyProperties props) {
         this.props = props;
         byte[] keyBytes = props.secret().getBytes(StandardCharsets.UTF_8);
         if (keyBytes.length < 32) {
