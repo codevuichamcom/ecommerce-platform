@@ -1,6 +1,6 @@
 package com.ecom.cart.config;
 
-import com.ecom.cart.security.JwtAuthenticationFilter;
+import com.ecom.common.security.JwtAuthenticationFilter;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,9 +19,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  *
  * <p>Endpoint duy nhất require auth bắt buộc: {@code POST /cart/merge} —
  * cần biết userId để merge vào.
+ *
+ * <p>Day 7: JWT filter auto-config qua common-lib
+ * {@code SecurityAutoConfiguration}. Cart-specific properties giữ nguyên.
  */
 @Configuration
-@EnableConfigurationProperties({JwtProperties.class, CartProperties.class})
+@EnableConfigurationProperties(CartProperties.class)
 public class SecurityConfig {
 
     @Bean

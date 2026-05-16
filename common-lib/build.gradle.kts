@@ -31,6 +31,14 @@ dependencies {
     compileOnly("org.springframework.boot:spring-boot-starter-validation")
     compileOnly("org.springframework.boot:spring-boot-starter-data-jpa")
     compileOnly("org.springframework.security:spring-security-core")
+    compileOnly("org.springframework.security:spring-security-web")
+    compileOnly("org.springframework.security:spring-security-config")
+
+    // JWT verify-only stack (Day 7) — consumer service đã có jjwt-api/impl/jackson
+    // ở build.gradle.kts riêng (auth/product/inventory/cart/order). compileOnly
+    // ở đây để common-lib compile được mà không force kéo jjwt vào notification
+    // service (Day 11) nếu service đó không cần JWT.
+    compileOnly(libs.jjwt.api)
 
     // Lombok
     compileOnly(libs.lombok)

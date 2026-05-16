@@ -42,7 +42,7 @@ graph LR
         D4[Day 4<br/>Inventory DDD]:::done
         D5[Day 5<br/>Cart Redis]:::done
         D6[Day 6<br/>Order DDD]:::done
-        D7[Day 7<br/>Mock W1]:::planned
+        D7[Day 7<br/>Mock W1]:::done
     end
 
     subgraph Week2[Week 2 — Kafka & Async]
@@ -216,6 +216,7 @@ graph LR
 | [`lessons/05b-redis-data-structures.md`](lessons/05b-redis-data-structures.md) | ✅ | Hash vs String JSON vs Sorted Set cho cart, atomicity field-level |
 | [`lessons/06-aggregate-root.md`](lessons/06-aggregate-root.md) | ✅ | Aggregate boundary, 5 cạm bẫy, 3-approach comparison, "1 tx 1 aggregate" rule |
 | [`lessons/06b-sealed-types-state-machine.md`](lessons/06b-sealed-types-state-machine.md) | ✅ | Sealed vs enum, exhaustive switch (JEP 441), persistence 2-column pattern |
+| [`lessons/07-refactor-extract-discipline.md`](lessons/07-refactor-extract-discipline.md) | ✅ | Rule of three, 3-điểm criteria extract lên common-lib, 4 cạm bẫy, anti-pattern AHA |
 | `lessons/08-kafka-basics.md` | ⏳ Day 8 | Producer/consumer config, idempotent producer |
 | `lessons/08b-feign-vs-http-interface.md` | ⏳ Day 8 | Trade-off declarative HTTP client |
 | `lessons/09-distributed-tracing-otel.md` | ⏳ Day 9 | Micrometer Tracing + W3C traceparent |
@@ -292,11 +293,12 @@ graph LR
 | `interview/day-04-inventory.md` | ✅ | Optimistic lock / Aggregate / domain event + AI Playbook + Tech Lead Lens |
 | [`interview/day-05-cart.md`](interview/day-05-cart.md) | ✅ | Redis vs DB / Hash vs JSON / TTL refresh / merge / Redis crash — 5 Q&A + AI Playbook |
 | [`interview/day-06-order.md`](interview/day-06-order.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (aggregate boundary / sealed vs enum / orchestration rollback / exhaustive switch / 1 tx 1 aggregate) + AI Playbook + Tech Lead Lens |
-| `interview/week-01-mock.md` | ⏳ Day 7 | Mock interview tổng kết Week 1 |
+| `interview/week-01-mock.md` | ✅ | 10 Q&A (5 SD + 5 Spring/DDD) self-grade brutally honest, 9 strong / 1 borderline |
+| `interview/week-01-cv-bullets.md` | ✅ | 2 bullet metric-driven (DDD depth + modern stack), 90s elevator pitch |
 | `interview/day-09-order-flow.md` | ⏳ Day 9 | Event-driven / OTel / consumer idempotency |
 | `interview/day-13-outbox.md` | ⏳ Day 13 | Outbox / relay / dual write problem |
 | `interview/week-02-mock.md` | ⏳ Day 14 | Kafka senior questions |
-| `interview/week-NN-cv-bullets.md` | ⏳ Day 7/14/21/25/30/37 | CV bullet draft cuối mỗi tuần |
+| `interview/week-NN-cv-bullets.md` | ⏳ Day 14/21/25/30/37 | CV bullet draft cuối mỗi tuần (Day 7 ✅) |
 | `interview/day-22-elasticsearch.md` | ⏳ Day 22 | ES use case + decision rationale |
 | `interview/day-23-mongodb.md` | ⏳ Day 23 | Mongo use case + decision rationale |
 | `interview/day-24-storage-decisions.md` | ⏳ Day 24 | "Khi nào dùng NoSQL?" — câu phỏng vấn classic |
@@ -333,7 +335,7 @@ graph LR
 
 | Doc | Status | Mô tả |
 | --- | ------ | ----- |
-| [`review/ai-junior-traps.md`](review/ai-junior-traps.md) | 🚧 (2 entry) | Pattern lỗi AI/junior thường gặp + 10 quick-reference questions |
+| [`review/ai-junior-traps.md`](review/ai-junior-traps.md) | 🚧 (4 entry) | Pattern lỗi AI/junior thường gặp + 10 quick-reference questions; entry [03] [04] thêm Day 7 (premature DRY + auto-config kéo dependency) |
 
 ### 👥 2.11. Leadership (`leadership/`)
 

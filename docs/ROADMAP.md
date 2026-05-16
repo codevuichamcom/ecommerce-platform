@@ -13,12 +13,12 @@
 
 | Field             | Value                                       |
 | ----------------- | ------------------------------------------- |
-| Last updated      | 2026-05-15                                  |
-| Current sprint    | **Day 6 ✅ Done** (order-service DDD: Order aggregate + sealed `OrderStatus` exhaustive switch + sync orchestration cart→inventory.reserve + compensation rollback, 14/14 test PASS) |
-| Next up           | **Day 7 — Refactor + Week 1 Mock Interview**|
-| Sprints completed | 6 / 40                                      |
+| Last updated      | 2026-05-16                                  |
+| Current sprint    | **Day 7 ✅ Done** (Week 1 wrap: refactor 4 service JWT verify-only stack lên `common-lib` auto-config sau rule of three — xóa 16 file duplicate; mock interview 10 Q&A self-grade 9 strong / 1 borderline; 2 CV bullet metric-driven; 2 entry traps mới) |
+| Next up           | **Day 8 — Kafka setup + Spring 6.1 HTTP Interface vs OpenFeign**|
+| Sprints completed | 7 / 40                                      |
 | Services built    | 5 / 9 (`common-lib` ✅, `auth-service` ✅, `product-service` ✅, `inventory-service` ✅, `cart-service` ✅, `order-service` ✅, gateway/payment/notification/analytics ⏳) |
-| Docs created      | 30                                          |
+| Docs created      | 33                                          |
 | Build tool        | **Gradle 8.11.1 (Kotlin DSL + Version Catalog) — Wrapper present** |
 | Spring Boot       | **3.4.5**                                   |
 | Blockers          | none                                        |
@@ -59,8 +59,8 @@ gantt
     Day 3 Product                 :done,    d3, 2026-05-07, 1d
     Day 4 Inventory DDD           :done,    d4, 2026-05-09, 1d
     Day 5 Cart Redis              :done,    d5, 2026-05-09, 1d
-    Day 6 Order DDD               :active,  d6, after d5, 1d
-    Day 7 Refactor + Mock         :crit,    d7, after d6, 1d
+    Day 6 Order DDD               :done,    d6, 2026-05-15, 1d
+    Day 7 Refactor + Mock         :done,    d7, 2026-05-16, 1d
 
     section Week 2 — Kafka
     Day 8 Kafka setup             :         d8, after d7, 1d
@@ -244,15 +244,17 @@ gantt
 
 ---
 
-### ⏳ Day 7 — Refactor + review + mock interview (Week 1)
+### ✅ Day 7 — Refactor + review + mock interview (Week 1)
 
-**Status**: pending
+**Status**: done · 2026-05-16
 
-- [ ] Refactor common patterns phát hiện trong tuần
-- [ ] REVIEW MODE pass toàn bộ code Week 1
-- [ ] Mock interview: 5 câu System Design + 5 câu Spring Boot
-- [ ] Doc: `interview/week-01-mock.md`
-- [ ] Doc: `interview/week-01-cv-bullets.md`
+- [x] Refactor JWT verify-only stack (4 service: product/inventory/cart/order) → `common-lib/security/` auto-config (`@ConditionalOnClass` + `@ConditionalOnProperty` + `@ConditionalOnMissingBean`); auth-service KHÔNG động (principal có `tokenVersion` khác contract). Xóa 16 file duplicate.
+- [x] Build green toàn repo: 6 module compile, 32 unit test PASS (9 Stock + 14 Order + 5 OrderStatus JSON + 4 CartId), integration test gated SKIP. Build 1m29s.
+- [x] Mock interview 10 Q&A (5 System Design + 5 Spring/DDD/Concurrency) self-grade brutally honest: 9 strong / 1 borderline (VT pinning case Day 19 sẽ fix bằng JFR thật) / 0 fail
+- [x] Doc: [`lessons/07-refactor-extract-discipline.md`](lessons/07-refactor-extract-discipline.md) — rule of three, 3-điểm criteria, 4 cạm bẫy
+- [x] Doc: [`interview/week-01-mock.md`](interview/week-01-mock.md) — 10 Q&A + verdict + gap to fix
+- [x] Doc: [`interview/week-01-cv-bullets.md`](interview/week-01-cv-bullets.md) — 2 bullet metric-driven + 90s elevator pitch
+- [x] Doc: [`review/ai-junior-traps.md`](review/ai-junior-traps.md) — append entry [03] premature-DRY + [04] auto-config kéo dependency
 
 ---
 
@@ -779,3 +781,4 @@ gantt
 - **2026-05-09** · Day 4 — `inventory-service` DDD deliverable: Aggregate `Stock` enforce invariant `reserved ≤ quantity` ở constructor + method (factory `Stock.create`, no public setter), `@Version` optimistic lock kế thừa BaseEntity, `@Retryable(OptimisticLockingFailureException, maxAttempts=4, REQUIRES_NEW)` exp backoff. Domain event `StockReserved`/`StockReleased` qua `@DomainEvents` (Spring Data hook nguyên thủy thay vì AbstractAggregateRoot vì single inheritance). DB CHECK constraint defense-in-depth. 9/9 unit test pass; 100-thread concurrency IT gated `RUN_INVENTORY_INTEGRATION_TESTS=true`. 5 docs: ADR-003 (DDD 3-điểm criteria), lesson 04 optimistic-locking, lesson 04b transaction-isolation (fill skeleton), issue 04 overselling 9-section (4 approach), interview day-04 + AI Playbook + Tech Lead Lens. Branch `day-04-inventory-ddd`.
 - **2026-05-15** · Day 6 — `order-service` DDD deliverable: Aggregate `Order` + entity `OrderItem` + VO `Money`/`Address` record `@Embeddable`. Sealed `OrderStatus` permits PendingPayment/Paid/Shipped/Delivered/Cancelled — mỗi permit record với data riêng. Exhaustive switch ở `transitionTo()` + `isTerminal()` **không** có `default ->` (compile-time guarantee thêm permit sẽ break build). Persistence 2 column `status_type VARCHAR + status_data JSONB` qua `OrderStatusSerializer` exhaustive switch + JPA `@PostLoad`/`@PrePersist`. `PlaceOrderUseCase` orchestrate cart-service → loop inventory.reserve → save Order; try-catch compensation pattern track `reserved` list, fail mid-way → release N-1 prior, fail at save → release ALL; `releaseReservation()` best-effort log `ORPHAN-RESERVATION`. Idempotency key partial unique index. RestClient (chưa Feign — Day 8 mới so sánh HTTP Interface). 14/14 unit test PASS (9 aggregate + 5 sealed JSON round-trip), build green 1m43s. 5 docs: architecture/order-domain (3 mermaid diagram), lessons 06 aggregate-root + 06b sealed-types, issue 06 orchestration-rollback 9-section (4 approaches), interview day-06 + AI Playbook + Tech Lead Lens. Branch `day-06-order-ddd`.
 - **2026-05-09** · Day 5 — `cart-service` Redis-primary deliverable: 6 endpoint (get/add/update/remove/clear/merge), Redis Hash structure `cart:{anon|user}:{id}` field=SKU value=qty, **HINCRBY** atomic field-level chống lost-update, TTL 7d refresh-on-mutate (KHÔNG ở read), anonymous→user merge với rule **sum quantity per SKU** + cap by `maxQtyPerItem` rollback decrement. Sealed `CartId` (Anonymous/User) namespace tách biệt. Build green; 4/4 unit test PASS; 2 IT (concurrency + merge) gated `RUN_CART_INTEGRATION_TESTS=true`. 5 docs: ADR-004 Redis-primary (4 alternatives PG/PG+cache/Redis/Redis+snapshot), lesson 05 redis-vs-db, lesson 05b data-structures (Hash vs String JSON), issue 05 merge-conflict 9-section, interview day-05 + AI Playbook + bối cảnh ShopVN. Branch `day-05-cart-redis`.
+- **2026-05-16** · Day 7 — Week 1 wrap deliverable: refactor JWT verify-only stack lên `common-lib/security/` auto-config sau rule-of-three (`SecurityAutoConfiguration` với 3 layer condition `@ConditionalOnClass` + `@ConditionalOnProperty` + `@ConditionalOnMissingBean`; `compileOnly` jjwt + spring-security-web để consumer service tự kéo runtime). Xóa **16 file duplicate** ở 4 service (product/inventory/cart/order × `JwtAuthenticationFilter` + `JwtVerifier` + `AuthUserPrincipal` + `JwtProperties`). Auth-service KHÔNG động vì principal có `tokenVersion` (4 field) khác contract verify-only (3 field). Build green 1m29s, 32/32 unit test PASS. 4 docs: lesson 07 refactor-extract-discipline (rule of three + 4 cạm bẫy), interview week-01-mock 10 Q&A self-grade 9 strong/1 borderline (VT pinning ammo Day 19), interview week-01-cv-bullets (2 bullet + 90s pitch), review traps append [03] premature-DRY + [04] auto-config dependency leak. Branch `day-07-refactor-mock`.

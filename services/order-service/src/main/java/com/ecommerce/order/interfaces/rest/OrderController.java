@@ -1,6 +1,7 @@
 package com.ecommerce.order.interfaces.rest;
 
 import com.ecom.common.response.ApiResponse;
+import com.ecom.common.security.AuthUserPrincipal;
 import com.ecommerce.order.application.OrderQueryService;
 import com.ecommerce.order.application.PlaceOrderCommand;
 import com.ecommerce.order.application.PlaceOrderUseCase;
@@ -8,7 +9,6 @@ import com.ecommerce.order.domain.Order;
 import com.ecommerce.order.interfaces.rest.dto.CancelOrderRequest;
 import com.ecommerce.order.interfaces.rest.dto.OrderResponse;
 import com.ecommerce.order.interfaces.rest.dto.PlaceOrderRequest;
-import com.ecommerce.order.security.AuthUserPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

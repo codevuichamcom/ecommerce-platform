@@ -1,7 +1,6 @@
 package com.ecom.inventory.config;
 
-import com.ecom.inventory.security.JwtAuthenticationFilter;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import com.ecom.common.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -24,11 +23,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  *   <li>{@code POST /inventory/release} — chỉ SERVICE (cart/order).</li>
  * </ul>
  *
- * <p>Day 8 sẽ thay đổi: cross-service auth dùng mTLS hoặc service token,
- * không reuse user JWT (security risk khi rotate).
+ * <p>Day 7: filter + verifier + props auto-config qua common-lib
+ * {@code SecurityAutoConfiguration}. Day 8 sẽ thay đổi: cross-service
+ * auth dùng mTLS hoặc service token, không reuse user JWT.
  */
 @Configuration
-@EnableConfigurationProperties(JwtProperties.class)
 @EnableMethodSecurity
 public class SecurityConfig {
 

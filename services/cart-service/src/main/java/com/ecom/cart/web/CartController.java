@@ -1,7 +1,6 @@
 package com.ecom.cart.web;
 
 import com.ecom.cart.domain.CartId;
-import com.ecom.cart.security.AuthUserPrincipal;
 import com.ecom.cart.service.CartService;
 import com.ecom.cart.web.dto.AddItemRequest;
 import com.ecom.cart.web.dto.CartResponse;
@@ -9,6 +8,7 @@ import com.ecom.cart.web.dto.UpdateItemRequest;
 import com.ecom.common.exception.BusinessException;
 import com.ecom.common.exception.ErrorCode;
 import com.ecom.common.response.ApiResponse;
+import com.ecom.common.security.AuthUserPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

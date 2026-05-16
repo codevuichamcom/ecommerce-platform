@@ -1,1 +1,2 @@
 com.ecom.common.autoconfig.CommonAutoConfiguration
+com.ecom.common.autoconfig.SecurityAutoConfiguration
