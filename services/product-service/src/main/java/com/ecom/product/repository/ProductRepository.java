@@ -29,6 +29,9 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     boolean existsBySlug(String slug);
 
+    /** Day 8 — order-service snapshot lookup. KHÔNG cần fetch category. */
+    Optional<Product> findBySku(String sku);
+
     /**
      * Search theo name (LIKE case-insensitive) + filter optional category +
      * filter optional status. NULL parameter = bỏ qua filter đó.

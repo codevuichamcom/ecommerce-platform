@@ -13,12 +13,12 @@
 
 | Field             | Value                                       |
 | ----------------- | ------------------------------------------- |
-| Last updated      | 2026-05-16                                  |
-| Current sprint    | **Day 7 ✅ Done** (Week 1 wrap: refactor 4 service JWT verify-only stack lên `common-lib` auto-config sau rule of three — xóa 16 file duplicate; mock interview 10 Q&A self-grade 9 strong / 1 borderline; 2 CV bullet metric-driven; 2 entry traps mới) |
-| Next up           | **Day 8 — Kafka setup + Spring 6.1 HTTP Interface vs OpenFeign**|
-| Sprints completed | 7 / 40                                      |
-| Services built    | 5 / 9 (`common-lib` ✅, `auth-service` ✅, `product-service` ✅, `inventory-service` ✅, `cart-service` ✅, `order-service` ✅, gateway/payment/notification/analytics ⏳) |
-| Docs created      | 33                                          |
+| Last updated      | 2026-05-18                                  |
+| Current sprint    | **Day 8 ✅ Done** (Kafka foundation: `common-lib` `KafkaAutoConfiguration` opt-in qua `app.kafka.enabled`, idempotent producer `acks=all` + virtual-thread listener; 5 topic + 4 event record `DomainEvent` v1 schema; order-service publish `order.created` + demo CẢ HAI client Feign + Spring 6.1 HTTP Interface; product-service `/products/{sku}/snapshot` endpoint; `notification-service` scaffold consumer-only) |
+| Next up           | **Day 9 — Order flow event-driven + Micrometer Tracing + OpenTelemetry** |
+| Sprints completed | 8 / 40                                      |
+| Services built    | 6 / 9 (`common-lib` ✅, `auth-service` ✅, `product-service` ✅, `inventory-service` ✅, `cart-service` ✅, `order-service` ✅, `notification-service` 🚧 scaffold, gateway/payment/analytics ⏳) |
+| Docs created      | 39                                          |
 | Build tool        | **Gradle 8.11.1 (Kotlin DSL + Version Catalog) — Wrapper present** |
 | Spring Boot       | **3.4.5**                                   |
 | Blockers          | none                                        |
@@ -260,19 +260,26 @@ gantt
 
 ## 📨 WEEK 2 — Kafka & async workflow
 
-### ⏳ Day 8 — Kafka setup
+### ✅ Day 8 — Kafka setup + Spring 6.1 HTTP Interface vs OpenFeign
 
-**Status**: pending
+**Status**: done · 2026-05-18
 
 **🆕 Modernity introduces**: Spring 6.1 HTTP Interface (declarative HTTP client) — so sánh với OpenFeign.
 
-- [ ] Kafka topics: `order.created`, `order.cancelled`, `payment.completed`, `inventory.reserved`, `notification.outgoing`
-- [ ] Producer/consumer config + idempotent producer
-- [ ] Demo cả OpenFeign + HTTP Interface song song → Doc trade-off
-- [ ] Doc: `lessons/08-kafka-basics.md`
-- [ ] Doc: `lessons/08b-feign-vs-http-interface.md`
-- [ ] Doc: `architecture/event-driven-flow.md`
-- [ ] ADR: `decisions/004-feign-vs-http-interface.md`
+- [x] Kafka topics: `order.created`, `order.cancelled`, `payment.completed`, `inventory.reserved`, `notification.outgoing` — single source of truth ở [`common-lib/messaging/TopicNames.java`](../common-lib/src/main/java/com/ecom/common/messaging/TopicNames.java)
+- [x] `common-lib/autoconfig/KafkaAutoConfiguration` opt-in qua `app.kafka.enabled=true` — idempotent producer (`acks=all`, `enable.idempotence=true`, `retries=MAX_VALUE`, `max.in.flight=5`), consumer `enable.auto.commit=false` + `isolation.level=read_committed`, virtual-thread listener executor qua `SimpleAsyncTaskExecutor.setVirtualThreads(true)` + `setListenerTaskExecutor`
+- [x] 4 event record `DomainEvent` v1 schema (`OrderCreatedV1` / `StockReservedV1` / `PaymentCompletedV1` / `NotificationOutgoingV1`) — JSON additive contract, `eventId` + `occurredAt` + `eventType` + `eventVersion`
+- [x] `order-service` publish `order.created` ([`OrderEventPublisher`](../services/order-service/src/main/java/com/ecommerce/order/infrastructure/messaging/OrderEventPublisher.java)) — key=orderId guarantee per-order ordering
+- [x] Demo CẢ HAI client side-by-side: `ProductFeignClient` (`@FeignClient`) + `ProductHttpInterfaceClient` (`@GetExchange` + `HttpServiceProxyFactory` + `RestClientAdapter`) — debug endpoint `/debug/product/{sku}/via-feign` + `/via-http-interface`
+- [x] `product-service` `GET /products/{sku}/snapshot` endpoint — lightweight DTO record, dùng cho Day 8 sync call demo + Day 10+ payment capture price
+- [x] `notification-service` scaffold — minimal deps (no web/security/jpa), `@KafkaListener(topics = ORDER_CREATED)` log payload + `Thread.currentThread().isVirtual()`
+- [x] Build green 43 actionable tasks; 32 unit test PASS (9 Stock + 14 Order + 5 OrderStatus + 4 CartId)
+- [x] Doc: [`lessons/08-kafka-basics.md`](lessons/08-kafka-basics.md) — Topic/Partition/Offset/Consumer group + 3 producer flags + delivery semantics preview
+- [x] Doc: [`lessons/08b-feign-vs-http-interface.md`](lessons/08b-feign-vs-http-interface.md) — 8-axis comparison table + code side-by-side + 4 follow-up traps
+- [x] Doc: [`architecture/event-driven-flow.md`](architecture/event-driven-flow.md) — 2 mermaid diagram (topic topology + sync vs async sequence) + schema versioning rule (JSON additive vs breaking → vN topic + dual-publish)
+- [x] Doc: [`issues/08-kafka-message-loss-acks-default.md`](issues/08-kafka-message-loss-acks-default.md) — 9-section, 0.3% event lost trong leader failover, 4 approaches (`acks=0/1/all/transactional`), chosen `acks=all + idempotent`
+- [x] Doc: [`interview/day-08-kafka.md`](interview/day-08-kafka.md) — bối cảnh ShopVN/Anh Hùng + 5 Q&A (acks/idempotent · partition key · rebalance · Feign vs HTTP Interface · schema versioning) + AI Playbook + Tech Lead Lens
+- [x] ADR: [`decisions/005-feign-vs-http-interface.md`](decisions/005-feign-vs-http-interface.md) — 5 alternatives (RestClient raw / OpenFeign / **HTTP Interface chosen** / gRPC / WebClient declarative)
 
 ---
 
@@ -781,4 +788,5 @@ gantt
 - **2026-05-09** · Day 4 — `inventory-service` DDD deliverable: Aggregate `Stock` enforce invariant `reserved ≤ quantity` ở constructor + method (factory `Stock.create`, no public setter), `@Version` optimistic lock kế thừa BaseEntity, `@Retryable(OptimisticLockingFailureException, maxAttempts=4, REQUIRES_NEW)` exp backoff. Domain event `StockReserved`/`StockReleased` qua `@DomainEvents` (Spring Data hook nguyên thủy thay vì AbstractAggregateRoot vì single inheritance). DB CHECK constraint defense-in-depth. 9/9 unit test pass; 100-thread concurrency IT gated `RUN_INVENTORY_INTEGRATION_TESTS=true`. 5 docs: ADR-003 (DDD 3-điểm criteria), lesson 04 optimistic-locking, lesson 04b transaction-isolation (fill skeleton), issue 04 overselling 9-section (4 approach), interview day-04 + AI Playbook + Tech Lead Lens. Branch `day-04-inventory-ddd`.
 - **2026-05-15** · Day 6 — `order-service` DDD deliverable: Aggregate `Order` + entity `OrderItem` + VO `Money`/`Address` record `@Embeddable`. Sealed `OrderStatus` permits PendingPayment/Paid/Shipped/Delivered/Cancelled — mỗi permit record với data riêng. Exhaustive switch ở `transitionTo()` + `isTerminal()` **không** có `default ->` (compile-time guarantee thêm permit sẽ break build). Persistence 2 column `status_type VARCHAR + status_data JSONB` qua `OrderStatusSerializer` exhaustive switch + JPA `@PostLoad`/`@PrePersist`. `PlaceOrderUseCase` orchestrate cart-service → loop inventory.reserve → save Order; try-catch compensation pattern track `reserved` list, fail mid-way → release N-1 prior, fail at save → release ALL; `releaseReservation()` best-effort log `ORPHAN-RESERVATION`. Idempotency key partial unique index. RestClient (chưa Feign — Day 8 mới so sánh HTTP Interface). 14/14 unit test PASS (9 aggregate + 5 sealed JSON round-trip), build green 1m43s. 5 docs: architecture/order-domain (3 mermaid diagram), lessons 06 aggregate-root + 06b sealed-types, issue 06 orchestration-rollback 9-section (4 approaches), interview day-06 + AI Playbook + Tech Lead Lens. Branch `day-06-order-ddd`.
 - **2026-05-09** · Day 5 — `cart-service` Redis-primary deliverable: 6 endpoint (get/add/update/remove/clear/merge), Redis Hash structure `cart:{anon|user}:{id}` field=SKU value=qty, **HINCRBY** atomic field-level chống lost-update, TTL 7d refresh-on-mutate (KHÔNG ở read), anonymous→user merge với rule **sum quantity per SKU** + cap by `maxQtyPerItem` rollback decrement. Sealed `CartId` (Anonymous/User) namespace tách biệt. Build green; 4/4 unit test PASS; 2 IT (concurrency + merge) gated `RUN_CART_INTEGRATION_TESTS=true`. 5 docs: ADR-004 Redis-primary (4 alternatives PG/PG+cache/Redis/Redis+snapshot), lesson 05 redis-vs-db, lesson 05b data-structures (Hash vs String JSON), issue 05 merge-conflict 9-section, interview day-05 + AI Playbook + bối cảnh ShopVN. Branch `day-05-cart-redis`.
+- **2026-05-18** · Day 8 — Kafka foundation deliverable: `common-lib/KafkaAutoConfiguration` opt-in qua `app.kafka.enabled` (idempotent producer `acks=all` + `enable.idempotence=true` + `max.in.flight≤5` + `retries=MAX_VALUE`; consumer `enable.auto.commit=false` + `isolation.level=read_committed`; virtual-thread listener executor qua `SimpleAsyncTaskExecutor.setVirtualThreads(true)` thay vì `setVirtualThreads(true)` ContainerProperties — không tồn tại ở Spring Kafka 3.4). 5 topic `TopicNames` single source of truth + 4 event record v1 (`OrderCreatedV1`/`StockReservedV1`/`PaymentCompletedV1`/`NotificationOutgoingV1`) implement `DomainEvent` (eventId/occurredAt/eventType/eventVersion). `order-service` `OrderEventPublisher` publish `order.created` key=orderId; demo CẢ HAI client side-by-side `ProductFeignClient` + `ProductHttpInterfaceClient` cho cùng endpoint `/products/{sku}/snapshot` (product-service thêm endpoint thật); `notification-service` scaffold consumer-only (no web/security/jpa) `@KafkaListener(ORDER_CREATED)` log virtual thread. Build green 43 task, 32 unit test PASS. 6 docs: lesson 08 kafka-basics + 08b feign-vs-http-interface, architecture event-driven-flow (2 mermaid), ADR-005 HTTP Interface chosen (5 alternatives), issue 08 message-loss-acks 9-section (4 approaches), interview day-08 + AI Playbook + Tech Lead Lens. Branch `day-08-kafka-feign`.
 - **2026-05-16** · Day 7 — Week 1 wrap deliverable: refactor JWT verify-only stack lên `common-lib/security/` auto-config sau rule-of-three (`SecurityAutoConfiguration` với 3 layer condition `@ConditionalOnClass` + `@ConditionalOnProperty` + `@ConditionalOnMissingBean`; `compileOnly` jjwt + spring-security-web để consumer service tự kéo runtime). Xóa **16 file duplicate** ở 4 service (product/inventory/cart/order × `JwtAuthenticationFilter` + `JwtVerifier` + `AuthUserPrincipal` + `JwtProperties`). Auth-service KHÔNG động vì principal có `tokenVersion` (4 field) khác contract verify-only (3 field). Build green 1m29s, 32/32 unit test PASS. 4 docs: lesson 07 refactor-extract-discipline (rule of three + 4 cạm bẫy), interview week-01-mock 10 Q&A self-grade 9 strong/1 borderline (VT pinning ammo Day 19), interview week-01-cv-bullets (2 bullet + 90s pitch), review traps append [03] premature-DRY + [04] auto-config dependency leak. Branch `day-07-refactor-mock`.

@@ -40,6 +40,8 @@ public class SecurityConfig {
                 .httpBasic(basic -> basic.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/info").permitAll()
+                        // Day 8 demo endpoint — sẽ xóa ở Day 9 khi wire publish vào use case thật.
+                        .requestMatchers("/debug/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(eh -> eh

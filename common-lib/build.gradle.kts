@@ -40,6 +40,11 @@ dependencies {
     // service (Day 11) nếu service đó không cần JWT.
     compileOnly(libs.jjwt.api)
 
+    // Kafka (Day 8) — auto-config @ConditionalOnClass(KafkaTemplate). Service
+    // có Kafka tự kéo `spring-kafka` runtime ở build.gradle.kts riêng. Service
+    // không dùng Kafka (vd: auth-service) sẽ không activate auto-config.
+    compileOnly("org.springframework.kafka:spring-kafka")
+
     // Lombok
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
