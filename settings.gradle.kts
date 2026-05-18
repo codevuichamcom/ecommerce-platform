@@ -38,8 +38,8 @@ include("services:inventory-service")
 include("services:cart-service")
 include("services:order-service")
 include("services:notification-service")
+include("services:payment-service")
 
 // Services sẽ uncomment khi bắt đầu build:
 // include("services:gateway-service")
-// include("services:payment-service")
 // include("services:analytics-service")

@@ -13,12 +13,12 @@
 
 | Field             | Value                                       |
 | ----------------- | ------------------------------------------- |
-| Last updated      | 2026-05-18                                  |
-| Current sprint    | **Day 9 ✅ Done** (Order flow event-driven: `PlaceOrderUseCase` bỏ sync RPC → save Order `reservation_status=PENDING` + publish `order.created`; inventory consume + reserve qua Stock aggregate → publish `inventory.reserved`; order consume → `markReserved()` idempotent; notification fan-out consumer group riêng; Micrometer Tracing + OTel + Zipkin wired qua Spring Kafka observation W3C `traceparent`; V2 migration thêm `reservation_status` column; dual-write debt log-warn → Day 13 outbox) |
-| Next up           | **Day 10 — Payment callback (PaymentIntent aggregate + idempotent dedup)** |
-| Sprints completed | 9 / 40                                      |
-| Services built    | 6 / 9 (`common-lib` ✅, `auth-service` ✅, `product-service` ✅, `inventory-service` ✅, `cart-service` ✅, `order-service` ✅, `notification-service` 🚧 scaffold+consumer, gateway/payment/analytics ⏳) |
-| Docs created      | 44                                          |
+| Last updated      | 2026-05-19                                  |
+| Current sprint    | **Day 10 ✅ Done** (`payment-service` Layered + callback idempotent: `PaymentIntent` sealed status + `HandleCallbackUseCase` 3-layer dedup [L3 fast-path + L4 UNIQUE catch + `@Retryable` optimistic lock], HMAC-SHA256 signature verifier + timestamp skew + `MessageDigest.isEqual()` constant-time; order-service `PaymentCompletedConsumer` + `Order.markPaid()` idempotent transition PendingPayment→Paid; V1 migration UNIQUE partial index `(provider, provider_txn_id) WHERE provider_txn_id IS NOT NULL`; ADR-007 revise scope ADR-003 — payment chuyển Layered) |
+| Next up           | **Day 11 — Notification service (multi-topic consumer + template engine + API versioning v1→v2)** |
+| Sprints completed | 10 / 40                                     |
+| Services built    | 7 / 9 (`common-lib` ✅, `auth-service` ✅, `product-service` ✅, `inventory-service` ✅, `cart-service` ✅, `order-service` ✅, `payment-service` ✅, `notification-service` 🚧 scaffold+consumer, gateway/analytics ⏳) |
+| Docs created      | 48                                          |
 | Build tool        | **Gradle 8.11.1 (Kotlin DSL + Version Catalog) — Wrapper present** |
 | Spring Boot       | **3.4.5**                                   |
 | Blockers          | none                                        |
@@ -304,15 +304,22 @@ gantt
 
 ---
 
-### ⏳ Day 10 — Payment callback
+### ✅ Day 10 — Payment callback
 
-**Status**: pending
+**Status**: done · 2026-05-19
 
-- [ ] payment-service: tạo `PaymentIntent` aggregate
-- [ ] Mock payment gateway callback endpoint
-- [ ] Idempotent xử lý (dedup theo `transactionId` unique constraint)
-- [ ] Doc: `issues/10-duplicate-payment-callback.md`
-- [ ] Doc: `lessons/10-idempotency.md`
+- [x] payment-service Layered scaffold (ADR-007: 1/3 DDD criteria → Layered + sealed status, KHÔNG full Aggregate)
+- [x] `PaymentIntent` JPA entity + sealed `PaymentStatus` (Initiated/Authorized/Captured/Failed/Expired) + factory + state transition methods + `providerTxnId` immutability enforce
+- [x] Mock gateway callback `POST /payments/callback` — HMAC-SHA256 signature verify + timestamp skew window 300s + `MessageDigest.isEqual()` constant-time
+- [x] `HandleCallbackUseCase` 3-layer idempotent: L3 fast-path `findByProviderAndProviderTxnId` + L4 UNIQUE catch `DataIntegrityViolationException` + `@Retryable(ObjectOptimisticLockingFailureException)` exp backoff 50→500ms, `@Transactional(REQUIRES_NEW)`, `saveAndFlush()` ép UNIQUE fail-fast trong tx
+- [x] V1 Flyway migration: `payment_intent` table + CHECK constraints + partial UNIQUE index `(provider, provider_txn_id) WHERE provider_txn_id IS NOT NULL`
+- [x] Publish `PaymentCompletedV1` key=orderId (Day 8 schema) — KHÔNG publish khi duplicate hoặc FAILED outcome
+- [x] order-service `PaymentCompletedConsumer` + `Order.markPaid(Instant)` idempotent (return boolean — no throw cho terminal state để tránh retry storm)
+- [x] 20 unit test PASS (10 PaymentIntent state machine + 6 HandleCallback [fast-path/UNIQUE race/FAILED/unknown/provider mismatch] + 4 CallbackSignatureVerifier)
+- [x] Doc: [`lessons/10-idempotency.md`](lessons/10-idempotency.md) — 4-layer model + Idempotency-Key header pattern + 5 cạm bẫy
+- [x] Doc: [`issues/10-duplicate-payment-callback.md`](issues/10-duplicate-payment-callback.md) — 9-section, 4 approaches (Redis SETNX / DB UNIQUE / token table / event version)
+- [x] Doc: [`decisions/007-payment-service-layered-not-ddd.md`](decisions/007-payment-service-layered-not-ddd.md) — ADR, 4 alternatives, revise scope ADR-003
+- [x] Doc: [`interview/day-10-payment.md`](interview/day-10-payment.md) — bối cảnh ShopVN/Anh Hùng + 5 Q&A + AI Playbook
 
 ---
 
@@ -795,4 +802,5 @@ gantt
 - **2026-05-09** · Day 5 — `cart-service` Redis-primary deliverable: 6 endpoint (get/add/update/remove/clear/merge), Redis Hash structure `cart:{anon|user}:{id}` field=SKU value=qty, **HINCRBY** atomic field-level chống lost-update, TTL 7d refresh-on-mutate (KHÔNG ở read), anonymous→user merge với rule **sum quantity per SKU** + cap by `maxQtyPerItem` rollback decrement. Sealed `CartId` (Anonymous/User) namespace tách biệt. Build green; 4/4 unit test PASS; 2 IT (concurrency + merge) gated `RUN_CART_INTEGRATION_TESTS=true`. 5 docs: ADR-004 Redis-primary (4 alternatives PG/PG+cache/Redis/Redis+snapshot), lesson 05 redis-vs-db, lesson 05b data-structures (Hash vs String JSON), issue 05 merge-conflict 9-section, interview day-05 + AI Playbook + bối cảnh ShopVN. Branch `day-05-cart-redis`.
 - **2026-05-18** · Day 8 — Kafka foundation deliverable: `common-lib/KafkaAutoConfiguration` opt-in qua `app.kafka.enabled` (idempotent producer `acks=all` + `enable.idempotence=true` + `max.in.flight≤5` + `retries=MAX_VALUE`; consumer `enable.auto.commit=false` + `isolation.level=read_committed`; virtual-thread listener executor qua `SimpleAsyncTaskExecutor.setVirtualThreads(true)` thay vì `setVirtualThreads(true)` ContainerProperties — không tồn tại ở Spring Kafka 3.4). 5 topic `TopicNames` single source of truth + 4 event record v1 (`OrderCreatedV1`/`StockReservedV1`/`PaymentCompletedV1`/`NotificationOutgoingV1`) implement `DomainEvent` (eventId/occurredAt/eventType/eventVersion). `order-service` `OrderEventPublisher` publish `order.created` key=orderId; demo CẢ HAI client side-by-side `ProductFeignClient` + `ProductHttpInterfaceClient` cho cùng endpoint `/products/{sku}/snapshot` (product-service thêm endpoint thật); `notification-service` scaffold consumer-only (no web/security/jpa) `@KafkaListener(ORDER_CREATED)` log virtual thread. Build green 43 task, 32 unit test PASS. 6 docs: lesson 08 kafka-basics + 08b feign-vs-http-interface, architecture event-driven-flow (2 mermaid), ADR-005 HTTP Interface chosen (5 alternatives), issue 08 message-loss-acks 9-section (4 approaches), interview day-08 + AI Playbook + Tech Lead Lens. Branch `day-08-kafka-feign`.
 - **2026-05-18** · Day 9 — Order flow event-driven + Distributed Tracing deliverable: `PlaceOrderUseCase` bỏ sync RPC orchestration (xóa `InventoryClient` + `ReserveRequest` DTO) → save Order `reservation_status=PENDING` + publish `OrderCreatedV1`; V2 Flyway migration thêm `reservation_status VARCHAR(16) NOT NULL DEFAULT 'PENDING'` + CHECK constraint + partial index SLI; `Order.markReserved()` idempotent (no-op nếu đã RESERVED). inventory-service `OrderCreatedConsumer` reserve qua Stock aggregate → publish `StockReservedV1` key=orderId, log-warn (KHÔNG throw) khi `InsufficientStockException` tránh retry storm (Day 12 wire failed event); `InventoryEventPublisher` log dual-write debt warning. order-service `InventoryReservedConsumer` → `markReserved`; notification-service `InventoryReservedListener` consumer group riêng `notification-inv` (fan-out độc lập). Micrometer Tracing + OTel bridge + Zipkin exporter vào `common-lib` (api scope), Spring Kafka `template/listener.observation-enabled=true` propagate W3C `traceparent` qua headers; Zipkin service `docker-compose.yml` (openzipkin/zipkin:3 :9411, in-memory). Build green, 32/32 unit test PASS. 5 docs: ADR-006 sync→async (5 alternatives, supersede phần ADR-003 orchestration), lesson 09 distributed-tracing-otel (mermaid sequence 3-service trace), lesson 09b eventual-consistency-window, issue 09 eventual-consistency 9-section (4 approaches), interview day-09 + AI Playbook + Tech Lead Lens + bối cảnh ShopVN/Anh Hùng. Branch `day-09-order-flow`.
+- **2026-05-19** · Day 10 — `payment-service` Layered + callback idempotent deliverable: ADR-007 chốt Layered (1/3 DDD criteria, revise scope ADR-003). `PaymentIntent` JPA entity + sealed `PaymentStatus` 5 permit, factory `initiate()`, transition methods enforce invariant + `providerTxnId` immutability. `HandleCallbackUseCase` 3-layer dedup: L3 `findByProviderAndProviderTxnId` fast-path + L4 `DataIntegrityViolationException` catch trên UNIQUE partial index + `@Retryable(ObjectOptimisticLockingFailureException, REQUIRES_NEW)` exp backoff 50→500ms; `saveAndFlush()` thay vì `save()` ép UNIQUE fail-fast trong tx. `CallbackSignatureVerifier` HMAC-SHA256 + timestamp skew 300s + `MessageDigest.isEqual()` constant-time. V1 Flyway migration: CHECK constraints + partial UNIQUE `(provider, provider_txn_id) WHERE provider_txn_id IS NOT NULL`. Publish `PaymentCompletedV1` key=orderId (KHÔNG publish khi dup/FAILED). order-service `Order.markPaid(Instant)` idempotent return boolean + `PaymentCompletedConsumer`. Build green, 20/20 unit test PASS. 4 docs: ADR-007 payment-Layered (4 alternatives), lesson 10 idempotency (4-layer model + Idempotency-Key), issue 10 duplicate-callback 9-section (4 approaches), interview day-10 + AI Playbook + bối cảnh ShopVN/Anh Hùng. Branch `day-10-payment`.
 - **2026-05-16** · Day 7 — Week 1 wrap deliverable: refactor JWT verify-only stack lên `common-lib/security/` auto-config sau rule-of-three (`SecurityAutoConfiguration` với 3 layer condition `@ConditionalOnClass` + `@ConditionalOnProperty` + `@ConditionalOnMissingBean`; `compileOnly` jjwt + spring-security-web để consumer service tự kéo runtime). Xóa **16 file duplicate** ở 4 service (product/inventory/cart/order × `JwtAuthenticationFilter` + `JwtVerifier` + `AuthUserPrincipal` + `JwtProperties`). Auth-service KHÔNG động vì principal có `tokenVersion` (4 field) khác contract verify-only (3 field). Build green 1m29s, 32/32 unit test PASS. 4 docs: lesson 07 refactor-extract-discipline (rule of three + 4 cạm bẫy), interview week-01-mock 10 Q&A self-grade 9 strong/1 borderline (VT pinning ammo Day 19), interview week-01-cv-bullets (2 bullet + 90s pitch), review traps append [03] premature-DRY + [04] auto-config dependency leak. Branch `day-07-refactor-mock`.
