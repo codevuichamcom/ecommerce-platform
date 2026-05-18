@@ -14,11 +14,11 @@
 | Field             | Value                                       |
 | ----------------- | ------------------------------------------- |
 | Last updated      | 2026-05-18                                  |
-| Current sprint    | **Day 8 ✅ Done** (Kafka foundation: `common-lib` `KafkaAutoConfiguration` opt-in qua `app.kafka.enabled`, idempotent producer `acks=all` + virtual-thread listener; 5 topic + 4 event record `DomainEvent` v1 schema; order-service publish `order.created` + demo CẢ HAI client Feign + Spring 6.1 HTTP Interface; product-service `/products/{sku}/snapshot` endpoint; `notification-service` scaffold consumer-only) |
-| Next up           | **Day 9 — Order flow event-driven + Micrometer Tracing + OpenTelemetry** |
-| Sprints completed | 8 / 40                                      |
-| Services built    | 6 / 9 (`common-lib` ✅, `auth-service` ✅, `product-service` ✅, `inventory-service` ✅, `cart-service` ✅, `order-service` ✅, `notification-service` 🚧 scaffold, gateway/payment/analytics ⏳) |
-| Docs created      | 39                                          |
+| Current sprint    | **Day 9 ✅ Done** (Order flow event-driven: `PlaceOrderUseCase` bỏ sync RPC → save Order `reservation_status=PENDING` + publish `order.created`; inventory consume + reserve qua Stock aggregate → publish `inventory.reserved`; order consume → `markReserved()` idempotent; notification fan-out consumer group riêng; Micrometer Tracing + OTel + Zipkin wired qua Spring Kafka observation W3C `traceparent`; V2 migration thêm `reservation_status` column; dual-write debt log-warn → Day 13 outbox) |
+| Next up           | **Day 10 — Payment callback (PaymentIntent aggregate + idempotent dedup)** |
+| Sprints completed | 9 / 40                                      |
+| Services built    | 6 / 9 (`common-lib` ✅, `auth-service` ✅, `product-service` ✅, `inventory-service` ✅, `cart-service` ✅, `order-service` ✅, `notification-service` 🚧 scaffold+consumer, gateway/payment/analytics ⏳) |
+| Docs created      | 44                                          |
 | Build tool        | **Gradle 8.11.1 (Kotlin DSL + Version Catalog) — Wrapper present** |
 | Spring Boot       | **3.4.5**                                   |
 | Blockers          | none                                        |
@@ -283,19 +283,24 @@ gantt
 
 ---
 
-### ⏳ Day 9 — OrderCreated flow
+### ✅ Day 9 — OrderCreated flow
 
-**Status**: pending
+**Status**: done · 2026-05-18
 
 **🆕 Modernity introduces**: Micrometer Tracing + OpenTelemetry (W3C `traceparent` propagation qua Kafka headers).
 
-- [ ] order-service publish `order.created` (mock outbox; thật sự ở Day 13)
-- [ ] inventory-service consumer (chuyển từ Feign sang event-driven)
-- [ ] notification-service consumer (mock email)
-- [ ] Setup Micrometer Tracing + OTel exporter, propagate trace id qua Kafka
-- [ ] Doc: `issues/09-eventual-consistency-order.md`
-- [ ] Doc: `lessons/09-distributed-tracing-otel.md`
-- [ ] Doc: `interview/day-09-order-flow.md`
+- [x] order-service publish `order.created` — `PlaceOrderUseCase` bỏ sync RPC, save Order `reservation_status=PENDING` rồi publish `OrderCreatedV1`
+- [x] inventory-service consumer (chuyển từ Feign sang event-driven) — `OrderCreatedConsumer` reserve qua Stock aggregate, publish `inventory.reserved`
+- [x] notification-service consumer (mock email) — `InventoryReservedListener` consumer group riêng `notification-inv` (fan-out)
+- [x] order-service consume `inventory.reserved` → `Order.markReserved()` idempotent (`InventoryReservedConsumer`)
+- [x] Setup Micrometer Tracing + OTel Zipkin exporter, propagate trace id qua Kafka headers (Spring Kafka `observation-enabled` producer + listener)
+- [x] V2 Flyway migration thêm `reservation_status` column + CHECK constraint + partial index SLI
+- [x] Zipkin service vào `docker-compose.yml` (openzipkin/zipkin:3, port 9411)
+- [x] Doc: `issues/09-eventual-consistency-order.md` (9-section)
+- [x] Doc: `lessons/09-distributed-tracing-otel.md`
+- [x] Doc: `lessons/09b-eventual-consistency-window.md`
+- [x] Doc: `interview/day-09-order-flow.md` (+ AI Playbook + Tech Lead Lens)
+- [x] Doc: `decisions/006-sync-orchestration-vs-async-events.md` (ADR)
 
 ---
 
@@ -789,4 +794,5 @@ gantt
 - **2026-05-15** · Day 6 — `order-service` DDD deliverable: Aggregate `Order` + entity `OrderItem` + VO `Money`/`Address` record `@Embeddable`. Sealed `OrderStatus` permits PendingPayment/Paid/Shipped/Delivered/Cancelled — mỗi permit record với data riêng. Exhaustive switch ở `transitionTo()` + `isTerminal()` **không** có `default ->` (compile-time guarantee thêm permit sẽ break build). Persistence 2 column `status_type VARCHAR + status_data JSONB` qua `OrderStatusSerializer` exhaustive switch + JPA `@PostLoad`/`@PrePersist`. `PlaceOrderUseCase` orchestrate cart-service → loop inventory.reserve → save Order; try-catch compensation pattern track `reserved` list, fail mid-way → release N-1 prior, fail at save → release ALL; `releaseReservation()` best-effort log `ORPHAN-RESERVATION`. Idempotency key partial unique index. RestClient (chưa Feign — Day 8 mới so sánh HTTP Interface). 14/14 unit test PASS (9 aggregate + 5 sealed JSON round-trip), build green 1m43s. 5 docs: architecture/order-domain (3 mermaid diagram), lessons 06 aggregate-root + 06b sealed-types, issue 06 orchestration-rollback 9-section (4 approaches), interview day-06 + AI Playbook + Tech Lead Lens. Branch `day-06-order-ddd`.
 - **2026-05-09** · Day 5 — `cart-service` Redis-primary deliverable: 6 endpoint (get/add/update/remove/clear/merge), Redis Hash structure `cart:{anon|user}:{id}` field=SKU value=qty, **HINCRBY** atomic field-level chống lost-update, TTL 7d refresh-on-mutate (KHÔNG ở read), anonymous→user merge với rule **sum quantity per SKU** + cap by `maxQtyPerItem` rollback decrement. Sealed `CartId` (Anonymous/User) namespace tách biệt. Build green; 4/4 unit test PASS; 2 IT (concurrency + merge) gated `RUN_CART_INTEGRATION_TESTS=true`. 5 docs: ADR-004 Redis-primary (4 alternatives PG/PG+cache/Redis/Redis+snapshot), lesson 05 redis-vs-db, lesson 05b data-structures (Hash vs String JSON), issue 05 merge-conflict 9-section, interview day-05 + AI Playbook + bối cảnh ShopVN. Branch `day-05-cart-redis`.
 - **2026-05-18** · Day 8 — Kafka foundation deliverable: `common-lib/KafkaAutoConfiguration` opt-in qua `app.kafka.enabled` (idempotent producer `acks=all` + `enable.idempotence=true` + `max.in.flight≤5` + `retries=MAX_VALUE`; consumer `enable.auto.commit=false` + `isolation.level=read_committed`; virtual-thread listener executor qua `SimpleAsyncTaskExecutor.setVirtualThreads(true)` thay vì `setVirtualThreads(true)` ContainerProperties — không tồn tại ở Spring Kafka 3.4). 5 topic `TopicNames` single source of truth + 4 event record v1 (`OrderCreatedV1`/`StockReservedV1`/`PaymentCompletedV1`/`NotificationOutgoingV1`) implement `DomainEvent` (eventId/occurredAt/eventType/eventVersion). `order-service` `OrderEventPublisher` publish `order.created` key=orderId; demo CẢ HAI client side-by-side `ProductFeignClient` + `ProductHttpInterfaceClient` cho cùng endpoint `/products/{sku}/snapshot` (product-service thêm endpoint thật); `notification-service` scaffold consumer-only (no web/security/jpa) `@KafkaListener(ORDER_CREATED)` log virtual thread. Build green 43 task, 32 unit test PASS. 6 docs: lesson 08 kafka-basics + 08b feign-vs-http-interface, architecture event-driven-flow (2 mermaid), ADR-005 HTTP Interface chosen (5 alternatives), issue 08 message-loss-acks 9-section (4 approaches), interview day-08 + AI Playbook + Tech Lead Lens. Branch `day-08-kafka-feign`.
+- **2026-05-18** · Day 9 — Order flow event-driven + Distributed Tracing deliverable: `PlaceOrderUseCase` bỏ sync RPC orchestration (xóa `InventoryClient` + `ReserveRequest` DTO) → save Order `reservation_status=PENDING` + publish `OrderCreatedV1`; V2 Flyway migration thêm `reservation_status VARCHAR(16) NOT NULL DEFAULT 'PENDING'` + CHECK constraint + partial index SLI; `Order.markReserved()` idempotent (no-op nếu đã RESERVED). inventory-service `OrderCreatedConsumer` reserve qua Stock aggregate → publish `StockReservedV1` key=orderId, log-warn (KHÔNG throw) khi `InsufficientStockException` tránh retry storm (Day 12 wire failed event); `InventoryEventPublisher` log dual-write debt warning. order-service `InventoryReservedConsumer` → `markReserved`; notification-service `InventoryReservedListener` consumer group riêng `notification-inv` (fan-out độc lập). Micrometer Tracing + OTel bridge + Zipkin exporter vào `common-lib` (api scope), Spring Kafka `template/listener.observation-enabled=true` propagate W3C `traceparent` qua headers; Zipkin service `docker-compose.yml` (openzipkin/zipkin:3 :9411, in-memory). Build green, 32/32 unit test PASS. 5 docs: ADR-006 sync→async (5 alternatives, supersede phần ADR-003 orchestration), lesson 09 distributed-tracing-otel (mermaid sequence 3-service trace), lesson 09b eventual-consistency-window, issue 09 eventual-consistency 9-section (4 approaches), interview day-09 + AI Playbook + Tech Lead Lens + bối cảnh ShopVN/Anh Hùng. Branch `day-09-order-flow`.
 - **2026-05-16** · Day 7 — Week 1 wrap deliverable: refactor JWT verify-only stack lên `common-lib/security/` auto-config sau rule-of-three (`SecurityAutoConfiguration` với 3 layer condition `@ConditionalOnClass` + `@ConditionalOnProperty` + `@ConditionalOnMissingBean`; `compileOnly` jjwt + spring-security-web để consumer service tự kéo runtime). Xóa **16 file duplicate** ở 4 service (product/inventory/cart/order × `JwtAuthenticationFilter` + `JwtVerifier` + `AuthUserPrincipal` + `JwtProperties`). Auth-service KHÔNG động vì principal có `tokenVersion` (4 field) khác contract verify-only (3 field). Build green 1m29s, 32/32 unit test PASS. 4 docs: lesson 07 refactor-extract-discipline (rule of three + 4 cạm bẫy), interview week-01-mock 10 Q&A self-grade 9 strong/1 borderline (VT pinning ammo Day 19), interview week-01-cv-bullets (2 bullet + 90s pitch), review traps append [03] premature-DRY + [04] auto-config dependency leak. Branch `day-07-refactor-mock`.

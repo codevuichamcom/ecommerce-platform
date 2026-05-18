@@ -196,7 +196,8 @@ graph LR
 | `decisions/003-ddd-for-order-inventory-payment.md` | ✅ | 3-điểm criteria DDD vs Layered, mapping 9 service |
 | [`decisions/004-redis-primary-for-cart.md`](decisions/004-redis-primary-for-cart.md) | ✅ | Redis primary cho cart, 4 alternatives compared (PG / PG+Redis cache / Redis-only / Redis+PG snapshot) |
 | [`decisions/005-feign-vs-http-interface.md`](decisions/005-feign-vs-http-interface.md) | ✅ | Spring 6.1 HTTP Interface chosen vs OpenFeign — 5 alternatives compared, version coupling + adapter flexibility là dominant reason |
-| `decisions/006-outbox-vs-cdc.md` | ⏳ Day 13 | Outbox pattern vs Debezium CDC |
+| [`decisions/006-sync-orchestration-vs-async-events.md`](decisions/006-sync-orchestration-vs-async-events.md) | ✅ | Order flow async event-driven (Day 9) vs sync (Day 6) — 5 alternatives, accept eventual consistency + outbox/DLT debt |
+| `decisions/008-outbox-vs-cdc.md` | ⏳ Day 13 | Outbox pattern vs Debezium CDC |
 | `decisions/007-postgres-vs-elasticsearch-search.md` | ⏳ Day 22 | Postgres GIN/full-text vs Elasticsearch cho product search |
 | `decisions/008-mongo-for-analytics-and-flexible-attributes.md` | ⏳ Day 23 | MongoDB use case có chủ ý: event store + flexible product attributes |
 | `decisions/009-api-versioning-strategy.md` | ⏳ Day 11 | URI vs header vs content negotiation — chọn URI versioning + N-1 compat |
@@ -219,7 +220,8 @@ graph LR
 | [`lessons/07-refactor-extract-discipline.md`](lessons/07-refactor-extract-discipline.md) | ✅ | Rule of three, 3-điểm criteria extract lên common-lib, 4 cạm bẫy, anti-pattern AHA |
 | [`lessons/08-kafka-basics.md`](lessons/08-kafka-basics.md) | ✅ | Topic/Partition/Offset/Consumer group; 3 producer flags (`acks` + `enable.idempotence` + `max.in.flight`); delivery semantics preview |
 | [`lessons/08b-feign-vs-http-interface.md`](lessons/08b-feign-vs-http-interface.md) | ✅ | 8-axis comparison + code side-by-side + 4 follow-up traps |
-| `lessons/09-distributed-tracing-otel.md` | ⏳ Day 9 | Micrometer Tracing + W3C traceparent |
+| [`lessons/09-distributed-tracing-otel.md`](lessons/09-distributed-tracing-otel.md) | ✅ | Micrometer Tracing + OTel bridge + Zipkin, W3C `traceparent` qua Kafka headers, sampling strategy |
+| [`lessons/09b-eventual-consistency-window.md`](lessons/09b-eventual-consistency-window.md) | ✅ | Window async vs sync, khi nào dùng/KHÔNG, đo SLI lag |
 | `lessons/10-idempotency.md` | ⏳ Day 10 | Idempotency key, dedup constraint |
 | `lessons/11-fire-and-forget.md` | ⏳ Day 11 | Async notification pattern |
 | `lessons/11b-api-versioning.md` | ⏳ Day 11 | URI / header / accept-version trade-off, N-1 deprecation policy |
@@ -256,7 +258,7 @@ graph LR
 | [`issues/05-cart-merge-conflict-on-login.md`](issues/05-cart-merge-conflict-on-login.md) | ✅ | Anonymous → user cart merge: sum / overwrite / prompt — 4 approaches |
 | [`issues/06-orchestration-rollback.md`](issues/06-orchestration-rollback.md) | ✅ | Order persisted nhưng inventory không rollback — 4 approaches (sync compensate / saga choreography / saga orchestration / 2PC) |
 | [`issues/08-kafka-message-loss-acks-default.md`](issues/08-kafka-message-loss-acks-default.md) | ✅ | 0.3% event lost sau leader failover (Spring Kafka default `acks=1`) — 4 approaches (`acks=0/1/all/transactional`), chosen `acks=all + idempotent` |
-| `issues/09-eventual-consistency-order.md` | ⏳ Day 9 | Order created nhưng inventory consumer chưa thấy |
+| [`issues/09-eventual-consistency-order.md`](issues/09-eventual-consistency-order.md) | ✅ | Order PENDING reservation window 50ms-5s — 4 approaches (sync / async+status / sync-timeout-fallback / saga), chosen async+status |
 | `issues/10-duplicate-payment-callback.md` | ⏳ Day 10 | Gateway retry → callback 2 lần → trừ tiền 2 lần |
 | `issues/12-poison-message.md` | ⏳ Day 12 | Message lặp throw → blocks consumer → DLT giải pháp |
 | `issues/15-cache-stampede.md` | ⏳ Day 15 | Hot key TTL expire → 1000 req hit DB. Single-flight vs probabilistic early expiration vs lock |
@@ -297,7 +299,7 @@ graph LR
 | `interview/week-01-mock.md` | ✅ | 10 Q&A (5 SD + 5 Spring/DDD) self-grade brutally honest, 9 strong / 1 borderline |
 | `interview/week-01-cv-bullets.md` | ✅ | 2 bullet metric-driven (DDD depth + modern stack), 90s elevator pitch |
 | [`interview/day-08-kafka.md`](interview/day-08-kafka.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (acks/idempotent · partition key · rebalance · Feign vs HTTP Interface · schema versioning) + AI Playbook + Tech Lead Lens |
-| `interview/day-09-order-flow.md` | ⏳ Day 9 | Event-driven / OTel / consumer idempotency |
+| [`interview/day-09-order-flow.md`](interview/day-09-order-flow.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (sync vs async · traceparent Kafka · sampling · dual-write · span vs MDC) + AI Playbook + Tech Lead Lens |
 | `interview/day-13-outbox.md` | ⏳ Day 13 | Outbox / relay / dual write problem |
 | `interview/week-02-mock.md` | ⏳ Day 14 | Kafka senior questions |
 | `interview/week-NN-cv-bullets.md` | ⏳ Day 14/21/25/30/37 | CV bullet draft cuối mỗi tuần (Day 7 ✅) |

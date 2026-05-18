@@ -103,6 +103,18 @@ public class Order extends BaseEntity {
     @Column(name = "placed_at", nullable = false, updatable = false)
     private Instant placedAt;
 
+    /**
+     * Day 9 eventual-consistency tracker. KHÔNG trộn vào sealed
+     * {@link OrderStatus} vì đây là cross-cutting concern (tracking async
+     * reservation), không phải business lifecycle state.
+     *
+     * <p>Transition: {@code PENDING} (initial khi place) → {@code RESERVED}
+     * (sau khi nhận {@code inventory.reserved} qua Kafka). Day 12 sẽ thêm
+     * {@code FAILED} khi retry hết.
+     */
+    @Column(name = "reservation_status", nullable = false, length = 16)
+    private String reservationStatus;
+
     // Unidirectional one-to-many. OrderItem.orderId column được FK link qua
     // @JoinColumn — Hibernate ép update bằng UPDATE phụ nếu cần. Day 6 chấp
     // nhận vì OrderItem write-once (snapshot), không có overhead update.
@@ -136,8 +148,19 @@ public class Order extends BaseEntity {
         order.total = Money.zero(currency);
         order.idempotencyKey = idempotencyKey;
         order.placedAt = Instant.now();
+        order.reservationStatus = "PENDING";
         order.setStatus(new OrderStatus.PendingPayment());
         return order;
+    }
+
+    /**
+     * Day 9: gọi khi nhận {@code inventory.reserved} cho TẤT CẢ items. Idempotent
+     * — gọi lại không có side effect (đã RESERVED rồi thì bỏ qua).
+     */
+    public void markReserved() {
+        if ("PENDING".equals(this.reservationStatus)) {
+            this.reservationStatus = "RESERVED";
+        }
     }
 
     public void addItem(String sku, String productName, int quantity, Money unitPrice) {

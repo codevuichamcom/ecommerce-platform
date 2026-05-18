@@ -83,6 +83,23 @@ services:
       timeout: 5s
       retries: 10
 
+  # Day 9 — Zipkin standalone cho distributed tracing.
+  # Production sẽ migrate Tempo (Day 20) — Zipkin chọn vì nhẹ + UI built-in,
+  # đủ cho 7 service dev local. OTel format compatible qua exporter-zipkin.
+  zipkin:
+    image: openzipkin/zipkin:3
+    container_name: ecom-zipkin
+    restart: unless-stopped
+    ports:
+      - "9411:9411"
+    environment:
+      STORAGE_TYPE: mem   # In-memory, không persist — restart = mất trace.
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9411/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: ecom-kafka-ui

@@ -29,6 +29,33 @@ spring:
 server:
   port: 8083
 
+# Day 9 — Kafka consume order.created + publish inventory.reserved.
+app:
+  kafka:
+    enabled: true
+    bootstrap-servers: "${KAFKA_BOOTSTRAP:localhost:9092}"
+    client-id: inventory-service
+    consumer-group: inventory-service
+
+spring.kafka:
+  template:
+    observation-enabled: true   # Day 9 — auto traceparent injection.
+  listener:
+    observation-enabled: true   # Day 9 — auto traceparent extraction.
+
+# Day 9 — Micrometer Tracing + OTel + Zipkin exporter.
+management:
+  tracing:
+    sampling:
+      probability: 1.0          # Dev 100%. Prod head-based 0.01-0.1 hoặc tail-based collector.
+  zipkin:
+    tracing:
+      endpoint: "${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}"
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
 # JWT shared secret với auth-service (xem product-service Day 3).
 auth:
   jwt:
