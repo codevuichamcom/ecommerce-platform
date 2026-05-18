@@ -45,6 +45,14 @@ dependencies {
     // không dùng Kafka (vd: auth-service) sẽ không activate auto-config.
     compileOnly("org.springframework.kafka:spring-kafka")
 
+    // Tracing (Day 9) — Micrometer Tracing + OTel bridge + Zipkin exporter.
+    // `api` để consumer service nhận classpath tự động (cross-cutting, mọi
+    // service đều cần trace). Spring Boot 3.4 `ZipkinAutoConfiguration` kích
+    // hoạt khi `management.zipkin.tracing.endpoint` được set ở service yaml.
+    // Actuator KHÔNG ép — service consumer tự kéo nếu cần `/actuator/health`.
+    api(libs.micrometer.tracing.bridge.otel)
+    api(libs.opentelemetry.exporter.zipkin)
+
     // Lombok
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)

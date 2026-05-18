@@ -43,9 +43,10 @@ resilience4j-spring-boot3        = { module = "io.github.resilience4j:resilience
 resilience4j-reactor             = { module = "io.github.resilience4j:resilience4j-reactor",      version.ref = "resilience4j" }
 caffeine                         = { module = "com.github.ben-manes.caffeine:caffeine",            version.ref = "caffeine" }
 
-# Tracing — modern Sleuth-replacement
+# Tracing — modern Sleuth-replacement (Day 9 wires Zipkin exporter)
 micrometer-tracing-bridge-otel   = { module = "io.micrometer:micrometer-tracing-bridge-otel",      version.ref = "micrometer-tracing" }
 opentelemetry-exporter-otlp      = { module = "io.opentelemetry:opentelemetry-exporter-otlp" }
+opentelemetry-exporter-zipkin    = { module = "io.opentelemetry:opentelemetry-exporter-zipkin" }
 
 # Mapping & boilerplate
 mapstruct                  = { module = "org.mapstruct:mapstruct",                       version.ref = "mapstruct" }

@@ -48,6 +48,27 @@ app:
     client-id: order-service
     consumer-group: order-service
 
+# Day 9 — Spring Kafka observation cho trace propagate qua headers tự động.
+spring.kafka:
+  template:
+    observation-enabled: true
+  listener:
+    observation-enabled: true
+
+# Day 9 — Micrometer Tracing + OTel Zipkin exporter.
+# Sampling 1.0 ở dev — production: 0.01-0.1 head-based hoặc tail-based via collector.
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: "${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}"
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
 # JWT shared secret với auth-service (xem product/inventory-service).
 auth:
   jwt:
