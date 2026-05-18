@@ -154,6 +154,25 @@ public class Order extends BaseEntity {
     }
 
     /**
+     * Day 10: gọi khi nhận {@code payment.completed} từ payment-service. Idempotent
+     * — gọi lại trên Order đã Paid không có side effect. Race với cancel: nếu
+     * Order đã Cancelled (terminal), markPaid no-op + log warn ở caller.
+     *
+     * <p>Transition rule (CLAUDE.md §5 + sealed OrderStatus): chỉ PendingPayment
+     * mới được chuyển sang Paid. Mọi state khác (Paid lần 2, Cancelled, Shipped,
+     * Delivered) → no-op. KHÔNG throw vì consumer Kafka retry sẽ vô hạn.
+     *
+     * @return true nếu transition diễn ra (lần đầu), false nếu no-op (duplicate/terminal).
+     */
+    public boolean markPaid(Instant paidAt) {
+        if (status instanceof OrderStatus.PendingPayment) {
+            transitionTo(new OrderStatus.Paid(paidAt));
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Day 9: gọi khi nhận {@code inventory.reserved} cho TẤT CẢ items. Idempotent
      * — gọi lại không có side effect (đã RESERVED rồi thì bỏ qua).
      */

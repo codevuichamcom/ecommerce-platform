@@ -1,0 +1,71 @@
+spring:
+  application:
+    name: payment-service
+
+  threads:
+    virtual:
+      enabled: true
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/payment_db
+    username: ecom
+    password: ecom
+    hikari:
+      maximum-pool-size: 20
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc.time_zone: UTC
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+server:
+  port: 8087
+
+# Day 10 — Kafka producer publish payment.completed.
+app:
+  kafka:
+    enabled: true
+    bootstrap-servers: "${KAFKA_BOOTSTRAP:localhost:9092}"
+    client-id: payment-service
+    consumer-group: payment-service
+  payment:
+    # HMAC-SHA256 shared secret với mock gateway. Production: từ Vault/AWS Secrets Manager,
+    # rotate hằng quý, per-provider config riêng (VNPay/Momo/ZaloPay khác key).
+    callback-secret: "${PAYMENT_CALLBACK_SECRET:dev-only-callback-secret-change-me}"
+    # Reject callback nếu timestamp lệch quá ngưỡng → chống replay attack.
+    callback-max-skew-seconds: 300
+
+spring.kafka:
+  template:
+    observation-enabled: true
+  listener:
+    observation-enabled: true
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: "${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}"
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+auth:
+  jwt:
+    secret: "${AUTH_JWT_SECRET:dev-only-jwt-secret-change-me-in-prod-2026-05-04}"
+    issuer: "ecom-auth"
+
+logging:
+  level:
+    com.ecommerce.payment: DEBUG
+    org.springframework.security: INFO
