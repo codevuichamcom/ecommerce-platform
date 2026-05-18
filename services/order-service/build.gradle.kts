@@ -31,6 +31,10 @@ dependencies {
     implementation("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.postgresql:postgresql")
 
+    // Day 8 — Kafka producer + OpenFeign (compare với Spring 6.1 HTTP Interface).
+    implementation("org.springframework.kafka:spring-kafka")
+    implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
+
     // JWT verify only (token issued bởi auth-service).
     implementation(libs.jjwt.api)
     runtimeOnly(libs.jjwt.impl)
@@ -50,6 +54,9 @@ dependencies {
 dependencyManagement {
     imports {
         mavenBom(libs.testcontainers.bom.get().toString())
+        // Spring Cloud BOM cho OpenFeign — phải align version với Spring Boot 3.4.5
+        // (Spring Cloud 2024.0.0 = Boot 3.4.x).
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:${libs.versions.spring.cloud.get()}")
     }
 }
 

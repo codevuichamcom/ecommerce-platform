@@ -11,6 +11,7 @@ import com.ecom.product.repository.CategoryRepository;
 import com.ecom.product.repository.ProductRepository;
 import com.ecom.product.web.dto.ProductCreateRequest;
 import com.ecom.product.web.dto.ProductResponse;
+import com.ecom.product.web.dto.ProductSnapshotResponse;
 import com.ecom.product.web.dto.ProductUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -46,6 +47,26 @@ public class ProductService {
 
     public ProductResponse get(UUID id) {
         return productMapper.toResponse(loadOrThrow(id));
+    }
+
+    /**
+     * Day 8 — lightweight snapshot cho order-service. Order capture
+     * price/name/currency tại checkout time vào order_items để tránh
+     * price drift khi admin đổi giá.
+     *
+     * <p>KHÔNG fetch category/attributes — tiết kiệm payload khi
+     * order có N item, gọi N lần snapshot.
+     */
+    public ProductSnapshotResponse getSnapshot(String sku) {
+        Product product = productRepository.findBySku(sku)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND,
+                        "Product not found by sku: " + sku));
+        return new ProductSnapshotResponse(
+                product.getSku(),
+                product.getName(),
+                product.getPrice(),
+                product.getCurrency()
+        );
     }
 
     public ProductResponse getBySlug(String slug) {

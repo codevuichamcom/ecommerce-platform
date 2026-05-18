@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: notification-service
+
+  # Consumer-only service nhưng vẫn bật virtual thread cho thread Spring tạo
+  # ở actuator / lifecycle. Listener container đã setVirtualThreads(true)
+  # riêng (xem KafkaAutoConfiguration).
+  threads:
+    virtual:
+      enabled: true
+
+  # Day 8 scaffold — chưa có web endpoint. Tắt Spring MVC autoconfig để
+  # service KHÔNG mở Tomcat port (consumer-only).
+  main:
+    web-application-type: none
+
+# Opt-in Kafka (xem common-lib KafkaAutoConfiguration).
+app:
+  kafka:
+    enabled: true
+    bootstrap-servers: "${KAFKA_BOOTSTRAP:localhost:9092}"
+    client-id: notification-service
+    consumer-group: notification-service
+
+# Port chỉ để actuator/info nếu sau thêm web; hiện tại web-application-type=none
+# nên không bind port.
+server:
+  port: 8087
+
+logging:
+  level:
+    com.ecommerce.notification: DEBUG
+    org.springframework.kafka: INFO

@@ -35,6 +35,18 @@ services:
     base-url: "${CART_SERVICE_URL:http://localhost:8085}"
   inventory:
     base-url: "${INVENTORY_SERVICE_URL:http://localhost:8083}"
+  product:
+    # Day 8 — order-service gọi product-service `/products/{sku}/snapshot`
+    # qua cả Feign + HTTP Interface để demo trade-off.
+    base-url: "${PRODUCT_SERVICE_URL:http://localhost:8082}"
+
+# Day 8 — Kafka opt-in. Producer + consumer setup ở common-lib KafkaAutoConfiguration.
+app:
+  kafka:
+    enabled: true
+    bootstrap-servers: "${KAFKA_BOOTSTRAP:localhost:9092}"
+    client-id: order-service
+    consumer-group: order-service
 
 # JWT shared secret với auth-service (xem product/inventory-service).
 auth:

@@ -1,2 +1,3 @@
 com.ecom.common.autoconfig.CommonAutoConfiguration
 com.ecom.common.autoconfig.SecurityAutoConfiguration
+com.ecom.common.autoconfig.KafkaAutoConfiguration

@@ -6,6 +6,7 @@ import com.ecom.product.domain.ProductStatus;
 import com.ecom.product.service.ProductService;
 import com.ecom.product.web.dto.ProductCreateRequest;
 import com.ecom.product.web.dto.ProductResponse;
+import com.ecom.product.web.dto.ProductSnapshotResponse;
 import com.ecom.product.web.dto.ProductUpdateRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -56,6 +57,17 @@ public class ProductController {
     @GetMapping("/slug/{slug}")
     public ApiResponse<ProductResponse> getBySlug(@PathVariable String slug) {
         return ApiResponse.ok(productService.getBySlug(slug));
+    }
+
+    /**
+     * Day 8 — snapshot cho order-service (capture giá tại checkout). Public
+     * read như {@code GET /products/{id}} — KHÔNG yêu cầu auth vì product
+     * info là public. Day 12 sẽ cache cấp common-lib (cache-aside) + circuit
+     * breaker phía caller.
+     */
+    @GetMapping("/{sku}/snapshot")
+    public ApiResponse<ProductSnapshotResponse> getSnapshot(@PathVariable String sku) {
+        return ApiResponse.ok(productService.getSnapshot(sku));
     }
 
     @PostMapping
