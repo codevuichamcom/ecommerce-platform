@@ -2,17 +2,25 @@ spring:
   application:
     name: notification-service
 
-  # Consumer-only service nhưng vẫn bật virtual thread cho thread Spring tạo
-  # ở actuator / lifecycle. Listener container đã setVirtualThreads(true)
-  # riêng (xem KafkaAutoConfiguration).
   threads:
     virtual:
       enabled: true
 
-  # Day 8 scaffold — chưa có web endpoint. Tắt Spring MVC autoconfig để
-  # service KHÔNG mở Tomcat port (consumer-only).
+  # Day 11: bật servlet để expose /api/v1 + /api/v2 versioning demo endpoints.
   main:
-    web-application-type: none
+    web-application-type: servlet
+
+  thymeleaf:
+    prefix: classpath:/templates/notification/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+    cache: false   # dev; true ở prod
+
+  data:
+    redis:
+      host: "${REDIS_HOST:localhost}"
+      port: "${REDIS_PORT:6379}"
 
 # Opt-in Kafka (xem common-lib KafkaAutoConfiguration).
 app:
@@ -21,6 +29,9 @@ app:
     bootstrap-servers: "${KAFKA_BOOTSTRAP:localhost:9092}"
     client-id: notification-service
     consumer-group: notification-service
+
+  notification:
+    dedup-ttl-hours: 24   # Redis SET NX TTL cho idempotency key
 
 spring.kafka:
   template:
@@ -40,8 +51,6 @@ management:
       exposure:
         include: health,info
 
-# Port chỉ để actuator/info nếu sau thêm web; hiện tại web-application-type=none
-# nên không bind port.
 server:
   port: 8087
 

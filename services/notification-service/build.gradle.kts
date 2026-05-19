@@ -1,19 +1,13 @@
 /*
- * notification-service — Kafka consumer demo (Day 8 scaffold).
+ * notification-service — Day 11: multi-topic consumer + Thymeleaf + API versioning.
  *
- * Day 8 scope:
- *   - Boot up + 1 @KafkaListener log `order.created` event nhận được.
- *   - Verify end-to-end Kafka pipeline (order-service publish → broker → consumer).
+ * Thêm so với Day 8 scaffold:
+ *   - spring-boot-starter-web: expose /api/v1 + /api/v2 versioning demo endpoints.
+ *   - spring-boot-starter-thymeleaf: render email template (order-confirmed, payment-completed).
+ *   - spring-boot-starter-data-redis: Redis SET NX idempotency dedup by eventId (TTL 24h).
  *
- * Day 11 sẽ build full:
- *   - Multi-topic listener (order.*, payment.*, notification.outgoing)
- *   - Thymeleaf template engine
- *   - Email/SMS/Push adapter (mock SMTP/Twilio)
- *   - Idempotent handler (dedup by eventId)
- *
- * KHÔNG cần: web starter (consumer-only, không expose REST endpoint),
- * data-jpa (Day 11 mới thêm khi cần persist sent log), security (consumer
- * không có inbound HTTP).
+ * KHÔNG cần: security (no auth trên internal notification API), data-jpa
+ * (notification stateless — không persist sent log, Day 34 system design sẽ thêm).
  */
 
 plugins {
@@ -25,8 +19,10 @@ plugins {
 dependencies {
     implementation(project(":common-lib"))
 
-    // Core + actuator (health endpoint) — KHÔNG web/security/jpa.
+    implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.kafka:spring-kafka")
 
     compileOnly(libs.lombok)
