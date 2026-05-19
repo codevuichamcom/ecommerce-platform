@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Đơn hàng đã được xác nhận</title>
+</head>
+<body>
+<p>Xin chào,</p>
+
+<p>
+    Đơn hàng <strong th:text="${orderId}">ORDER-ID</strong> của bạn đã được xác nhận thành công.
+</p>
+
+<table>
+    <tr>
+        <td>Mã đơn hàng:</td>
+        <td th:text="${orderId}">ORDER-ID</td>
+    </tr>
+    <tr>
+        <td>Tổng tiền:</td>
+        <td>
+            <span th:text="${totalAmount}">0</span>
+            <span th:text="${currency}">VND</span>
+        </td>
+    </tr>
+    <tr>
+        <td>Số lượng sản phẩm:</td>
+        <td th:text="${itemCount}">0</td>
+    </tr>
+</table>
+
+<p>Chúng tôi sẽ thông báo khi đơn hàng được giao.</p>
+
+<p>Trân trọng,<br/>ShopVN Team</p>
+</body>
+</html>

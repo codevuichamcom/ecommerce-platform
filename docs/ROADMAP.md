@@ -14,11 +14,11 @@
 | Field             | Value                                       |
 | ----------------- | ------------------------------------------- |
 | Last updated      | 2026-05-19                                  |
-| Current sprint    | **Day 10 ✅ Done** (`payment-service` Layered + callback idempotent: `PaymentIntent` sealed status + `HandleCallbackUseCase` 3-layer dedup [L3 fast-path + L4 UNIQUE catch + `@Retryable` optimistic lock], HMAC-SHA256 signature verifier + timestamp skew + `MessageDigest.isEqual()` constant-time; order-service `PaymentCompletedConsumer` + `Order.markPaid()` idempotent transition PendingPayment→Paid; V1 migration UNIQUE partial index `(provider, provider_txn_id) WHERE provider_txn_id IS NOT NULL`; ADR-007 revise scope ADR-003 — payment chuyển Layered) |
-| Next up           | **Day 11 — Notification service (multi-topic consumer + template engine + API versioning v1→v2)** |
-| Sprints completed | 10 / 40                                     |
-| Services built    | 7 / 9 (`common-lib` ✅, `auth-service` ✅, `product-service` ✅, `inventory-service` ✅, `cart-service` ✅, `order-service` ✅, `payment-service` ✅, `notification-service` 🚧 scaffold+consumer, gateway/analytics ⏳) |
-| Docs created      | 48                                          |
+| Current sprint    | **Day 11 ✅ Done** (`notification-service` multi-topic consumer `order.created` + `payment.completed`; Thymeleaf template engine `order-created.html` + `payment-completed.html`; Redis SET NX idempotent dedup by `eventId` TTL 24h; adapter pattern `NotificationChannel` → `LoggingEmailChannel`; API versioning v1→v2 demo `/api/v1/notifications/health` + `/api/v2/notifications/health` thêm `channelUsed`; ADR-008 URI versioning + N-1 deprecation policy) |
+| Next up           | **Day 12 — Retry + Dead Letter Topic (Resilience4j circuit breaker + retry + bulkhead + DLT)** |
+| Sprints completed | 11 / 40                                     |
+| Services built    | 7 / 9 (`common-lib` ✅, `auth-service` ✅, `product-service` ✅, `inventory-service` ✅, `cart-service` ✅, `order-service` ✅, `payment-service` ✅, `notification-service` ✅, gateway/analytics ⏳) |
+| Docs created      | 53                                          |
 | Build tool        | **Gradle 8.11.1 (Kotlin DSL + Version Catalog) — Wrapper present** |
 | Spring Boot       | **3.4.5**                                   |
 | Blockers          | none                                        |
@@ -323,17 +323,17 @@ gantt
 
 ---
 
-### ⏳ Day 11 — Notification service
+### ✅ Day 11 — Notification service
 
-**Status**: pending
+**Status**: done · 2026-05-19
 
-- [ ] Consumer multi-topic (`order.*`, `payment.*`)
-- [ ] Template engine (Thymeleaf đơn giản)
-- [ ] Fire-and-forget với log
-- [ ] API versioning v1 → v2 thử nghiệm trên 1 endpoint (gap problem)
-- [ ] Doc: `lessons/11-fire-and-forget.md`
-- [ ] Doc: `lessons/11b-api-versioning.md` — URI vs header vs Accept-Version, N-1 deprecation policy
-- [ ] ADR: `decisions/008-api-versioning-strategy.md`
+- [x] Consumer multi-topic (`order.*`, `payment.*`)
+- [x] Template engine (Thymeleaf đơn giản)
+- [x] Fire-and-forget với log
+- [x] API versioning v1 → v2 thử nghiệm trên 1 endpoint (gap problem)
+- [x] Doc: [`lessons/11-fire-and-forget.md`](lessons/11-fire-and-forget.md)
+- [x] Doc: [`lessons/11b-api-versioning.md`](lessons/11b-api-versioning.md) — URI vs header vs Accept-Version, N-1 deprecation policy
+- [x] ADR: [`decisions/008-api-versioning-strategy.md`](decisions/008-api-versioning-strategy.md)
 
 ---
 
@@ -804,3 +804,4 @@ gantt
 - **2026-05-18** · Day 9 — Order flow event-driven + Distributed Tracing deliverable: `PlaceOrderUseCase` bỏ sync RPC orchestration (xóa `InventoryClient` + `ReserveRequest` DTO) → save Order `reservation_status=PENDING` + publish `OrderCreatedV1`; V2 Flyway migration thêm `reservation_status VARCHAR(16) NOT NULL DEFAULT 'PENDING'` + CHECK constraint + partial index SLI; `Order.markReserved()` idempotent (no-op nếu đã RESERVED). inventory-service `OrderCreatedConsumer` reserve qua Stock aggregate → publish `StockReservedV1` key=orderId, log-warn (KHÔNG throw) khi `InsufficientStockException` tránh retry storm (Day 12 wire failed event); `InventoryEventPublisher` log dual-write debt warning. order-service `InventoryReservedConsumer` → `markReserved`; notification-service `InventoryReservedListener` consumer group riêng `notification-inv` (fan-out độc lập). Micrometer Tracing + OTel bridge + Zipkin exporter vào `common-lib` (api scope), Spring Kafka `template/listener.observation-enabled=true` propagate W3C `traceparent` qua headers; Zipkin service `docker-compose.yml` (openzipkin/zipkin:3 :9411, in-memory). Build green, 32/32 unit test PASS. 5 docs: ADR-006 sync→async (5 alternatives, supersede phần ADR-003 orchestration), lesson 09 distributed-tracing-otel (mermaid sequence 3-service trace), lesson 09b eventual-consistency-window, issue 09 eventual-consistency 9-section (4 approaches), interview day-09 + AI Playbook + Tech Lead Lens + bối cảnh ShopVN/Anh Hùng. Branch `day-09-order-flow`.
 - **2026-05-19** · Day 10 — `payment-service` Layered + callback idempotent deliverable: ADR-007 chốt Layered (1/3 DDD criteria, revise scope ADR-003). `PaymentIntent` JPA entity + sealed `PaymentStatus` 5 permit, factory `initiate()`, transition methods enforce invariant + `providerTxnId` immutability. `HandleCallbackUseCase` 3-layer dedup: L3 `findByProviderAndProviderTxnId` fast-path + L4 `DataIntegrityViolationException` catch trên UNIQUE partial index + `@Retryable(ObjectOptimisticLockingFailureException, REQUIRES_NEW)` exp backoff 50→500ms; `saveAndFlush()` thay vì `save()` ép UNIQUE fail-fast trong tx. `CallbackSignatureVerifier` HMAC-SHA256 + timestamp skew 300s + `MessageDigest.isEqual()` constant-time. V1 Flyway migration: CHECK constraints + partial UNIQUE `(provider, provider_txn_id) WHERE provider_txn_id IS NOT NULL`. Publish `PaymentCompletedV1` key=orderId (KHÔNG publish khi dup/FAILED). order-service `Order.markPaid(Instant)` idempotent return boolean + `PaymentCompletedConsumer`. Build green, 20/20 unit test PASS. 4 docs: ADR-007 payment-Layered (4 alternatives), lesson 10 idempotency (4-layer model + Idempotency-Key), issue 10 duplicate-callback 9-section (4 approaches), interview day-10 + AI Playbook + bối cảnh ShopVN/Anh Hùng. Branch `day-10-payment`.
 - **2026-05-16** · Day 7 — Week 1 wrap deliverable: refactor JWT verify-only stack lên `common-lib/security/` auto-config sau rule-of-three (`SecurityAutoConfiguration` với 3 layer condition `@ConditionalOnClass` + `@ConditionalOnProperty` + `@ConditionalOnMissingBean`; `compileOnly` jjwt + spring-security-web để consumer service tự kéo runtime). Xóa **16 file duplicate** ở 4 service (product/inventory/cart/order × `JwtAuthenticationFilter` + `JwtVerifier` + `AuthUserPrincipal` + `JwtProperties`). Auth-service KHÔNG động vì principal có `tokenVersion` (4 field) khác contract verify-only (3 field). Build green 1m29s, 32/32 unit test PASS. 4 docs: lesson 07 refactor-extract-discipline (rule of three + 4 cạm bẫy), interview week-01-mock 10 Q&A self-grade 9 strong/1 borderline (VT pinning ammo Day 19), interview week-01-cv-bullets (2 bullet + 90s pitch), review traps append [03] premature-DRY + [04] auto-config dependency leak. Branch `day-07-refactor-mock`.
+- **2026-05-19** · Day 11 — `notification-service` full deliverable: nâng từ Day 8 scaffold lên service thật. `OrderCreatedConsumer` + `PaymentCompletedConsumer` với Redis SET NX idempotent dedup (TTL 24h, fail-open); `NotificationTemplateEngine` Thymeleaf wrapper; `NotificationChannel` interface + `LoggingEmailChannel` adapter; Thymeleaf templates `order-created.html` + `payment-completed.html` (dùng `th:text` — no XSS). API versioning demo: `/api/v1/notifications/health` + `/api/v2/notifications/health` (v2 thêm `channelUsed`). Xóa 2 scaffold listener (`OrderEventListener`, `InventoryReservedListener`). Build green 24s. 5 docs: lesson 11 fire-and-forget, lesson 11b api-versioning (fill skeleton), ADR-008 URI versioning + N-1 policy (fill skeleton), issue 11 email-spam 9-section (4 approaches), interview day-11 + AI Playbook + bối cảnh ShopVN/Anh Hùng. Branch `day-11-notification`.

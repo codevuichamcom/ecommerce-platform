@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Thanh toán thành công</title>
+</head>
+<body>
+<p>Xin chào,</p>
+
+<p>
+    Thanh toán cho đơn hàng <strong th:text="${orderId}">ORDER-ID</strong> đã được xử lý thành công.
+</p>
+
+<table>
+    <tr>
+        <td>Mã đơn hàng:</td>
+        <td th:text="${orderId}">ORDER-ID</td>
+    </tr>
+    <tr>
+        <td>Mã giao dịch:</td>
+        <td th:text="${transactionId}">TXN-ID</td>
+    </tr>
+    <tr>
+        <td>Số tiền:</td>
+        <td>
+            <span th:text="${amount}">0</span>
+            <span th:text="${currency}">VND</span>
+        </td>
+    </tr>
+</table>
+
+<p>Cảm ơn bạn đã tin tưởng ShopVN.</p>
+
+<p>Trân trọng,<br/>ShopVN Team</p>
+</body>
+</html>
