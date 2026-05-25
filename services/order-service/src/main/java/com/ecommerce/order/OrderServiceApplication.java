@@ -2,6 +2,7 @@ package com.ecommerce.order;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * order-service entrypoint.
@@ -15,6 +16,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * sẽ thêm Resilience4j circuit breaker cho RestClient call inventory/cart.
  */
 @SpringBootApplication(scanBasePackages = {"com.ecommerce.order", "com.ecom.common"})
+@EnableScheduling
 public class OrderServiceApplication {
 
     public static void main(String[] args) {

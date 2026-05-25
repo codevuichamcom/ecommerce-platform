@@ -199,7 +199,7 @@ graph LR
 | [`decisions/006-sync-orchestration-vs-async-events.md`](decisions/006-sync-orchestration-vs-async-events.md) | ✅ | Order flow async event-driven (Day 9) vs sync (Day 6) — 5 alternatives, accept eventual consistency + outbox/DLT debt |
 | [`decisions/007-payment-service-layered-not-ddd.md`](decisions/007-payment-service-layered-not-ddd.md) | ✅ | payment-service dùng Layered + sealed status, revise scope ADR-003 — 1/3 DDD criteria không đạt, 4 alternatives compared |
 | [`decisions/008-api-versioning-strategy.md`](decisions/008-api-versioning-strategy.md) | ✅ | URI versioning + N-1 deprecation policy (90-day sunset), 5 alternatives compared |
-| `decisions/009-outbox-vs-cdc.md` | ⏳ Day 13 | Outbox pattern vs Debezium CDC |
+| [`decisions/009-outbox-vs-cdc.md`](decisions/009-outbox-vs-cdc.md) | ✅ | Transactional outbox + polling relay vs Debezium CDC, 5 alternatives compared, migration path khi volume > 10k/s |
 | `decisions/010-postgres-vs-elasticsearch-search.md` | ⏳ Day 22 | Postgres GIN/full-text vs Elasticsearch cho product search |
 | `decisions/011-mongo-for-analytics-and-flexible-attributes.md` | ⏳ Day 23 | MongoDB use case có chủ ý: event store + flexible product attributes |
 
@@ -230,7 +230,8 @@ graph LR
 | [`lessons/12b-circuit-breaker-resilience4j.md`](lessons/12b-circuit-breaker-resilience4j.md) | ✅ | State machine CLOSED/OPEN/HALF_OPEN, sliding window count vs time, Bulkhead semaphore vs threadpool, fallback rules |
 | [`lessons/12c-kafka-delivery-semantics.md`](lessons/12c-kafka-delivery-semantics.md) | ✅ | At-most/at-least/exactly-once + producer idempotence + manual ack + idempotent consumer (filled skeleton) |
 | [`lessons/12d-partition-key-ordering.md`](lessons/12d-partition-key-ordering.md) | ✅ | Ordering per-partition, key choice cho project (`orderId`), skew + rebalance + DLT partition affinity (filled skeleton) |
-| `lessons/13-outbox-pattern.md` | ⏳ Day 13 | Transactional outbox, relay, mark sent |
+| [`lessons/13-outbox-pattern.md`](lessons/13-outbox-pattern.md) | ✅ | Transactional outbox + scheduled relay, SKIP LOCKED, 5 cạm bẫy, 5 approaches comparison |
+| [`lessons/13b-dual-write-problem.md`](lessons/13b-dual-write-problem.md) | ✅ | Dual-write concept, tại sao 2PC fail, solution family (outbox / CDC / saga) |
 | `lessons/19-java-locking.md` | ⏳ Day 19 | synchronized / ReentrantLock / StampedLock |
 | `lessons/19b-virtual-threads-deep.md` | ⏳ Day 19 | Loom internals, pinning, structured concurrency |
 | `lessons/19c-distributed-lock-redlock.md` | ⏳ Day 19 | Redis SET NX PX, Redlock + Kleppmann/antirez debate, fencing token |
@@ -263,6 +264,7 @@ graph LR
 | [`issues/10-duplicate-payment-callback.md`](issues/10-duplicate-payment-callback.md) | ✅ | VNPay retry → 2 event `payment.completed` cho cùng orderId — 4 approaches (Redis SETNX / DB UNIQUE / token table / event version), chosen UNIQUE partial index |
 | [`issues/11-notification-email-spam.md`](issues/11-notification-email-spam.md) | ✅ | Kafka retry → gửi email 3 lần — 4 approaches (Redis SET NX / DB table / in-memory / Kafka EOS), chosen Redis SET NX TTL 24h fail-open |
 | [`issues/12-poison-message.md`](issues/12-poison-message.md) | ✅ | NPE crash loop → 200k lag — 4 approaches (skip / DLT-ngay / sidetrack / retry-then-DLT), chosen retry-then-DLT |
+| [`issues/13-order-paid-inventory-not-reserved.md`](issues/13-order-paid-inventory-not-reserved.md) | ✅ | Kafka broker restart 90s → 23 order DB OK, Kafka publish fail silently — 4 approaches (sync ack / outbox poll / Debezium CDC / reconciler), chosen outbox |
 | `issues/15-cache-stampede.md` | ⏳ Day 15 | Hot key TTL expire → 1000 req hit DB. Single-flight vs probabilistic early expiration vs lock |
 | `issues/15b-hot-key.md` | ⏳ Day 15 | 1 product viral → Redis 1 key bottleneck. Local cache fallback / key sharding |
 | `issues/17-jpa-n-plus-one.md` | ⏳ Day 17 | List orders → N+1 query items |
@@ -305,7 +307,7 @@ graph LR
 | [`interview/day-10-payment.md`](interview/day-10-payment.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (idempotent definition · UNIQUE vs SETNX · race handling · eventual consistency UX · HMAC + replay) + AI Playbook |
 | [`interview/day-11-notification.md`](interview/day-11-notification.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (Kafka retry spam · URI versioning · breaking change · fire-and-forget · Thymeleaf XSS) + AI Playbook |
 | [`interview/day-12-resilience.md`](interview/day-12-resilience.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (exp backoff vs fixed · CB state machine · khi nào KHÔNG retry · DLT vs retry topic · Bulkhead semaphore vs threadpool) + AI Playbook + Tech Lead Lens |
-| `interview/day-13-outbox.md` | ⏳ Day 13 | Outbox / relay / dual write problem |
+| [`interview/day-13-outbox.md`](interview/day-13-outbox.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (dual-write · outbox vs CDC · multi-instance race SKIP LOCKED · ordering per-aggregate · table bloat cleanup) + AI Playbook + Tech Lead Lens |
 | `interview/week-02-mock.md` | ⏳ Day 14 | Kafka senior questions |
 | `interview/week-NN-cv-bullets.md` | ⏳ Day 14/21/25/30/37 | CV bullet draft cuối mỗi tuần (Day 7 ✅) |
 | `interview/day-22-elasticsearch.md` | ⏳ Day 22 | ES use case + decision rationale |

@@ -3,6 +3,7 @@ package com.ecommerce.order.application;
 import com.ecom.common.event.OrderCreatedV1;
 import com.ecom.common.exception.BusinessException;
 import com.ecom.common.exception.ErrorCode;
+import com.ecom.common.messaging.TopicNames;
 import com.ecommerce.order.domain.Money;
 import com.ecommerce.order.domain.Order;
 import com.ecommerce.order.domain.OrderItem;
@@ -10,7 +11,7 @@ import com.ecommerce.order.domain.OrderRepository;
 import com.ecommerce.order.domain.exception.EmptyCartException;
 import com.ecommerce.order.infrastructure.client.CartClient;
 import com.ecommerce.order.infrastructure.client.dto.CartView;
-import com.ecommerce.order.infrastructure.messaging.OrderEventPublisher;
+import com.ecommerce.order.infrastructure.outbox.OutboxRecorder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,10 +36,11 @@ import java.util.UUID;
  * (~50-500ms) mà order hiển thị `PENDING` cho user. Frontend Day 27 sẽ
  * show banner "Đang giữ hàng..." cho UX rõ ràng.
  *
- * <p><b>Dual-write debt</b>: DB commit + Kafka publish KHÔNG atomic. Worst
- * case: DB commit OK, Kafka down → order tồn tại với `reservation_status=PENDING`
- * vĩnh viễn (silent inconsistency). Day 13 outbox pattern sẽ trả debt này.
- * Tạm thời log warn + SLI alert ở Day 20.
+ * <p><b>Dual-write debt — TRẢ Ở DAY 13</b>: trước đây DB commit + Kafka publish
+ * không atomic. Bây giờ {@link OutboxRecorder#record} ghi event vào bảng
+ * {@code outbox_event} cùng tx → atomic. Background {@code OutboxRelay} poll
+ * và publish Kafka sau, consumer side đã idempotent (Day 12). Trade-off:
+ * thêm 1-2s lag publish; SLI {@code outbox.pending.age > 30s} = alert.
  */
 @Slf4j
 @Service
@@ -47,7 +49,7 @@ public class PlaceOrderUseCase {
 
     private final OrderRepository orderRepository;
     private final CartClient cartClient;
-    private final OrderEventPublisher orderEventPublisher;
+    private final OutboxRecorder outboxRecorder;
 
     @Transactional
     public Order place(PlaceOrderCommand cmd) {
@@ -85,11 +87,18 @@ public class PlaceOrderUseCase {
             throw new BusinessException(ErrorCode.INTERNAL_ERROR, "Failed to persist order");
         }
 
-        // 4. Publish order.created. Dual-write debt (xem javadoc class).
-        // Publish SAU save để event consumer (inventory) load được order nếu
-        // cần callback. Trace context tự propagate qua Kafka headers vì
-        // spring.kafka.template.observation-enabled=true ở application.yml.
-        orderEventPublisher.publishOrderCreated(toEvent(saved));
+        // 4. Ghi event vào outbox CÙNG tx. Relay scheduled publish sau (Day 13).
+        // Atomic guarantee: nếu save Order succeed thì insert outbox cũng succeed
+        // (cùng tx Postgres). Nếu DB commit fail → cả 2 rollback. Loại bỏ
+        // dual-write inconsistency của Day 9.
+        OrderCreatedV1 event = toEvent(saved);
+        outboxRecorder.record(
+                "Order",
+                saved.getId().toString(),
+                "OrderCreatedV1",
+                TopicNames.ORDER_CREATED,
+                saved.getId().toString(),
+                event);
 
         log.info("Order placed (PENDING reservation) id={} user={} total={} {}",
                 saved.getId(), saved.getUserId(),
