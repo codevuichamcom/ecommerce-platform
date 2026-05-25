@@ -60,4 +60,24 @@ public class NotificationDeduplicator {
             return true;
         }
     }
+
+    /**
+     * Day 12 — release dedup token khi dispatch fail để Kafka retry có thể
+     * tái xử lý. KHÔNG release sẽ làm retry skip (dedup nói "đã xử lý")
+     * → email không bao giờ gửi được mặc dù dispatch fail transient.
+     *
+     * <p>Race trade-off: nếu fail-then-release rồi 1 consumer khác cùng group
+     * pick up event này song song → có thể duplicate dispatch. Chấp nhận vì
+     * Kafka per-partition single-consumer guarantee (Day 8) loại bỏ race
+     * cùng-group; cross-group (notification-order vs notification-payment)
+     * vốn đã không share dedup key.
+     */
+    public void release(UUID eventId) {
+        try {
+            redisTemplate.delete(KEY_PREFIX + eventId);
+        } catch (Exception ex) {
+            log.warn("[dedup] release failed eventId={} — TTL sẽ tự expire sau {}h. error={}",
+                    eventId, dedupTtlHours, ex.getMessage());
+        }
+    }
 }

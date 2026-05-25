@@ -70,9 +70,12 @@ public class PaymentCompletedConsumer {
             log.info("[payment-completed] dispatched orderId={} txn={} eventId={}",
                     event.orderId(), event.transactionId(), event.eventId());
 
-        } catch (Exception ex) {
-            log.error("[payment-completed] dispatch failed eventId={} orderId={} error={}",
-                    event.eventId(), event.orderId(), ex.getMessage(), ex);
+        } catch (RuntimeException ex) {
+            // Day 12: release dedup + propagate → retry topology + DLT.
+            deduplicator.release(event.eventId());
+            log.error("[payment-completed] dispatch failed eventId={} orderId={} error={} → propagate to retry/DLT",
+                    event.eventId(), event.orderId(), ex.getMessage());
+            throw ex;
         }
     }
 }

@@ -65,6 +65,38 @@ auth:
     secret: "${AUTH_JWT_SECRET:dev-only-jwt-secret-change-me-in-prod-2026-05-04}"
     issuer: "ecom-auth"
 
+# Day 12 — mock gateway behavior cho demo CB/Bulkhead.
+# Production: thay bằng real gateway client (VNPay/Momo/ZaloPay SDK) + remove block này.
+app.gateway.mock:
+  failure-rate: "${GATEWAY_MOCK_FAILURE_RATE:0.0}"   # 0.0..1.0 — set 0.8 để demo CB OPEN
+  latency-ms:   "${GATEWAY_MOCK_LATENCY_MS:50}"
+
+# Day 12 — Resilience4j cấu hình
+# - CircuitBreaker: sliding-window=10, failureRate≥50% → OPEN
+#   waitDurationInOpenState=30s → HALF_OPEN, 3 probe call quyết định CLOSED hay OPEN
+# - Bulkhead semaphore: maxConcurrent=10; vượt → BulkheadFullException → fallback
+# - recordExceptions chỉ GatewayUnavailableException — KHÔNG count BulkheadFullException
+#   (Bulkhead full không phải gateway lỗi).
+resilience4j:
+  circuitbreaker:
+    instances:
+      paymentGateway:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        recordExceptions:
+          - com.ecommerce.payment.gateway.GatewayUnavailableException
+  bulkhead:
+    instances:
+      paymentGateway:
+        maxConcurrentCalls: 10
+        maxWaitDuration: 0   # fail-fast, không queue → semantic "load shedding"
+
 logging:
   level:
     com.ecommerce.payment: DEBUG

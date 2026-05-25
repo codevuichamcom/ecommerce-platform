@@ -29,7 +29,7 @@
 | 9 | [Cắt dây — buông tay — tin tưởng](./09-cat-day.md) | Day 9 — Async flow |
 | 10 | [Tiền không được sai](./10-tien-khong-sai.md) | Day 10 — Payment |
 | 11 | [Người đưa thư](./11-nguoi-dua-thu.md) | Day 11 — Notification |
-| 12 | 🔮 Lưới an toàn | Day 12 — Resilience |
+| 12 | [Lưới an toàn](./12-luoi-an-toan.md) | Day 12 — Resilience |
 | 13 | 🔮 Hộp thư đi | Day 13 — Outbox |
 | 14 | 🔮 Kiểm tra giữa kỳ | Day 14 — Mock |
 

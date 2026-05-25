@@ -25,6 +25,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.kafka:spring-kafka")
 
+    // Day 12 — retry topology (DefaultErrorHandler + DLT) dùng Spring Kafka native.
+    // KHÔNG cần resilience4j ở consumer-side: ExponentialBackOff đã built-in.
+
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
 

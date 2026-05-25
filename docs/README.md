@@ -226,10 +226,10 @@ graph LR
 | [`lessons/10-idempotency.md`](lessons/10-idempotency.md) | ✅ | 4-layer idempotency (Network/App-cache/Check-then-act/DB-UNIQUE) + Idempotency-Key header pattern + 5 cạm bẫy + Q&A |
 | [`lessons/11-fire-and-forget.md`](lessons/11-fire-and-forget.md) | ✅ | Fire-and-forget pattern: at-most-once, idempotency bắt buộc, fail-open/closed Redis dedup |
 | [`lessons/11b-api-versioning.md`](lessons/11b-api-versioning.md) | ✅ | URI / header / accept-version trade-off, N-1 deprecation policy, expand-contract pattern |
-| `lessons/12-retry-strategy.md` | ⏳ Day 12 | Exponential backoff, jitter, max retry |
-| `lessons/12b-circuit-breaker-resilience4j.md` | ⏳ Day 12 | Resilience4j circuit breaker config |
-| `lessons/12c-kafka-delivery-semantics.md` | ⏳ Day 12 | At-most/at-least/exactly-once, `enable.auto.commit=false`, manual ack |
-| `lessons/12d-partition-key-ordering.md` | ⏳ Day 12 | Ordering guarantee per-partition, choosing partition key, rebalance gotcha |
+| [`lessons/12-retry-strategy.md`](lessons/12-retry-strategy.md) | ✅ | Exp backoff 1s/4s/16s + jitter + non-retryable classification, khi NÊN và KHÔNG NÊN retry, 5 cạm bẫy |
+| [`lessons/12b-circuit-breaker-resilience4j.md`](lessons/12b-circuit-breaker-resilience4j.md) | ✅ | State machine CLOSED/OPEN/HALF_OPEN, sliding window count vs time, Bulkhead semaphore vs threadpool, fallback rules |
+| [`lessons/12c-kafka-delivery-semantics.md`](lessons/12c-kafka-delivery-semantics.md) | ✅ | At-most/at-least/exactly-once + producer idempotence + manual ack + idempotent consumer (filled skeleton) |
+| [`lessons/12d-partition-key-ordering.md`](lessons/12d-partition-key-ordering.md) | ✅ | Ordering per-partition, key choice cho project (`orderId`), skew + rebalance + DLT partition affinity (filled skeleton) |
 | `lessons/13-outbox-pattern.md` | ⏳ Day 13 | Transactional outbox, relay, mark sent |
 | `lessons/19-java-locking.md` | ⏳ Day 19 | synchronized / ReentrantLock / StampedLock |
 | `lessons/19b-virtual-threads-deep.md` | ⏳ Day 19 | Loom internals, pinning, structured concurrency |
@@ -262,7 +262,7 @@ graph LR
 | [`issues/09-eventual-consistency-order.md`](issues/09-eventual-consistency-order.md) | ✅ | Order PENDING reservation window 50ms-5s — 4 approaches (sync / async+status / sync-timeout-fallback / saga), chosen async+status |
 | [`issues/10-duplicate-payment-callback.md`](issues/10-duplicate-payment-callback.md) | ✅ | VNPay retry → 2 event `payment.completed` cho cùng orderId — 4 approaches (Redis SETNX / DB UNIQUE / token table / event version), chosen UNIQUE partial index |
 | [`issues/11-notification-email-spam.md`](issues/11-notification-email-spam.md) | ✅ | Kafka retry → gửi email 3 lần — 4 approaches (Redis SET NX / DB table / in-memory / Kafka EOS), chosen Redis SET NX TTL 24h fail-open |
-| `issues/12-poison-message.md` | ⏳ Day 12 | Message lặp throw → blocks consumer → DLT giải pháp |
+| [`issues/12-poison-message.md`](issues/12-poison-message.md) | ✅ | NPE crash loop → 200k lag — 4 approaches (skip / DLT-ngay / sidetrack / retry-then-DLT), chosen retry-then-DLT |
 | `issues/15-cache-stampede.md` | ⏳ Day 15 | Hot key TTL expire → 1000 req hit DB. Single-flight vs probabilistic early expiration vs lock |
 | `issues/15b-hot-key.md` | ⏳ Day 15 | 1 product viral → Redis 1 key bottleneck. Local cache fallback / key sharding |
 | `issues/17-jpa-n-plus-one.md` | ⏳ Day 17 | List orders → N+1 query items |
@@ -304,6 +304,7 @@ graph LR
 | [`interview/day-09-order-flow.md`](interview/day-09-order-flow.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (sync vs async · traceparent Kafka · sampling · dual-write · span vs MDC) + AI Playbook + Tech Lead Lens |
 | [`interview/day-10-payment.md`](interview/day-10-payment.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (idempotent definition · UNIQUE vs SETNX · race handling · eventual consistency UX · HMAC + replay) + AI Playbook |
 | [`interview/day-11-notification.md`](interview/day-11-notification.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (Kafka retry spam · URI versioning · breaking change · fire-and-forget · Thymeleaf XSS) + AI Playbook |
+| [`interview/day-12-resilience.md`](interview/day-12-resilience.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (exp backoff vs fixed · CB state machine · khi nào KHÔNG retry · DLT vs retry topic · Bulkhead semaphore vs threadpool) + AI Playbook + Tech Lead Lens |
 | `interview/day-13-outbox.md` | ⏳ Day 13 | Outbox / relay / dual write problem |
 | `interview/week-02-mock.md` | ⏳ Day 14 | Kafka senior questions |
 | `interview/week-NN-cv-bullets.md` | ⏳ Day 14/21/25/30/37 | CV bullet draft cuối mỗi tuần (Day 7 ✅) |
@@ -334,7 +335,7 @@ graph LR
 
 | Doc | Status | Mô tả |
 | --- | ------ | ----- |
-| `runbooks/kafka-topic-recovery.md` | ⏳ Day 12 | Khi DLT đầy, recover thế nào |
+| [`runbooks/kafka-topic-recovery.md`](runbooks/kafka-topic-recovery.md) | ✅ | 5-step recovery DLT (triage → inspect → classify → replay/discard → post-mortem) + anti-patterns |
 | `runbooks/db-migration-rollback.md` | ⏳ Week 3 | Flyway rollback strategy |
 
 ### 🔍 2.10. Code review (`review/`)
