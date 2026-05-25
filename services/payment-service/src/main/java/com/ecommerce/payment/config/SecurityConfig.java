@@ -42,6 +42,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers(HttpMethod.POST, "/payments/callback").permitAll()
+                        // Day 12 demo (dev profile only — remove khi go-prod).
+                        .requestMatchers("/debug/gateway/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(eh -> eh

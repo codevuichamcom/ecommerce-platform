@@ -42,6 +42,11 @@ dependencies {
     implementation("org.springframework.retry:spring-retry")
     implementation("org.springframework:spring-aspects")
 
+    // Day 12 — Resilience4j: circuit breaker + bulkhead cho outbound gateway call.
+    // Spring Boot 3 starter tự auto-configure registry, đọc cấu hình từ application.yml
+    // (`resilience4j.circuitbreaker.instances.*`, `resilience4j.bulkhead.instances.*`).
+    implementation(libs.resilience4j.spring.boot3)
+
     // JWT verify only — admin endpoint GET /payments/{id} cần auth.
     // Callback endpoint POST /payments/callback PUBLIC (gateway không có JWT),
     // bảo vệ bằng HMAC signature trong SecurityConfig.

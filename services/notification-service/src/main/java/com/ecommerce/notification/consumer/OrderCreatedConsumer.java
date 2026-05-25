@@ -22,10 +22,11 @@ import java.util.Map;
  * gọi lại handler — {@link NotificationDeduplicator#tryAcquire} return false
  * cho duplicate → skip render + dispatch → không spam email.
  *
- * <p>Fire-and-forget: KHÔNG throw exception sau khi render+dispatch fail —
- * Kafka sẽ commit offset, event không vào DLT. Accepted trade-off: email
- * có thể miss khi channel fail, không thể retry. Day 12 sẽ wire DLT cho
- * Kafka deserialization error (poison message), không phải dispatch fail.
+ * <p>Day 12 — failure handling: KHÔNG còn fire-and-forget swallow. Render
+ * hoặc dispatch fail → release dedup token + re-throw → DefaultErrorHandler
+ * retry 3 lần exp backoff (1s/4s/16s), fail tiếp → DLT topic
+ * order.created.DLT. IllegalArgumentException (template missing field,
+ * validation lỗi) là non-retryable → DLT NGAY (xem RetryTopologyConfiguration).
  *
  * <p>Replaces Day 8 scaffold {@code OrderEventListener}.
  */
@@ -77,11 +78,13 @@ public class OrderCreatedConsumer {
             log.info("[order-created] dispatched orderId={} eventId={}",
                     event.orderId(), event.eventId());
 
-        } catch (Exception ex) {
-            // Fire-and-forget: log error, không re-throw.
-            // Offset sẽ được commit, event KHÔNG vào retry queue.
-            log.error("[order-created] dispatch failed eventId={} orderId={} error={}",
-                    event.eventId(), event.orderId(), ex.getMessage(), ex);
+        } catch (RuntimeException ex) {
+            // Day 12: release dedup để retry có thể tái xử lý + re-throw cho
+            // DefaultErrorHandler (3 lần exp backoff → DLT).
+            deduplicator.release(event.eventId());
+            log.error("[order-created] dispatch failed eventId={} orderId={} error={} → propagate to retry/DLT",
+                    event.eventId(), event.orderId(), ex.getMessage());
+            throw ex;
         }
     }
 }

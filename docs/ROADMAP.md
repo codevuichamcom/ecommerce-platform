@@ -13,12 +13,12 @@
 
 | Field             | Value                                       |
 | ----------------- | ------------------------------------------- |
-| Last updated      | 2026-05-19                                  |
-| Current sprint    | **Day 11 ✅ Done** (`notification-service` multi-topic consumer `order.created` + `payment.completed`; Thymeleaf template engine `order-created.html` + `payment-completed.html`; Redis SET NX idempotent dedup by `eventId` TTL 24h; adapter pattern `NotificationChannel` → `LoggingEmailChannel`; API versioning v1→v2 demo `/api/v1/notifications/health` + `/api/v2/notifications/health` thêm `channelUsed`; ADR-008 URI versioning + N-1 deprecation policy) |
-| Next up           | **Day 12 — Retry + Dead Letter Topic (Resilience4j circuit breaker + retry + bulkhead + DLT)** |
-| Sprints completed | 11 / 40                                     |
+| Last updated      | 2026-05-25                                  |
+| Current sprint    | **Day 12 ✅ Done** (Resilience4j circuit breaker + bulkhead cho `payment-service` outbound gateway verify; Spring Kafka `DefaultErrorHandler` + `DeadLetterPublishingRecoverer` exp backoff 1s/4s/16s max 3 attempts cho `notification-service`; `DltConsumer` pattern `.*\.DLT` swallow + counter; `OrderCreatedConsumer` + `PaymentCompletedConsumer` bỏ swallow → release dedup + re-throw; `NotificationDeduplicator.release()` cho retry replay; `MockGatewayClient` + `VerificationResult` + `GatewayDebugController` /debug/gateway/{verify,force-fail,state}; non-retryable list `IllegalArgumentException` + `DeserializationException` → DLT ngay) |
+| Next up           | **Day 13 — Outbox pattern (transactional outbox + relay scheduled poll, refactor Day 9 dual-write)** |
+| Sprints completed | 12 / 40                                     |
 | Services built    | 7 / 9 (`common-lib` ✅, `auth-service` ✅, `product-service` ✅, `inventory-service` ✅, `cart-service` ✅, `order-service` ✅, `payment-service` ✅, `notification-service` ✅, gateway/analytics ⏳) |
-| Docs created      | 53                                          |
+| Docs created      | 60                                          |
 | Build tool        | **Gradle 8.11.1 (Kotlin DSL + Version Catalog) — Wrapper present** |
 | Spring Boot       | **3.4.5**                                   |
 | Blockers          | none                                        |
@@ -337,22 +337,28 @@ gantt
 
 ---
 
-### ⏳ Day 12 — Retry + Dead Letter Topic
+### ✅ Day 12 — Retry + Dead Letter Topic
 
-**Status**: pending
+**Status**: done · 2026-05-25
 
-**🆕 Modernity introduces**: Resilience4j (circuit breaker + retry + bulkhead + rate limiter).
+**🆕 Modernity introduces**: Resilience4j 2.2.0 (circuit breaker + bulkhead) cho payment outbound gateway; Spring Kafka `DefaultErrorHandler` + `DeadLetterPublishingRecoverer` cho consumer-side retry+DLT.
 
-- [ ] Resilience4j config: circuit breaker cho Feign call, retry cho Kafka consumer, bulkhead cho payment-gateway call
-- [ ] Retry policy (exponential backoff, max 3)
-- [ ] DLT cho poison message
-- [ ] Test: throw exception → message vào DLT, circuit breaker open sau N fails
-- [ ] Doc: `lessons/12-retry-strategy.md`
-- [ ] Doc: `lessons/12b-circuit-breaker-resilience4j.md`
-- [ ] Doc: `lessons/12c-kafka-delivery-semantics.md` — at-most/at-least/exactly-once + manual ack (gap problem)
-- [ ] Doc: `lessons/12d-partition-key-ordering.md` — ordering guarantee per-partition + key choice (gap problem)
-- [ ] Doc: `issues/12-poison-message.md` — full format (Approaches: skip / DLT / sidetrack / retry-then-DLT)
-- [ ] Runbook: `runbooks/kafka-topic-recovery.md`
+- [x] Resilience4j config: CB `paymentGateway` (sliding window count=10, failureRate≥50% → OPEN 30s → HALF_OPEN 3 probe) + Bulkhead semaphore `paymentGateway` (maxConcurrent=10, fail-fast no queue)
+- [x] Retry policy: `ExponentialBackOff(1s, 4.0, max=16s, maxElapsed=21s)` max 3 attempts cho Kafka consumer
+- [x] DLT cho poison message: `DeadLetterPublishingRecoverer` giữ partition affinity (`(record, ex) → new TopicPartition(record.topic() + ".DLT", record.partition())`); non-retryable list `IllegalArgumentException` + `JsonProcessingException` + `DeserializationException` → DLT ngay
+- [x] `DltConsumer` pattern `.*\.DLT` swallow + counter chống `.DLT.DLT` cascade
+- [x] Refactor `OrderCreatedConsumer` + `PaymentCompletedConsumer`: bỏ try-catch swallow → release dedup + re-throw để retry/DLT pipeline xử lý; `NotificationDeduplicator.release()` thêm cho retry replay
+- [x] `MockGatewayClient` với `@CircuitBreaker(fallbackMethod="verifyFallback")` + `@Bulkhead` + `VerificationResult` record (SUCCESS/FAILED/UNKNOWN) + `GatewayDebugController` /debug/gateway/{verify,force-fail,state}
+- [x] Unit test PASS: `RetryTopologyConfigurationTest` (2/2 — recoverer wiring + non-retryable classification) + `MockGatewayClientCircuitBreakerTest` (3/3 — CLOSED→OPEN, fast-fail OPEN, HALF_OPEN→CLOSED)
+- [x] Build green: notification-service + payment-service compile + all 23 unit test PASS
+- [x] Doc: [`lessons/12-retry-strategy.md`](lessons/12-retry-strategy.md) — exp backoff + jitter + classification, 5 cạm bẫy
+- [x] Doc: [`lessons/12b-circuit-breaker-resilience4j.md`](lessons/12b-circuit-breaker-resilience4j.md) — state machine + sliding window + Bulkhead semaphore vs threadpool
+- [x] Doc: [`lessons/12c-kafka-delivery-semantics.md`](lessons/12c-kafka-delivery-semantics.md) — fill skeleton, 3 mức delivery + idempotent producer vs consumer
+- [x] Doc: [`lessons/12d-partition-key-ordering.md`](lessons/12d-partition-key-ordering.md) — fill skeleton, key choice + DLT partition affinity + rebalance gotcha
+- [x] Doc: [`issues/12-poison-message.md`](issues/12-poison-message.md) — 9-section, 4 approaches (skip / DLT-ngay / sidetrack / retry-then-DLT chosen)
+- [x] Runbook: [`runbooks/kafka-topic-recovery.md`](runbooks/kafka-topic-recovery.md) — 5-step recovery + classify diagram + anti-patterns
+- [x] Doc: [`interview/day-12-resilience.md`](interview/day-12-resilience.md) — 5 Q&A + AI Playbook + Tech Lead Lens (Day 12 decision day)
+- [x] Evolution: [`evolution/12-luoi-an-toan.md`](evolution/12-luoi-an-toan.md)
 
 ---
 
@@ -805,3 +811,4 @@ gantt
 - **2026-05-19** · Day 10 — `payment-service` Layered + callback idempotent deliverable: ADR-007 chốt Layered (1/3 DDD criteria, revise scope ADR-003). `PaymentIntent` JPA entity + sealed `PaymentStatus` 5 permit, factory `initiate()`, transition methods enforce invariant + `providerTxnId` immutability. `HandleCallbackUseCase` 3-layer dedup: L3 `findByProviderAndProviderTxnId` fast-path + L4 `DataIntegrityViolationException` catch trên UNIQUE partial index + `@Retryable(ObjectOptimisticLockingFailureException, REQUIRES_NEW)` exp backoff 50→500ms; `saveAndFlush()` thay vì `save()` ép UNIQUE fail-fast trong tx. `CallbackSignatureVerifier` HMAC-SHA256 + timestamp skew 300s + `MessageDigest.isEqual()` constant-time. V1 Flyway migration: CHECK constraints + partial UNIQUE `(provider, provider_txn_id) WHERE provider_txn_id IS NOT NULL`. Publish `PaymentCompletedV1` key=orderId (KHÔNG publish khi dup/FAILED). order-service `Order.markPaid(Instant)` idempotent return boolean + `PaymentCompletedConsumer`. Build green, 20/20 unit test PASS. 4 docs: ADR-007 payment-Layered (4 alternatives), lesson 10 idempotency (4-layer model + Idempotency-Key), issue 10 duplicate-callback 9-section (4 approaches), interview day-10 + AI Playbook + bối cảnh ShopVN/Anh Hùng. Branch `day-10-payment`.
 - **2026-05-16** · Day 7 — Week 1 wrap deliverable: refactor JWT verify-only stack lên `common-lib/security/` auto-config sau rule-of-three (`SecurityAutoConfiguration` với 3 layer condition `@ConditionalOnClass` + `@ConditionalOnProperty` + `@ConditionalOnMissingBean`; `compileOnly` jjwt + spring-security-web để consumer service tự kéo runtime). Xóa **16 file duplicate** ở 4 service (product/inventory/cart/order × `JwtAuthenticationFilter` + `JwtVerifier` + `AuthUserPrincipal` + `JwtProperties`). Auth-service KHÔNG động vì principal có `tokenVersion` (4 field) khác contract verify-only (3 field). Build green 1m29s, 32/32 unit test PASS. 4 docs: lesson 07 refactor-extract-discipline (rule of three + 4 cạm bẫy), interview week-01-mock 10 Q&A self-grade 9 strong/1 borderline (VT pinning ammo Day 19), interview week-01-cv-bullets (2 bullet + 90s pitch), review traps append [03] premature-DRY + [04] auto-config dependency leak. Branch `day-07-refactor-mock`.
 - **2026-05-19** · Day 11 — `notification-service` full deliverable: nâng từ Day 8 scaffold lên service thật. `OrderCreatedConsumer` + `PaymentCompletedConsumer` với Redis SET NX idempotent dedup (TTL 24h, fail-open); `NotificationTemplateEngine` Thymeleaf wrapper; `NotificationChannel` interface + `LoggingEmailChannel` adapter; Thymeleaf templates `order-created.html` + `payment-completed.html` (dùng `th:text` — no XSS). API versioning demo: `/api/v1/notifications/health` + `/api/v2/notifications/health` (v2 thêm `channelUsed`). Xóa 2 scaffold listener (`OrderEventListener`, `InventoryReservedListener`). Build green 24s. 5 docs: lesson 11 fire-and-forget, lesson 11b api-versioning (fill skeleton), ADR-008 URI versioning + N-1 policy (fill skeleton), issue 11 email-spam 9-section (4 approaches), interview day-11 + AI Playbook + bối cảnh ShopVN/Anh Hùng. Branch `day-11-notification`.
+- **2026-05-25** · Day 12 — Resilience layer: 2 boundary cùng lúc. **(1) Kafka consumer side** (`notification-service`): `RetryTopologyConfiguration` với `DefaultErrorHandler` + `DeadLetterPublishingRecoverer` giữ partition affinity + `ExponentialBackOff(1s, 4.0, max=16s, maxElapsed=21s)` max 3 attempts; `addNotRetryableExceptions(IllegalArgumentException, JsonProcessingException, DeserializationException)` → DLT ngay; `setCommitRecovered(true)` ép commit offset gốc unblock partition. `DltConsumer` `@KafkaListener(topicPattern=".*\\.DLT", groupId="notification-dlt")` swallow + counter chống `.DLT.DLT` cascade. Refactor 2 consumer: bỏ try-catch swallow → `deduplicator.release(eventId)` + re-throw; `NotificationDeduplicator.release()` mới (rollback Redis SET NX để retry replay đi qua dedup). **(2) Outbound HTTP side** (`payment-service`): Resilience4j 2.2.0 — `MockGatewayClient.verify()` wrap `@CircuitBreaker(name="paymentGateway", fallbackMethod="verifyFallback")` + `@Bulkhead(name="paymentGateway")`; config yaml CB sliding window count=10, failureRate≥50%, waitInOpenState=30s, halfOpenPermitted=3, `automaticTransitionFromOpenToHalfOpenEnabled=true`, `recordExceptions: [GatewayUnavailableException]` (KHÔNG count BulkheadFullException); Bulkhead semaphore maxConcurrent=10 + maxWaitDuration=0 (fail-fast no queue). `VerificationResult` record 3 status SUCCESS/FAILED/UNKNOWN; `GatewayDebugController` /debug/gateway/{verify/{txn},force-fail,state} expose CB state + metrics cho demo. Build green: 23 unit test PASS (16 existing + 2 retry topology + 3 CB state machine — CLOSED→OPEN sau 5 fail, OPEN fast-fail không gọi gateway, HALF_OPEN→CLOSED sau 3 probe pass). 7 docs: lesson 12 retry-strategy (exp backoff math + jitter + 5 cạm bẫy), lesson 12b CB-resilience4j (state machine + sliding window + Bulkhead semantic), lesson 12c kafka-delivery-semantics (fill skeleton), lesson 12d partition-key-ordering (fill skeleton + DLT partition affinity), issue 12 poison-message 9-section (4 approaches chosen retry-then-DLT), runbook kafka-topic-recovery (5-step triage→inspect→classify→replay→post-mortem + classify mermaid), interview day-12-resilience (bối cảnh ShopVN/Anh Hùng + 5 Q&A + AI Playbook + Tech Lead Lens). Evolution chương 12 "Lưới an toàn". Branch `day-12-resilience-dlt`.

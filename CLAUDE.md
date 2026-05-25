@@ -91,6 +91,7 @@ ecommerce-platform/
 └── docs/
     ├── README.md                   # 📚 HUB mục lục + lộ trình đọc (đọc đầu tiên khi cần tham chiếu doc)
     ├── ROADMAP.md                  # 40-day plan + CHECKLIST (đọc để biết đang ở đâu)
+    ├── evolution/                  # 📖 Biên niên sử — narrative kể chuyện hệ thống lớn lên từng day
     ├── architecture/
     ├── decisions/                  # ADRs
     ├── lessons/
@@ -147,6 +148,18 @@ ecommerce-platform/
 6. Issue nên simulate
 7. Interview questions
 8. Senior mindset notes
+
+### 8b-evo. Evolution chapter (BẮT BUỘC mỗi day)
+
+Sau khi build xong code + docs, viết 1 chương mới vào `docs/evolution/NN-<slug>.md`
+kể câu chuyện day vừa build. Đây là **narrative** — không phải tóm tắt ROADMAP.
+Chi tiết format + writing rules xem `.claude/skills/day/SKILL.md` Phase 5b.
+
+Nguyên tắc giữ mạch:
+- Mở đầu reference chương trước (1 câu). Kết thúc hook chương sau (cliffhanger).
+- KHÔNG lặp giải thích đã có ở chương trước — reference rồi đi tiếp.
+- Giọng kể chuyện, metaphor cụ thể, rhythm câu ngắn xen dài.
+- Update `docs/evolution/README.md` mục lục sau khi viết.
 
 ### 8c. Extension sections — apply CÓ CHỌN LỌC, không phải mỗi day
 
