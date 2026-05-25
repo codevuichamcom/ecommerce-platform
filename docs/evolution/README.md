@@ -30,7 +30,7 @@
 | 10 | [Tiền không được sai](./10-tien-khong-sai.md) | Day 10 — Payment |
 | 11 | [Người đưa thư](./11-nguoi-dua-thu.md) | Day 11 — Notification |
 | 12 | [Lưới an toàn](./12-luoi-an-toan.md) | Day 12 — Resilience |
-| 13 | 🔮 Hộp thư đi | Day 13 — Outbox |
+| 13 | [Sợi chỉ đỏ](./13-soi-chi-do.md) | Day 13 — Outbox |
 | 14 | 🔮 Kiểm tra giữa kỳ | Day 14 — Mock |
 
 ### [Phần III → VII — Preview Day 12-40](./12-40-preview.md)

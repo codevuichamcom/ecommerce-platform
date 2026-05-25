@@ -19,12 +19,11 @@ import java.util.concurrent.CompletableFuture;
  * (vd test load) thì partition skew, nhưng workload thực không có "order
  * hot" — order là 1-shot entity.
  *
- * <p><b>Day 8 publish trực tiếp trong service layer = dual-write problem</b>
- * (DB commit + Kafka publish không atomic). Day 13 sẽ refactor sang
- * outbox pattern: ghi event vào bảng {@code outbox_event} cùng transaction,
- * relay riêng publish lên Kafka. Hiện tại log warn nếu publish fail —
- * không rollback transaction (vì DB đã commit, rollback messaging không
- * có ý nghĩa).
+ * <p><b>Day 13 update</b>: Production path KHÔNG dùng class này nữa —
+ * {@code PlaceOrderUseCase} ghi event vào outbox table, {@code OutboxRelay}
+ * publish Kafka qua {@code KafkaTemplate} trực tiếp. Class này còn lại chỉ
+ * phục vụ {@code DebugController#publishMock} (Day 8 demo bypass outbox).
+ * Có thể xóa khi DebugController bị remove.
  *
  * <p>{@code send()} trả {@code CompletableFuture} — KHÔNG {@code .get()}
  * block ở thread caller. Wire callback log + metric, để producer batch tiếp.
