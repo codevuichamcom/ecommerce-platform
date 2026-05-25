@@ -160,6 +160,66 @@ Mục đích: 6 tháng sau đọc lại `interview/day-NN-*.md` vẫn diễn l�
 
 **Skeleton fill rule**: nếu Phase 1 phát hiện skeleton có sẵn (vd `04b-transaction-isolation.md` cho Day 4) → fill mọi `(TODO)` placeholder, đổi `Status: ⏳ Skeleton` → `✅ Done`.
 
+### Phase 5b — Evolution chapter (BẮT BUỘC, sau Phase 5)
+
+> Viết 1 chương mới vào `docs/evolution/` kể câu chuyện day vừa build.
+> Mục đích: người đọc thấy hệ thống "lớn lên" qua từng ngày — không phải
+> đọc ROADMAP khô khan mà đọc **narrative có cảm xúc**.
+
+**File output**: `docs/evolution/NN-<slug-tieng-viet>.md`
+(NN = day number, slug 2-4 từ tiếng Việt không dấu, vd `12-luoi-an-toan.md`)
+
+**Cấu trúc BẮT BUỘC** (giữ nhất quán với 11 chương đã viết):
+
+```markdown
+# Chương NN · <emoji> <Tên chương tiếng Việt — ngắn, gợi hình>
+
+**Day NN — <Topic tiếng Anh>**
+
+---
+
+> *"<Quote mở đầu — 1-2 câu, metaphor hoặc insight, tạo hook>"*
+
+---
+
+## Bối cảnh
+<2-4 đoạn: tại sao day này cần tồn tại, link logic từ chương trước>
+
+## <Section chính 1 — tên gợi tò mò, không generic>
+<Giải thích concept + code snippet minh họa + diagram nếu cần>
+
+## <Section chính 2-3>
+...
+
+## Kết thúc ngày NN
+<Scorecard dạng tree + Vibe 1 câu>
+
+> 💡 **<Insight type>**: <1 đoạn ngắn — interview tip / senior vs junior / trap>
+
+---
+
+*→ <Câu hook dẫn sang chương tiếp theo — tạo cliffhanger>*
+```
+
+**Writing rules** (giữ chất lượng đồng đều 40 chương):
+
+1. **Giọng văn**: kể chuyện, không liệt kê. Dùng metaphor cụ thể (pháo đài, mạch máu, dàn nhạc...) nhưng không lạm dụng — mỗi chương tối đa 2 metaphor.
+2. **Rhythm**: xen câu ngắn (3-5 từ) với câu dài. Dùng kỹ thuật "3 từ liên tiếp" tạo nhịp (*"Đẹp. Dễ hiểu. Dễ debug."*). Tránh 3+ câu liên tiếp bắt đầu cùng chủ ngữ.
+3. **Logic liên chương**: mở đầu phải reference chương trước (1 câu đủ). Kết thúc phải hook chương sau. KHÔNG lặp lại giải thích đã có ở chương trước — reference bằng 1 câu rồi đi tiếp.
+4. **Code snippet**: chỉ show đoạn code **hay nhất / surprising nhất** của day. Không paste cả file. Mỗi snippet ≤15 dòng, có comment giải thích WHY.
+5. **Mermaid diagram**: dùng khi topology/flow/state phức tạp. KHÔNG vẽ cho list 2-3 mục.
+6. **Scorecard cuối chương**: format tree (`├──`, `└──`), 5-8 dòng, kết bằng `Vibe:` 1 câu trong quotes.
+7. **Emoji**: chỉ ở title + section header + callout (💡⚠️). KHÔNG rải trong body text.
+8. **Ngôn ngữ**: Việt kỹ thuật, giữ English term. Không dịch nửa vời.
+9. **Độ dài**: 100-180 dòng markdown (đủ sâu mà không loãng).
+10. **Không lủng củng**: đọc lại trước khi output. Nếu 2 câu liền nói cùng 1 ý → gộp hoặc cắt 1.
+
+**Sau khi viết xong chapter**:
+- Update `docs/evolution/README.md` — thêm row vào bảng mục lục tương ứng.
+- Nếu day là cuối week (7, 14, 21, 25, 30, 37, 40) → update Mermaid diagram trong README (đổi classDef node từ `future` → `done`).
+
+---
+
 ### Phase 6 — Post-flight (mechanical, BẮT BUỘC, hay quên)
 
 Update 4 nơi theo thứ tự:
