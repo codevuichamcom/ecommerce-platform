@@ -56,7 +56,7 @@ services:
       retries: 10
 
   kafka:
-    image: bitnami/kafka:3.8
+    image: bitnamilegacy/kafka:3.8
     container_name: ecom-kafka
     restart: unless-stopped
     ports:
