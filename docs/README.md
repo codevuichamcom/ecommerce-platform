@@ -52,7 +52,7 @@ graph LR
         D11[Day 11<br/>Notification]:::planned
         D12[Day 12<br/>Retry + DLT]:::planned
         D13[Day 13<br/>Outbox]:::planned
-        D14[Day 14<br/>Mock W2]:::planned
+        D14[Day 14<br/>Mock W2]:::done
     end
 
     subgraph Week3[Week 3 — Performance]
@@ -308,8 +308,10 @@ graph LR
 | [`interview/day-11-notification.md`](interview/day-11-notification.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (Kafka retry spam · URI versioning · breaking change · fire-and-forget · Thymeleaf XSS) + AI Playbook |
 | [`interview/day-12-resilience.md`](interview/day-12-resilience.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (exp backoff vs fixed · CB state machine · khi nào KHÔNG retry · DLT vs retry topic · Bulkhead semaphore vs threadpool) + AI Playbook + Tech Lead Lens |
 | [`interview/day-13-outbox.md`](interview/day-13-outbox.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (dual-write · outbox vs CDC · multi-instance race SKIP LOCKED · ordering per-aggregate · table bloat cleanup) + AI Playbook + Tech Lead Lens |
-| `interview/week-02-mock.md` | ⏳ Day 14 | Kafka senior questions |
-| `interview/week-NN-cv-bullets.md` | ⏳ Day 14/21/25/30/37 | CV bullet draft cuối mỗi tuần (Day 7 ✅) |
+| [`interview/week-02-mock.md`](interview/week-02-mock.md) | ✅ | 10 Q Kafka senior (5 fundamentals + 5 production), self-grade 9 strong / 1 borderline (trace outbox path verify) / 0 fail |
+| [`interview/week-02-cv-bullets.md`](interview/week-02-cv-bullets.md) | ✅ | 2 bullet metric-driven (event-driven foundation + dual-write resolution; resilience + 4 ADR/week discipline) + elevator pitch v2 90s |
+| [`review/kafka-week2-findings.md`](review/kafka-week2-findings.md) | ✅ | Day 14 review brutally honest Week 2 — 9 finding (🔴 3 + 🟡 4 + 🟢 2) với severity + file:line + gap list Week 3 |
+| `interview/week-NN-cv-bullets.md` | ⏳ Day 21/25/30/37 | CV bullet draft cuối mỗi tuần (Day 7, 14 ✅) |
 | `interview/day-22-elasticsearch.md` | ⏳ Day 22 | ES use case + decision rationale |
 | `interview/day-23-mongodb.md` | ⏳ Day 23 | Mongo use case + decision rationale |
 | `interview/day-24-storage-decisions.md` | ⏳ Day 24 | "Khi nào dùng NoSQL?" — câu phỏng vấn classic |

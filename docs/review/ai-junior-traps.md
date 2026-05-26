@@ -79,6 +79,44 @@
 
 ---
 
+### [05] Catch-all `RuntimeException` ép retry storm thành message loss
+
+- **Gặp ở**: Day 14 review — [inventory/OrderCreatedConsumer.java:65-71](../../services/inventory-service/src/main/java/com/ecom/inventory/infrastructure/messaging/OrderCreatedConsumer.java#L65-L71)
+- **AI viết**: `catch (RuntimeException ex) { log.warn(...); }` với comment "tránh retry storm cho case stock hết thật". Catch-all bao luôn `CannotAcquireLockException` (DB down) + `OptimisticLockingFailureException` exhausted + `InsufficientStockException` (stock hết).
+- **Tại sao sai**: AI nắm 1 nửa requirement ("stock hết → đừng retry") và biến nó thành **catch-all** thay vì **catch riêng exception type đó**. Failure mode thật: DB failover 12s, mọi reserve throw infra exception → swallow → ack → message MẤT. Comment Day 9 hứa "Day 11 sẽ dedup" — nhưng Day 11 chỉ làm cho notification, inventory bị quên. **Debt ẩn**: code nói "sẽ fix", không ai track, fix không xảy ra.
+- **Đúng phải là**:
+  ```java
+  } catch (InsufficientStockException ex) {
+      publisher.publishReserveFailed(...);  // compensation, không retry
+  } catch (RuntimeException ex) {
+      throw ex;  // infra error → retry/DLT pipeline xử lý
+  }
+  ```
+- **Câu hỏi review**: "Catch-all có phân biệt được **business failure** (đừng retry) và **infra failure** (phải retry) không? Comment 'sẽ fix sau' có ai track không?"
+- **Tag**: #correctness #error-handling #debt-tracking
+
+---
+
+### [06] Dedup release sau side effect — duplicate dispatch
+
+- **Gặp ở**: Day 14 review — [notification/OrderCreatedConsumer.java:81-87](../../services/notification-service/src/main/java/com/ecommerce/notification/consumer/OrderCreatedConsumer.java#L81-L87)
+- **AI viết**:
+  ```java
+  try {
+      notificationChannel.send(payload);  // email SENT
+      log.info(...);  // ← nếu throw ở đây ...
+  } catch (RuntimeException ex) {
+      deduplicator.release(event.eventId());  // ← release sai
+      throw ex;
+  }
+  ```
+- **Tại sao sai**: `send()` đã thực hiện side effect (email ra ngoài). Bất kỳ exception sau `send()` đều **không nên** release dedup — vì retry sẽ send LẦN 2 = user nhận 2 email. AI ghép pattern "release on failure" mà không hỏi "failure trước hay sau side effect". Probability thấp nhưng đúng/sai principle.
+- **Đúng phải là**: flag `dispatched` track explicit, release CHỈ khi `!dispatched`.
+- **Câu hỏi review**: "Release dedup có phân biệt được failure **trước** vs **sau** side effect không? Side effect có rollback được không (email gửi rồi không rollback được)?"
+- **Tag**: #idempotency #subtle #side-effect-ordering
+
+---
+
 ## Top recurring AI failure modes (cập nhật khi gặp đủ 3+ ví dụ)
 
 > Sau ≥3 entry cùng pattern, lift lên đây thành "rule of thumb".

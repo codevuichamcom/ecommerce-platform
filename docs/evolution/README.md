@@ -31,7 +31,7 @@
 | 11 | [Người đưa thư](./11-nguoi-dua-thu.md) | Day 11 — Notification |
 | 12 | [Lưới an toàn](./12-luoi-an-toan.md) | Day 12 — Resilience |
 | 13 | [Sợi chỉ đỏ](./13-soi-chi-do.md) | Day 13 — Outbox |
-| 14 | 🔮 Kiểm tra giữa kỳ | Day 14 — Mock |
+| 14 | [Tấm gương soi](./14-guong-soi.md) | Day 14 — Mock interview Week 2 + Review |
 
 ### [Phần III → VII — Preview Day 12-40](./12-40-preview.md)
 *Tốc độ → Polyglot → Frontend → System Design → Final Mock*
@@ -83,8 +83,7 @@ graph LR
     classDef current fill:#fde68a,stroke:#d97706,color:#000
     classDef future fill:#e5e7eb,stroke:#6b7280,color:#000
 
-    class D1,D2,D3,D4,D5,D6,D7,D8,D9,D10,D11 done
-    class D12,D13 current
+    class D1,D2,D3,D4,D5,D6,D7,D8,D9,D10,D11,D12,D13 done
     class D15,D16,D19,D20,D22,D23,D25,D26,D31,D40 future
 ```
 
