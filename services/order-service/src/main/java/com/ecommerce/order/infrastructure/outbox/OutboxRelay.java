@@ -65,10 +65,15 @@ public class OutboxRelay {
      * Tick mỗi 1s. {@code fixedDelay} (không phải fixedRate) — tránh tick
      * chồng lấn nếu batch trước chạy lâu.
      *
-     * <p>KHÔNG annotate {@code @Transactional} ở đây: outer method chỉ
-     * orchestrate; mỗi {@link #publishOne(OutboxEvent)} mới mở tx.
+     * <p><b>Tx scope</b>: outer tx bao trọn loop để giữ {@code FOR UPDATE
+     * SKIP LOCKED} lock trên batch rows suốt thời gian process. Relay
+     * instance khác tick cùng lúc sẽ SKIP rows đang lock → không
+     * republish trùng. Mỗi {@link #publishOne(OutboxEvent)} là
+     * {@code REQUIRES_NEW} → suspend outer tx, mở tx riêng để mark
+     * SENT/FAILED, commit ngay, lock vẫn giữ ở outer.
      */
     @Scheduled(fixedDelayString = "${app.outbox.poll-interval-ms:1000}")
+    @Transactional
     public void poll() {
         List<OutboxEvent> batch = outboxRepository.fetchBatchForRelay(
                 PageRequest.of(0, batchSize));
