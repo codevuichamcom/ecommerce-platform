@@ -14,12 +14,21 @@ import com.ecom.product.web.dto.ProductResponse;
 import com.ecom.product.web.dto.ProductSnapshotResponse;
 import com.ecom.product.web.dto.ProductUpdateRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import static com.ecom.product.config.cache.CacheConfig.CACHE_PRODUCT_BY_ID;
+import static com.ecom.product.config.cache.CacheConfig.CACHE_PRODUCT_BY_SLUG;
 
 import java.util.HashMap;
 import java.util.UUID;
@@ -44,7 +53,15 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ProductMapper productMapper;
+    private final CacheManager cacheManager;
 
+    /**
+     * Cached read — qua 2-tier (Caffeine L1 + Redis L2) + XFetch stampede
+     * protection. {@code unless="#result == null"} không cần vì
+     * {@code loadOrThrow} throw thay vì trả null. Spring Cache skip cache
+     * khi method throw exception → 404 sẽ không poison cache.
+     */
+    @Cacheable(value = CACHE_PRODUCT_BY_ID, key = "#id")
     public ProductResponse get(UUID id) {
         return productMapper.toResponse(loadOrThrow(id));
     }
@@ -69,6 +86,7 @@ public class ProductService {
         );
     }
 
+    @Cacheable(value = CACHE_PRODUCT_BY_SLUG, key = "#slug")
     public ProductResponse getBySlug(String slug) {
         Product product = productRepository.findBySlug(slug)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND, "Product not found: " + slug));
@@ -131,12 +149,42 @@ public class ProductService {
         return productMapper.toResponse(productRepository.save(product));
     }
 
+    /**
+     * Update path — invalidate cả 2 cache name (byId + bySlug). Slug có thể
+     * đổi → phải evict BOTH old slug và new slug. Old slug evict bằng
+     * {@code product.getSlug()} (đọc TRƯỚC khi setSlug). New slug evict gián
+     * tiếp qua key="#req.slug()".
+     *
+     * <p>{@code @Caching} composite vì 1 method update touch 2 cache name.
+     * Spring không support multiple cache name trong 1 @CacheEvict với keys
+     * khác nhau.
+     *
+     * <p>{@code beforeInvocation=false} (default): chỉ evict NẾU method commit
+     * thành công. Lỗi (vd validation) → cache giữ nguyên, không invalidate
+     * nhầm.
+     */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = CACHE_PRODUCT_BY_ID, key = "#id"),
+            @CacheEvict(value = CACHE_PRODUCT_BY_SLUG, key = "#req.slug()"),
+            // Old slug evict — đọc trong method body qua programmatic API nếu
+            // slug đổi. Spring @CacheEvict không evaluate SpEL TRƯỚC method
+            // call (chỉ AFTER + access tới #result hoặc args), nên không thể
+            // viết key="#product.oldSlug". Method body sẽ xử lý manually qua
+            // CacheManager nếu detect slug đổi.
+    })
     public ProductResponse update(UUID id, ProductUpdateRequest req) {
         Product product = loadOrThrow(id);
+        String oldSlug = product.getSlug();
 
-        if (!product.getSlug().equals(req.slug()) && productRepository.existsBySlug(req.slug())) {
+        if (!oldSlug.equals(req.slug()) && productRepository.existsBySlug(req.slug())) {
             throw new BusinessException(ErrorCode.CONFLICT, "Product slug already exists");
+        }
+        // Slug đổi → evict cache key của OLD slug. @CacheEvict declarative
+        // chỉ evict NEW slug (key="#req.slug()") — phải manual evict old.
+        if (!oldSlug.equals(req.slug())) {
+            Cache slugCache = cacheManager.getCache(CACHE_PRODUCT_BY_SLUG);
+            if (slugCache != null) slugCache.evict(oldSlug);
         }
         Category category = product.getCategory().getId().equals(req.categoryId())
                 ? product.getCategory()
@@ -155,9 +203,21 @@ public class ProductService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = CACHE_PRODUCT_BY_ID, key = "#id"),
+            // Archive: slug vẫn còn — evict cache bySlug để query tiếp theo
+            // không trả product status=ACTIVE (cache stale).
+            @CacheEvict(value = CACHE_PRODUCT_BY_SLUG, allEntries = true,
+                    condition = "true")
+    })
     public void archive(UUID id) {
         // Day 3 chưa hard-delete — luôn ARCHIVE để giữ historical reference
         // (order/invoice cũ còn point tới SKU này).
+        //
+        // Cache invalidation: byId key=#id, bySlug allEntries=true vì không
+        // biết slug ở đây mà không query lại (đỡ 1 round trip). Trade-off:
+        // archive 1 product → flush toàn bộ slug cache. Acceptable vì archive
+        // là low-frequency operation (≪ read).
         Product product = loadOrThrow(id);
         product.setStatus(ProductStatus.ARCHIVED);
     }

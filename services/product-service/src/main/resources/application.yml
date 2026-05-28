@@ -23,8 +23,54 @@ spring:
     enabled: true
     baseline-on-migrate: true
 
+  # Day 15 — Redis cho L2 distributed cache. Reuse instance của cart-service.
+  # Lettuce client (mặc định Spring Data Redis) — non-blocking, share single
+  # connection an toàn với virtual threads. Jedis pool-per-thread tệ ở VT scale.
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2s
+      lettuce:
+        client-name: product-service-l2
+
 server:
   port: 8082
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # Day 20 sẽ scrape /actuator/prometheus từ Grafana — pre-wire sẵn.
+        include: health,info,prometheus,caches
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    tags:
+      application: product-service
+      tier: catalog
+
+# Day 15 — 2-tier cache config. L1 in-process (Caffeine) + L2 distributed (Redis).
+# Tuning rationale:
+#   - L1 TTL 60s + max 10k: catalog ~50k product, hot ratio ~20% → 10k đủ hot
+#     working set. Caffeine W-TinyLFU eviction near-optimal.
+#   - L2 TTL 300s: invalidation explicit qua @CacheEvict; TTL chỉ safety net
+#     khi evict miss (vd app crash giữa update). 5min đủ ngắn để stale không
+#     kéo dài + đủ dài để hit ratio cao.
+#   - Stampede early-expiration window 30s: trong 30s cuối TTL, XFetch refresh
+#     sớm với probability tăng → spread compute, chống thundering herd.
+app:
+  cache:
+    l1:
+      ttl-seconds: 60
+      max-size: 10000
+    l2:
+      ttl-seconds: 300
+      key-prefix: "product-service:cache:"
+    stampede:
+      early-expiration-window-seconds: 30
+      xfetch-beta: 1.0
 
 # JWT shared secret với auth-service. Day 7 refactor sang JWKS hoặc shared
 # common-lib JwtVerifier. KHÔNG để khác secret giữa services — token issue
