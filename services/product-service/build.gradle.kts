@@ -26,6 +26,21 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
+
+    // Day 15 — 2-tier cache stack.
+    // - starter-cache: Spring Cache abstraction (@Cacheable / @CacheEvict).
+    // - starter-data-redis: L2 distributed cache (Lettuce client, non-blocking,
+    //   share connection an toàn với virtual threads).
+    // - caffeine: L1 in-process cache (Caffeine 3, near-optimal hit ratio
+    //   vs LRU vanilla; native recordStats() bind tới Micrometer).
+    // - starter-actuator + registry-prometheus: expose `/actuator/prometheus`
+    //   cho cache.gets / cache.puts metrics (Day 20 sẽ wire Grafana board).
+    implementation("org.springframework.boot:spring-boot-starter-cache")
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    implementation(libs.caffeine)
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("io.micrometer:micrometer-registry-prometheus")
+
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.postgresql:postgresql")
