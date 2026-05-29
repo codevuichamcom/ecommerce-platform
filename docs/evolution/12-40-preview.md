@@ -1,93 +1,14 @@
-# 🔮 Những chương chưa kể — Preview Day 12→40
+# 🔮 Những chương chưa kể — Preview Day 16→40
 
-> *"Câu chuyện mới đi được 1/4 chặng đường. Phần hay nhất còn ở phía trước."*
+> *"Đã đi hết Week 1 (nền móng) và Week 2 (Kafka). Câu chuyện qua được gần 40% chặng đường. Phần hay nhất — tốc độ, polyglot, frontend, system design — vẫn còn ở phía trước."*
 
----
-
-## Phần II tiếp theo — Hoàn thiện Kafka (Day 12-14)
-
-### Chương 12 · 🛡️ Lưới an toàn
-
-**Day 12 — Resilience4j + Dead Letter Topic**
-
-Cho đến giờ, hệ thống giả định mọi thứ hoạt động. Nhưng production không tử tế như vậy:
-- Inventory service OOM restart → consumer lag 10 phút
-- Database connection pool exhausted → mọi write fail
-- Downstream service deploy → 30 giây 503
-
-Day 12 thêm **3 lớp resilience**:
-
-```
-┌─────────────────────────────────────────────────┐
-│  Circuit Breaker: "Service kia đang chết,       │
-│                    đừng gọi nữa, chờ nó hồi"    │
-├─────────────────────────────────────────────────┤
-│  Retry: "Fail 1 lần? Thử lại. Fail 3 lần?      │
-│          Chuyển sang DLT."                       │
-├─────────────────────────────────────────────────┤
-│  Bulkhead: "Chỉ cho 10 concurrent call.         │
-│             Thứ 11 → reject ngay, không chờ."   │
-├─────────────────────────────────────────────────┤
-│  Dead Letter Topic: "Message xử lý không được?  │
-│                      Sang DLT, xử lý sau."      │
-└─────────────────────────────────────────────────┘
-```
-
-**Poison message** — message mà consumer không bao giờ process được (malformed JSON, business logic impossible). Không có DLT → retry vĩnh viễn → consumer stuck → lag tăng → alert storm → 3 giờ sáng bị gọi dậy.
+> 📚 Day 1–15 đã có **chương đầy đủ** — xem [mục lục](./README.md). File này chỉ giữ preview cho **Day 16→40**; mỗi day xong, một mục ở đây sẽ "tốt nghiệp" thành chương thật.
 
 ---
 
-### Chương 13 · 📤 Hộp thư đi
-
-**Day 13 — Outbox Pattern**
-
-Bài toán **dual-write**: save order vào DB + publish event vào Kafka. Nếu DB commit xong nhưng Kafka publish fail → DB có order, nhưng downstream không biết. Inconsistency.
-
-```
-❌ Sai:
-1. Save to DB     ← SUCCESS
-2. Publish Kafka  ← FAIL (network timeout)
-→ Order exists but no event published. Inventory never reserves.
-```
-
-**Outbox pattern** giải quyết:
-
-```
-✅ Đúng:
-1. Save order + insert outbox_event (CÙNG 1 transaction)  ← ATOMIC
-2. Relay process poll outbox → publish Kafka → mark sent
-→ Nếu relay fail? Retry. Event trong DB, không mất.
-```
-
-Một bảng `outbox_event`, một scheduled job poll + publish. Đơn giản. Reliable. Production-proven.
-
----
-
-### Chương 14 · 📝 Kiểm tra giữa kỳ
-
-**Day 14 — Week 2 Mock Interview**
-
-Kafka deep-dive: partition rebalance, consumer lag monitoring, exactly-once semantics, schema evolution strategy. Self-grade brutally honest.
-
----
-
-## Phần III — Tốc độ (Week 3, Day 15-21)
+## Phần III — Tốc độ (Week 3, Day 16-21)
 
 > *"Correct is table stakes. Fast is the game."*
-
-### Chương 15 · 🏎️ Hai tầng bộ nhớ
-
-**Day 15 — Caffeine L1 + Redis L2 (2-tier cache)**
-
-```
-Request → L1 Caffeine (in-process, 1ms) → miss → L2 Redis (network, 3ms) → miss → DB (10-50ms)
-```
-
-Tại sao 2 tầng? Vì hot product (iPhone mới ra) bị query 10,000 lần/giây. Redis handle được, nhưng 10,000 network round-trip/giây = 30ms × 10,000 = waste. Caffeine local cache: **0 network call**, sub-millisecond. Trade-off: stale data 60 giây. Acceptable cho product catalog.
-
-**Cache stampede**: 1000 request đồng thời, cache vừa expire → 1000 request đập DB cùng lúc. Fix: single-flight pattern — chỉ 1 request đi DB, 999 request chờ kết quả.
-
----
 
 ### Chương 16 · 🔬 Đọc vị database
 
@@ -271,9 +192,9 @@ graph TD
     classDef current fill:#fde68a,stroke:#d97706,color:#000
     classDef future fill:#e5e7eb,stroke:#6b7280,color:#000
 
-    class W1 done
-    class W2 current
-    class W3,W4,W5,W6,W7 future
+    class W1,W2 done
+    class W3 current
+    class W4,W5,W6,W7 future
 ```
 
 ---

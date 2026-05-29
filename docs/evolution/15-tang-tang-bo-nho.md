@@ -8,33 +8,49 @@
 
 ---
 
-## Bối cảnh
+> 🎬 **Chương này có gì:** một dãy phòng bộ nhớ — phòng gần nhanh đến mức không kịp nhận ra mình đang gọi cache; một sản phẩm viral TikTok kéo 1000 request đập cùng một cache key; một liều thuốc chống giẫm đạp bằng *xác suất* (không lock, không infra); và căn phòng gần nhất hóa ra cũng là căn dễ lẫn đồ nhất. ⚡
 
-Tấm gương Week 2 vừa khép lại. Anh Khải mở Slack lúc 9 giờ sáng thứ Hai: *"Phòng product complain trang detail load chậm. CFO hỏi tại sao infra cost x3 nhưng latency tệ hơn. Tuần này deliver cache, demo Friday."*
+---
 
-Tonny nhìn vào dashboard. P99 của `GET /products/{id}` là 250ms. Một tháng trước nó là 80ms. Catalog từ 5 nghìn lên 50 nghìn sản phẩm. Traffic gấp 10. Nhưng infra cũng đã x3 — vậy mà nghẽn vẫn nghẽn.
+## 🎬 Bối cảnh: anh Khải mở Slack lúc 9 giờ sáng thứ Hai
 
-Mạng đôi khi không trả lời được bằng tiền. Nó trả lời bằng kiến trúc.
+Tấm gương Week 2 vừa khép lại. Tin nhắn của anh Khải bật lên ngay đầu tuần:
 
-## Câu hỏi cũ — "Cache là gì?"
+> 🗣️ *"Phòng product complain trang detail load chậm. CFO hỏi tại sao infra cost x3 mà latency còn tệ hơn. Tuần này deliver cache, demo Friday."* 📅
 
-Một câu hỏi tưởng cũ. Nhưng câu trả lời thực ra phụ thuộc câu hỏi tiếp theo: cache *ở đâu*?
+Tonny nhìn dashboard. P99 của `GET /products/{id}` đang là **250ms**. Một tháng trước nó là 80ms. Catalog phình từ 5 nghìn lên 50 nghìn sản phẩm, traffic gấp 10. Infra cũng đã x3 — vậy mà nghẽn vẫn nghẽn.
 
-CPU có L1, L2, L3 cache trước khi tới RAM. Latency chênh nhau hàng nghìn lần: register vài nanosecond, RAM vài chục, disk vài triệu. Không ai thắc mắc *"vì sao cần nhiều tầng?"* — vì kiến trúc phần cứng đã dạy bài học từ thập niên 70: **không có một tier nào cân bằng được latency, capacity, và cost cùng lúc**.
+Mạng đôi khi không trả lời được bằng tiền. Nó trả lời bằng **kiến trúc**. 🏗️
 
-Cache application thì đến muộn hơn. Khi Redis ra đời 2009, ngành software như tìm được câu trả lời cho mọi bài toán latency: *"Cứ Redis là xong."* Một tier, một sự thật, dễ hiểu.
+---
 
-Nhưng Redis cũng có RTT. Một mili giây tròn từ pod đến Redis cluster. Nhân với 10 nghìn QPS — đó là 10 thread-second mỗi giây chỉ để chờ Redis trả lời. Network không bao giờ là free.
+## 🚪 Câu hỏi cũ — "Cache là gì?" (và phòng nào?)
 
-Caffeine — thư viện cache in-process của Ben Manes — đo 50 nanosecond mỗi lookup. Hai mươi nghìn lần nhanh hơn Redis. **Nhanh đến mức không còn nhận ra mình đang gọi cache**.
+Một câu tưởng cũ rích. Nhưng câu trả lời thật ra phụ thuộc câu hỏi kế tiếp: cache *ở đâu*?
 
-Vậy tại sao không dùng Caffeine luôn? Vì bốn pod application = bốn cache độc lập. Pod A update sản phẩm, ba pod còn lại không biết. Đó là cái giá của "in-process".
+Phần cứng đã dạy bài này từ thập niên 70. CPU có L1, L2, L3 trước khi chạm tới RAM. Latency chênh nhau hàng nghìn lần — và **không một tier nào cân được latency, capacity, cost cùng lúc**:
 
-Hai sự thật ngược nhau. Câu trả lời chỉ có thể là — kết hợp.
+| 🚪 Phòng | Latency | Đặc tính |
+| --- | --- | --- |
+| Register | vài nanosecond | gần nhất, nhỏ nhất |
+| RAM | vài chục ns | gần, vừa |
+| Disk | vài triệu ns | xa, mênh mông |
 
-## Hai tầng — như RAM và disk
+Cache application thì đến muộn hơn. Redis ra đời 2009, ngành software như tìm được liều thuốc cho mọi cơn đau latency: *"Cứ Redis là xong."* Một tier, một sự thật, dễ hiểu.
 
-Tonny vẽ trên whiteboard sơ đồ:
+Nhưng — Redis vẫn có RTT. Một mili giây tròn trĩnh từ pod tới Redis cluster. Nhân với 10 nghìn QPS = **10 thread-second mỗi giây** chỉ để ngồi chờ Redis trả lời. Network chưa bao giờ là miễn phí. 💸
+
+Còn **Caffeine** — thư viện cache in-process của Ben Manes — đo được **50 nanosecond** mỗi lookup. Nhanh gấp hai mươi nghìn lần Redis. Nhanh đến mức không còn nhận ra mình đang gọi cache.
+
+Vậy xài Caffeine luôn cho khỏe? Không được. Bốn pod = bốn cache độc lập. Pod A update sản phẩm, ba pod kia **không hề hay biết**. Đó là cái giá của *"in-process"*.
+
+Hai sự thật ngược chiều. Câu trả lời chỉ có thể là — **kết hợp cả hai**.
+
+---
+
+## 🏢 Hai tầng — dãy phòng RAM và kho
+
+Tonny vẽ lên whiteboard cái dãy phòng:
 
 ```
 Request → L1 Caffeine (50ns)
@@ -44,11 +60,10 @@ Request → L1 Caffeine (50ns)
           Postgres (30ms)
 ```
 
-L1 là người gác cửa: nhanh, gần, nhưng quên dễ. TTL 60 giây — để khi pod khác cập nhật, mình cũng "quên" theo mà tự đi hỏi lại L2.
+- 🚪 **L1 (Caffeine)** là căn phòng sát cửa: nhanh, gần, nhưng **mau quên**. TTL 60 giây — để khi pod khác cập nhật dữ liệu, mình cũng tự "quên" theo mà đi hỏi lại L2.
+- 🏬 **L2 (Redis)** là kho chung phía sau: chậm hơn, nhưng đảm bảo bốn pod cùng nhìn thấy *một* sự thật. TTL 5 phút — chỉ là safety net phòng khi evict hỏng.
 
-L2 là kho chung: chậm hơn, nhưng đảm bảo bốn pod cùng thấy một sự thật. TTL 5 phút — chỉ là safety net cho trường hợp evict hỏng.
-
-Logic đọc viết bằng tay sẽ tốn 200 dòng code. Spring Cache abstraction tóm nó thành một annotation:
+Logic đọc-ghi hai tầng viết tay sẽ ngốn 200 dòng. Spring Cache abstraction tóm gọn vào đúng một annotation:
 
 ```java
 @Cacheable(value = "product:byId", key = "#id")
@@ -57,23 +72,27 @@ public ProductResponse get(UUID id) {
 }
 ```
 
-Annotation đẹp. Quá đẹp. Nhưng đằng sau nó là `CacheConfig` 130 dòng để wire L1 và L2 lại với nhau qua `TwoTierCache` — một class implement `org.springframework.cache.Cache` và compose cả Caffeine native lẫn `RedisCache`.
+Annotation đẹp. *Quá* đẹp. Đằng sau nó là `CacheConfig` ~130 dòng để wire L1 và L2 lại với nhau qua `TwoTierCache` — một class implement `org.springframework.cache.Cache`, compose cả Caffeine native lẫn `RedisCache`. Trong đó có những chỗ framework bắt phải đi đúng đường: `RedisCache` có constructor *protected*, không `new` thẳng được, phải vòng qua `RedisCacheManager.builder().initialCacheNames(...).build()` rồi `.getCache(name)`, đăng ký vào `SimpleCacheManager`.
 
-Spring có `SimpleCacheManager` để đăng ký các custom `Cache`. Constructor của `RedisCache` thì protected — không `new` trực tiếp được. Phải đi qua `RedisCacheManager.builder().initialCacheNames(...).build()` rồi `.getCache(name)`. Một chi tiết nhỏ. Một bài học cũ: framework cho bạn API, nhưng cũng định ra cách phải dùng nó.
+> 💡 Wire hai tầng tốn ~130 dòng plumbing; cái annotation một dòng phía trên đã giấu hết cho ta. Bài học cũ mà luôn đúng: **framework cho bạn API, nhưng cũng định luôn cách bạn được phép dùng nó.**
 
-## Thundering herd — và một bài toán xác suất
+---
 
-Sản phẩm viral trên TikTok. 1 product. 1 cache key. 1000 request đồng thời.
+## 🐘 Thundering herd — và một liều thuốc bằng xác suất
 
-TTL hết. Cả 1000 đều thấy "expired" trong cùng một mili giây. Cả 1000 đập DB cùng lúc. DB CPU 100%. Cascading fail.
+Sản phẩm lên xu hướng TikTok. 1 product. 1 cache key. **1000 request đồng thời.**
 
-Đây là **cache stampede**, hay *thundering herd*. Một bệnh có 5 phương thuốc — Tonny đã liệt kê hết trong [issue 15](../issues/15-cache-stampede.md):
+TTL hết. Cả 1000 cùng thấy *"expired"* trong cùng một mili giây. Cả 1000 cùng lao xuống đập DB một lúc. DB CPU vọt **100%**. Cascading fail. 🔥
 
-- **Distributed lock** — strict 1 process refresh. Nhưng lock orphan khi GC pause là cơn ác mộng.
-- **In-process single-flight** — Caffeine `LoadingCache`. Per-JVM. Không xử lý multi-instance.
-- **Refresh-ahead** — cron job. Phải biết key nào hot trước.
-- **Stale-while-revalidate** — trả stale, refresh background. Phức tạp metadata.
-- **XFetch** — probabilistic early expiration.
+Đây là **cache stampede** (a.k.a. *thundering herd*) — một căn bệnh có tới 5 phương thuốc, Tonny đã liệt kê đủ trong [issue 15](../issues/15-cache-stampede.md):
+
+| 💊 Thuốc | Cách hoạt động | Tác dụng phụ |
+| --- | --- | --- |
+| Distributed lock | strict, 1 process refresh | lock orphan khi GC pause = ác mộng |
+| In-process single-flight | Caffeine `LoadingCache`, per-JVM | không xử lý multi-instance |
+| Refresh-ahead | cron job refresh trước | phải biết key nào hot từ trước |
+| Stale-while-revalidate | trả stale, refresh nền | metadata phức tạp |
+| ⭐ **XFetch** | probabilistic early expiration | duplicate compute nhẹ |
 
 XFetch (Vattani et al. 2015) đơn giản đến mức gần như đẹp:
 
@@ -82,11 +101,11 @@ double xfetchExpr = fetchDurationMs * beta * -Math.log(random);
 boolean shouldRefresh = xfetchExpr >= remainingTtl;
 ```
 
-Trong cửa sổ 30 giây cuối TTL, mỗi lookup gen một `random ∈ (0,1)`. Càng gần expire, công thức càng dễ trigger refresh. Random hóa khiến các thread quyết định khác nhau — vài thread refresh sớm, đa số tiếp tục lấy value cache. **Không lock. Không block. Không infra mới.**
+Trong cửa sổ 30 giây cuối TTL, mỗi lookup gen một `random ∈ (0,1)`. Càng gần expire, công thức càng dễ trigger refresh. Random hóa khiến mỗi thread *tự quyết khác nhau* — vài thread refresh sớm, đa số vẫn lấy value cũ trong căn phòng L1. **Không lock. Không block. Không infra mới.**
 
-Bài học: lock đảm bảo strict, nhưng đời thực không cần strict ở mọi nơi. Ở đây, duplicate compute 2-3 lần thay vì 1 — đổi lấy zero lock orphan risk — là một deal đẹp.
+> 🧠 Bài học: lock đảm bảo strict, nhưng đời thực không cần strict ở *mọi* nơi. Ở đây, đổi "duplicate compute 2-3 lần thay vì 1" lấy "zero lock-orphan risk" — là một deal đẹp.
 
-Test viết một cách trực tiếp:
+Test viết thẳng thừng:
 
 ```java
 // 100 thread cùng gọi cache.get sau khi key vào early window
@@ -96,13 +115,15 @@ assertThat(loaderCalls.get()).isLessThan(n / 4);
 
 Test pass. Một test ngắn, một bài học dài.
 
-## Invalidation — câu khó nhất
+---
 
-Phil Karlton có một câu nổi tiếng: *"There are only two hard things in Computer Science: cache invalidation and naming things."*
+## 🧹 Invalidation — và căn phòng dễ lẫn đồ nhất
 
-Trong project này, invalidation khó vì hai lý do:
+Phil Karlton có câu để đời: *"There are only two hard things in Computer Science: cache invalidation and naming things."*
 
-**Một**, nhiều cache name. `product:byId` và `product:bySlug` — cùng một product, hai cache key độc lập. Mỗi update phải evict cả hai. `@Caching` của Spring giúp gom lại:
+Trong dãy phòng này, **căn gần nhất cũng là căn dễ lẫn đồ nhất**: L1 nhanh, nhưng nếu quên dọn thì nó sẽ tự tin phục vụ đồ cũ. Invalidation khó vì hai lý do:
+
+🔑 **Một — nhiều cache name.** `product:byId` và `product:bySlug` cùng trỏ về một product nhưng là hai key độc lập. Mỗi update phải dọn *cả hai* phòng. `@Caching` của Spring gom lại:
 
 ```java
 @Caching(evict = {
@@ -112,9 +133,9 @@ Trong project này, invalidation khó vì hai lý do:
 public ProductResponse update(UUID id, ProductUpdateRequest req) { ... }
 ```
 
-**Hai**, slug có thể đổi. Annotation declarative chỉ truy cập được args và result — không có khái niệm "old state". Khi user đổi slug từ `iphone-15` sang `iphone-15-pro-max`, annotation evict được slug mới (cache miss → reload OK), nhưng slug cũ vẫn còn trong cache, vẫn trỏ về dữ liệu cũ.
+🔄 **Hai — slug có thể đổi.** Annotation declarative chỉ chạm được vào args và result — nó *không có khái niệm "old state"*. User đổi slug `iphone-15` → `iphone-15-pro-max`: annotation evict được slug mới (miss → reload OK), nhưng **slug cũ vẫn nằm lì trong phòng**, vẫn trỏ về dữ liệu cũ. Đồ cũ lẫn trong căn phòng gần nhất.
 
-Giải pháp manual:
+Phải dọn tay:
 
 ```java
 String oldSlug = product.getSlug();
@@ -124,11 +145,13 @@ if (!oldSlug.equals(req.slug())) {
 }
 ```
 
-Một dòng code. Một bug suýt để lọt. Đây là loại lỗi AI assistant thường bỏ qua — review tay là bắt buộc.
+> ⚠️ Một dòng code. Một bug suýt để lọt. Đây đúng kiểu lỗi AI assistant hay bỏ qua — declarative annotation trông đủ rồi, nó không nghĩ tới "old slug còn nằm đâu đó". Review tay là bắt buộc.
 
-## Quan sát — và sự thật của hit ratio
+---
 
-Cache có hai tier. Metric cũng phải tách hai tier.
+## 📊 Quan sát — và sự thật của hit ratio
+
+Cache có hai tier thì metric cũng phải tách hai tier — nếu không, một con số gộp sẽ giấu mất phòng nào đang gánh việc:
 
 ```promql
 product_cache_hits_total{tier="l1"}
@@ -137,9 +160,9 @@ product_cache_hits_total{tier="l2"}
 product_cache_misses_total{tier="l2"}
 ```
 
-Bind từ `LongAdder` của `TwoTierCache` qua Micrometer Gauge. Pre-wire `/actuator/prometheus` để Day 20 ghép Grafana dashboard.
+Bind từ `LongAdder` trong `TwoTierCache` qua Micrometer Gauge, pre-wire `/actuator/prometheus` để Day 20 ghép vào Grafana dashboard.
 
-Local smoke test với JMeter 100 thread × 5 phút, 10k product distribution Zipf:
+> 📚 Hai nguồn số liệu, đừng lẫn: con P99 ~250ms ở phần bối cảnh đến từ **production dashboard** thực; bảng dưới đây là **JMeter local smoke test** (100 thread × 5 phút, 10k product phân phối Zipf) — đo "before/after" trong môi trường lab, không phải số prod.
 
 ```
 └── P50 getProduct:     35ms → 2ms
@@ -150,21 +173,23 @@ Local smoke test với JMeter 100 thread × 5 phút, 10k product distribution Zi
 └── Effective DB load:  100% → ~2%
 ```
 
-Mạng đã trả lời. Không phải bằng tiền. Bằng kiến trúc.
-
-## Kết thúc ngày 15
-
-```
-└── Day 15
-    ├── Code:    7 file Java (CacheConfig, TwoTierCache, ProbabilisticExpiringCache, CacheMetrics, CacheProperties, +2 test)
-    ├── Docs:    1 lesson, 2 performance, 1 ADR, 2 issue filled, 1 interview, 1 evolution
-    ├── Test:    StampedeProtectionTest PASSED — loader calls < 25 với 100 concurrent
-    ├── Build:   ./gradlew :services:product-service:build OK
-    └── Vibe:    "Hai tầng. Năm mươi nano đến một mili. Cảm giác như nghe tim đập trong một căn phòng tối."
-```
-
-> 💡 **Senior vs Junior**: Junior viết `@Cacheable` rồi tự hỏi vì sao update không reflect. Senior audit toàn bộ write path TRƯỚC khi paste annotation. Bug cache không nằm ở chỗ cache — nó nằm ở chỗ quên evict. Phil Karlton đã đúng.
+Mạng đã trả lời. Không phải bằng tiền. Bằng kiến trúc. ⚡
 
 ---
 
-*→ Sang chương sau, dataset 50 nghìn product sẽ chạm mốc 1 triệu. Cache chỉ giải quyết phần đọc lặp. Còn query chạm tới row chưa cache — SQL phải tự lo. EXPLAIN ANALYZE sẽ trở thành bạn đồng hành. Sequential scan, index không dùng đúng, cardinality estimate sai — Postgres giấu nhiều thứ sau câu `SELECT *` quen thuộc.*
+## 🏁 Kết thúc ngày 15
+
+```
+📊 Scorecard:
+├── Code:    7 file Java (CacheConfig, TwoTierCache, ProbabilisticExpiringCache, CacheMetrics, CacheProperties, +2 test)
+├── Docs:    1 lesson · 2 performance · 1 ADR · 2 issue filled · 1 interview · 1 evolution
+├── Test:    StampedeProtectionTest PASSED — loader calls < 25 với 100 concurrent
+├── Build:   ./gradlew :services:product-service:build OK
+└── Vibe:    "Hai tầng. Năm mươi nano đến một mili. Như nghe tim đập trong một căn phòng tối." 🫀
+```
+
+> 💡 **Senior vs Junior:** Junior paste `@Cacheable` rồi ngồi ngẩn ra tự hỏi vì sao update không reflect. Senior audit **toàn bộ write path TRƯỚC** khi paste annotation. Bug cache không nằm ở chỗ cache — nó nằm ở chỗ *quên dọn phòng*. Phil Karlton đã đúng.
+
+---
+
+*→ Sang chương sau, dataset 50 nghìn product sẽ chạm mốc 1 triệu. Cache chỉ lo được phần đọc lặp. Còn query chạm tới row chưa cache — SQL phải tự thân vận động. **EXPLAIN ANALYZE** sẽ trở thành bạn đồng hành. Sequential scan, index không dùng đúng, cardinality estimate sai — Postgres giấu lắm thứ sau câu `SELECT *` quen thuộc...* 🔎

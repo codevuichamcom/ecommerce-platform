@@ -169,7 +169,11 @@ Mục đích: 6 tháng sau đọc lại `interview/day-NN-*.md` vẫn diễn l�
 **File output**: `docs/evolution/NN-<slug-tieng-viet>.md`
 (NN = day number, slug 2-4 từ tiếng Việt không dấu, vd `12-luoi-an-toan.md`)
 
-**Cấu trúc BẮT BUỘC** (giữ nhất quán với 11 chương đã viết):
+> 🏆 **CHUẨN VÀNG**: đọc `docs/evolution/10-tien-khong-sai.md` trước khi viết bất kỳ
+> chương nào — đó là bản mẫu tông giọng + cách trình bày Tonny đã duyệt (sau 2 vòng
+> sửa). Mọi chương mới/rewrite phải khớp tông đó.
+
+**Cấu trúc BẮT BUỘC** (giữ nhất quán với chuẩn vàng ch.10):
 
 ```markdown
 # Chương NN · <emoji> <Tên chương tiếng Việt — ngắn, gợi hình>
@@ -201,21 +205,23 @@ Mục đích: 6 tháng sau đọc lại `interview/day-NN-*.md` vẫn diễn l�
 *→ <Câu hook dẫn sang chương tiếp theo — tạo cliffhanger>*
 ```
 
-**Writing rules** (giữ chất lượng đồng đều 40 chương):
+**Writing rules** (chốt với Tonny 2026-05-29 — ưu tiên CUỐN HÚT + ĐẦY ĐỦ):
 
-1. **Giọng văn**: kể chuyện, không liệt kê. Dùng metaphor cụ thể (pháo đài, mạch máu, dàn nhạc...) nhưng không lạm dụng — mỗi chương tối đa 2 metaphor.
-2. **Rhythm**: xen câu ngắn (3-5 từ) với câu dài. Dùng kỹ thuật "3 từ liên tiếp" tạo nhịp (*"Đẹp. Dễ hiểu. Dễ debug."*). Tránh 3+ câu liên tiếp bắt đầu cùng chủ ngữ.
-3. **Logic liên chương**: mở đầu phải reference chương trước (1 câu đủ). Kết thúc phải hook chương sau. KHÔNG lặp lại giải thích đã có ở chương trước — reference bằng 1 câu rồi đi tiếp.
-4. **Code snippet**: chỉ show đoạn code **hay nhất / surprising nhất** của day. Không paste cả file. Mỗi snippet ≤15 dòng, có comment giải thích WHY.
-5. **Mermaid diagram**: dùng khi topology/flow/state phức tạp. KHÔNG vẽ cho list 2-3 mục.
-6. **Scorecard cuối chương**: format tree (`├──`, `└──`), 5-8 dòng, kết bằng `Vibe:` 1 câu trong quotes.
-7. **Emoji**: chỉ ở title + section header + callout (💡⚠️). KHÔNG rải trong body text.
-8. **Ngôn ngữ**: Việt kỹ thuật, giữ English term. Không dịch nửa vời.
-9. **Độ dài**: 100-180 dòng markdown (đủ sâu mà không loãng).
-10. **Không lủng củng**: đọc lại trước khi output. Nếu 2 câu liền nói cùng 1 ý → gộp hoặc cắt 1.
+1. **Một nhân vật/metaphor xuyên suốt CÓ TÍNH CÁCH**: chọn 1 hình tượng (vd ch.10 "bác thủ quỹ hoang tưởng không tin một ai") và nuôi nó từ epigraph → mọi section → cliffhanger. KHÔNG nêu metaphor ở mở bài rồi bỏ rơi. Đây là lỗi #1 của các chương cũ.
+2. **Giọng vui nhộn, hài hước, lầy lội** — mục đích là kích thích Tonny đọc + học, không phải văn chương nghiêm túc. Mỗi câu đùa phải *cõng* 1 điểm kỹ thuật thật (vd "gateway retry như người yêu cũ nhắn lúc 2h sáng" → giải thích at-least-once). Đùa mà không dạy gì = cắt.
+3. **GIỮ ĐẦY ĐỦ NỘI DUNG — KHÔNG cắt code sang lessons**: code block quan trọng (sealed interface, SQL, config, verify method...) phải nằm NGAY trong chương. Có thể dài. Tonny muốn đọc 1 chương là đủ ôn, không phải nhảy file. (Đảo ngược rule cũ "≤15 dòng".)
+4. **Rhythm**: xen câu ngắn (3-5 từ) với câu dài. Kỹ thuật "3 từ liên tiếp" (*"Trùng — chặn. Giả mạo — chặn."*). Tránh 3+ câu liên tiếp cùng chủ ngữ.
+5. **Logic liên chương**: mở đầu reference chương trước (1 câu, nối qua chính metaphor càng tốt). Kết thúc hook chương sau (cliffhanger có câu hỏi treo). KHÔNG lặp giải thích cũ — reference 1 câu rồi đi tiếp.
+6. **Trình bày sinh động + NHIỀU emoji**: rải emoji ngữ nghĩa ở section header, callout, bullet list, và điểm nhấn trong prose để mắt đọc đỡ mỏi (vd "🐉 khách biến thành rồng phun lửa"). NGOẠI LỆ DUY NHẤT: KHÔNG để emoji bên trong code block / table cell (gây nhiễu grep/paste). Giữ bảng emoji-nghĩa-cố-định ở CLAUDE.md §10b.
+7. **Mermaid**: dùng khi topology/flow/state phức tạp. `note` trong diagram có thể pha giọng vui. KHÔNG vẽ cho list 2-3 mục.
+8. **Scorecard cuối chương**: format tree (`├──`, `└──`), kết bằng `Vibe:` 1 câu trong quotes (giọng nhân vật). KHÔNG dùng file-tree liệt kê tên class (lỗi ch.12/14 cũ).
+9. **Callout học tập**: chèn `> 💡` cho interview tip / senior-vs-junior / "vì sao đếm 1-2-3", `> ⚠️` cho cạm bẫy. Đây là nơi neo kiến thức ôn thi.
+10. **Ngôn ngữ**: Việt kỹ thuật, giữ English term. Không dịch nửa vời.
+11. **Độ dài**: tự do theo nội dung (đầy đủ code + đùa thường 150-280 dòng). Đừng cắt nội dung để ngắn; chỉ cắt câu lặp ý.
+12. **Đọc lại trước khi output**: 2 câu liền nói cùng ý → gộp/cắt. Đùa lố không cõng kỹ thuật → cắt.
 
 **Sau khi viết xong chapter**:
-- Update `docs/evolution/README.md` — thêm row vào bảng mục lục tương ứng.
+- Update `docs/evolution/README.md` — thêm row vào bảng mục lục, ĐIỀN cả cột `🎭 Metaphor xuyên suốt`. Trước khi chốt metaphor, LIẾC cột này để tránh trùng hình ảnh với chương khác (vd "sợi chỉ đỏ" đã thuộc ch.13 — tracing phải dùng "sợi chỉ Ariadne").
 - Nếu day là cuối week (7, 14, 21, 25, 30, 37, 40) → update Mermaid diagram trong README (đổi classDef node từ `future` → `done`).
 
 ---

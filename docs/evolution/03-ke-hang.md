@@ -4,19 +4,32 @@
 
 ---
 
-> *"Một cửa hàng không có hàng chỉ là một căn phòng trống với cái cổng khóa."*
+> *"Một cửa hàng không có hàng chỉ là căn phòng trống có cổng khóa. Nhưng một chủ tiệm khôn không khoe kệ đầy — họ khoe cuốn sổ nợ, vì nợ có ghi chép là nợ trả được."*
 
 ---
 
-## Bối cảnh
-
-Auth đã gác cổng. Giờ cần thứ để bán. `product-service` nghe đơn giản — CRUD product, CRUD category, search. Nhưng những quyết định "nhỏ" ở đây sẽ quyết định hệ thống sống hay chết khi scale lên 1 triệu sản phẩm.
+> 🎬 **Chương này có gì:** một chủ tiệm dựng kệ hàng thần tốc nhưng tay luôn cầm sổ nợ, một màn hình trắng vì entity rò ra ngoài, ba cách nhét thuộc tính sản phẩm muôn hình vạn trạng, và một câu thần chú phân biệt "nợ có chủ đích" với "nợ vì không biết gì". 🧾
 
 ---
 
-## Cái bẫy đầu tiên: Entity Leak
+## 🎬 Bối cảnh: chủ tiệm và cuốn sổ nợ
 
-Ngày đầu viết API, ai cũng từng làm thế này:
+Người gác cổng đã khóa cổng (Chương 2). Giờ vương quốc cần thứ để **bán**. Vào vai mới: **chủ tiệm** 🧑‍💼.
+
+Chủ tiệm này có một thói quen lạ. Mỗi lần dựng kệ nhanh, mỗi lần chọn giải pháp "tạm đủ", bác không lờ đi — bác **rút sổ ra ghi**: *"Món này dựng tạm, nợ một khoản, sẽ trả ở Day X."* Đây là khác biệt sống còn giữa hai loại người mắc nợ:
+
+| 🧾 Loại nợ | Chân dung | Số phận |
+| --- | --- | --- |
+| 💡 **Conscious debt** (nợ có chủ đích) | Biết mình chọn giải pháp tạm, biết tại sao, biết khi nào trả | Trả được, có kế hoạch, ngủ ngon |
+| 😵 **Accidental debt** (nợ vì vô ý) | Không biết mình đang nợ, tưởng "thế là xong" | Lãi mẹ đẻ lãi con, vỡ nợ lúc scale |
+
+`product-service` nghe đơn giản — CRUD product, CRUD category, search. Nhưng mấy quyết định "nhỏ" hôm nay quyết định hệ thống sống hay sập khi lên 1 triệu sản phẩm. Chủ tiệm dựng kệ, và mỗi nét bút tạm bợ đều có một dòng trong sổ nợ.
+
+---
+
+## 🩸 Cái bẫy đầu tiên: entity rò ra ngoài, màn hình hóa trắng
+
+Ngày đầu viết API, ai cũng từng phạm tội này — và đây là loại **nợ vô ý** điển hình, vì người viết tưởng "thế là xong":
 
 ```java
 @GetMapping("/{id}")
@@ -26,42 +39,54 @@ public Product getProduct(@PathVariable Long id) {
 }
 ```
 
-Tại sao sai?
+> 🎬 **Cảnh phim:** frontend gọi `GET /products/42`, hớn hở chờ JSON. Cái về tới là một mớ hổ lốn có trường `hibernateLazyInitializer` chình ình giữa response. Jackson cố serialize cái lazy proxy của `category`, JSON vỡ cấu trúc, `JSON.parse()` ở client ném exception, React render ra... **màn hình trắng** 💀. Không lỗi backend, không 500, log sạch bong — chỉ một anh frontend ngồi gãi đầu lúc 5h chiều thứ Sáu.
 
-1. **Hibernate proxy leak** — `category` field là lazy proxy, Jackson serialize nó → `hibernateLazyInitializer` xuất hiện trong JSON response. Client parse fail.
-2. **Internal field exposure** — `createdBy`, `version`, `deletedAt` lộ ra ngoài. Attacker biết schema.
-3. **Coupling** — thay đổi entity = thay đổi API contract. Mọi client break.
+Vì sao trả thẳng entity là sai? Ba lý do, không cái nào lành:
 
-**Fix**: MapStruct compile-time mapping → DTO record. Entity ở trong, DTO ra ngoài. Tường lửa giữa persistence layer và API layer.
+1. 🩸 **Hibernate proxy leak** — `category` là lazy proxy, Jackson serialize nó → `hibernateLazyInitializer` lọt vào JSON → client parse fail (chính cái màn hình trắng trên).
+2. 🔓 **Lộ trường nội bộ** — `createdBy`, `version`, `deletedAt` phơi ra ngoài. Attacker đọc được schema, biết bạn xài soft-delete, optimistic lock... miễn phí.
+3. 🔗 **Coupling** — đổi entity = đổi luôn API contract. Một lần refactor cột DB là một lần mọi client gãy.
+
+**Cách bịt:** dựng một **tường lửa** giữa tầng persistence và tầng API. Entity ở **trong**, DTO ra **ngoài**. Dùng MapStruct map compile-time (không reflection runtime), DTO là record immutable:
 
 ```java
-// Entity stays inside
+// Entity ở lại bên trong, không bao giờ ra cổng
 @Entity class Product { ... }
 
-// DTO goes outside — immutable, explicit, safe
+// DTO ra ngoài — immutable, khai báo rõ ràng, an toàn
 public record ProductResponse(
     Long id, String name, String sku,
     BigDecimal price, Map<String, Object> attributes
 ) {}
 ```
 
-Thêm `spring.jpa.open-in-view: false` — tắt OSIV, chặn lazy loading ngoài transaction. Nếu quên load relation trong service layer → fail ngay, không âm thầm N+1 query.
+Thêm một dòng cấu hình khoá cửa hậu:
+
+```yaml
+spring:
+  jpa:
+    open-in-view: false   # tắt OSIV — chặn lazy loading ngoài transaction
+```
+
+Tắt OSIV nghĩa là: quên load relation trong service layer thì **fail ngay tại đó**, không âm thầm bắn N+1 query ngoài transaction rồi đổ bệnh sau. Lỗi to tiếng tốt hơn lỗi thì thầm.
+
+> 🧠 **Senior insight:** entity leak là nợ **vô ý** — nguy hiểm vì người viết không biết mình đang nợ. DTO boundary biến nó thành quyết định **có ý thức**: "tôi chủ động kẻ ranh giới persistence/API". Senior không phải người không bao giờ mắc nợ — là người biết mình đang nợ gì.
 
 ---
 
-## JSONB — chuẩn bị cho tương lai
+## 🗃️ JSONB: nợ có chủ đích, ghi rõ ngày trả
 
-Product có attributes đa dạng: TV có `screen_size`, `resolution`. Áo có `size`, `color`, `material`. Laptop có `ram`, `cpu`, `storage`.
+Sản phẩm thì muôn hình vạn trạng. TV có `screen_size`, `resolution`. Áo có `size`, `color`, `material`. Laptop có `ram`, `cpu`, `storage`. Làm sao một bảng chứa được mọi loại thuộc tính?
 
-3 cách tiếp cận:
+Chủ tiệm cân ba cách, ghi rõ ưu nhược vào sổ:
 
-| Approach | Pros | Cons |
-|----------|------|------|
-| 50 nullable columns | Query nhanh | Schema cứng, 90% column NULL |
-| EAV (Entity-Attribute-Value) | Flexible | Query chậm, JOIN hell, no type safety |
-| **JSONB column** | Flexible + queryable + indexable | Không FK constraint trên attributes |
+| 🧩 Approach | Pros | Cons |
+| --- | --- | --- |
+| 🧱 **50 cột nullable** | Query nhanh, có type | Schema cứng đơ, 90% cột NULL, thêm loại hàng = ALTER TABLE |
+| 🕸️ **EAV** (Entity-Attribute-Value) | Linh hoạt vô biên | Query chậm, JOIN hell, mất type safety, debug khóc |
+| ✅ **JSONB column** | Linh hoạt + query được + index được | Không FK constraint trên attributes |
 
-Chọn JSONB. Postgres 16 index GIN trên JSONB, query `WHERE attributes->>'brand' = 'Apple'` vẫn dùng index. Day 23 sẽ migrate phần này sang MongoDB khi cần aggregation pipeline phức tạp hơn — nhưng JSONB là stepping stone hoàn hảo.
+**Chọn JSONB.** Postgres 16 index được GIN trên JSONB, nên query `WHERE attributes->>'brand' = 'Apple'` vẫn xài index, không quét toàn bảng.
 
 ```java
 @JdbcTypeCode(SqlTypes.JSON)
@@ -69,52 +94,70 @@ Chọn JSONB. Postgres 16 index GIN trên JSONB, query `WHERE attributes->>'bran
 private Map<String, Object> attributes;
 ```
 
+Nhưng chủ tiệm không giả vờ JSONB là chân lý vĩnh cửu. Bác ghi vào sổ nợ rõ ràng: *"JSONB là stepping stone. Khi cần aggregation pipeline phức tạp hơn — Day 23 chuyển phần này sang MongoDB."* Đây là **conscious debt** mẫu mực: chọn giải pháp đủ-tốt-cho-hôm-nay, biết chính xác giới hạn của nó, và đã hẹn ngày trả.
+
+> 💡 **Ăn điểm phỏng vấn:** khi được hỏi "sao không EAV cho linh hoạt?", trả lời bằng cons cụ thể: *"EAV mất type safety và query thành JOIN hell. JSONB cho linh hoạt tương đương mà vẫn index GIN được. Tôi biết nó không FK-constraint được attributes — đó là khoản nợ tôi chấp nhận, và đã hẹn trả bằng Mongo khi aggregation phức tạp lên."*
+
 ---
 
-## Pagination — nghệ thuật bị đánh giá thấp
+## 📖 Phân trang: nghệ thuật bị đánh giá thấp
 
-*"Cho tôi tất cả products"* — câu nói phá sập database nhanh nhất.
+> *"Cho tôi tất cả products"* — câu nói phá sập database nhanh nhất hành tinh.
 
-Day 3 implement offset pagination với **3 lớp phòng thủ**:
+Chủ tiệm không bao giờ để khách bê cả kho ra. Day 3 dựng offset pagination với **ba lớp phòng thủ**:
 
-1. **Size cap**: `@Max(100)` — client request `size=999999`? Reject.
-2. **Sort whitelist**: chỉ cho sort theo `name`, `price`, `createdAt`. Sort theo `password`? Reject.
-3. **Default sensible**: không truyền gì → page 0, size 20, sort by createdAt DESC.
+| 🛡️ Lớp | Cơ chế | Chặn cái gì |
+| --- | --- | --- |
+| 1️⃣ **Size cap** | `@Max(100)` | Client xin `size=999999`? Reject. |
+| 2️⃣ **Sort whitelist** | Chỉ cho `name`, `price`, `createdAt` | Sort theo `password`? Reject (chống dò cột nhạy cảm). |
+| 3️⃣ **Default tử tế** | Không truyền gì → page 0, size 20, sort `createdAt DESC` | Khách lười vẫn được phục vụ đúng. |
 
 ```
 GET /products?page=0&size=20&sort=price,asc
 ```
 
-Tại sao offset mà không cursor? Vì Day 3 data ít, offset đủ tốt. Day 18 sẽ chứng minh offset chết ở 10M rows và migrate sang keyset/cursor pagination. **Biết giới hạn của tool mình đang dùng** quan trọng hơn dùng tool phức tạp nhất từ đầu.
+Vì sao offset mà không cursor/keyset? Vì Day 3 data còn ít, offset đủ tốt — và đây lại là một dòng trong sổ nợ: chủ tiệm **biết** offset sẽ chết ở chục triệu rows (đếm trang càng sâu càng chậm, vì DB phải skip qua hết các row trước). Nhưng hôm nay nó đủ. Khoản nợ này ghi rõ: *"Day 18 chứng minh offset sập ở 10M rows, chuyển sang keyset/cursor."*
+
+> 🧠 **Senior insight:** **biết giới hạn của tool mình đang dùng** quan trọng hơn dùng tool phức tạp nhất từ đầu. Cursor pagination phức tạp hơn, và với 100 sản phẩm thì nó là over-engineering. Chủ tiệm chọn đơn giản hôm nay, ghi nợ rõ ràng cho mai.
 
 ---
 
-## Search — tạm đủ, biết sẽ thay
+## 🔍 Search: khoản nợ ghi sổ lớn nhất
+
+Cuối cùng là tìm kiếm. Day 3 làm cách thô sơ nhất có thể:
 
 ```sql
 WHERE LOWER(name) LIKE LOWER('%keyword%')
 ```
 
-Chậm? Đúng. Không dùng index? Đúng. Nhưng Day 3 có 100 products. Day 16 sẽ thêm GIN trigram index. Day 22 sẽ thay hoàn toàn bằng Elasticsearch. Mỗi bước tiến hóa có lý do, có benchmark, có so sánh before/after.
+Chậm? Đúng. Không dùng index (vì `%` đầu chuỗi giết mọi B-tree index)? Đúng. Nhưng Day 3 chỉ có 100 sản phẩm — quét toàn bảng 100 dòng còn nhanh hơn dựng cả Elasticsearch. Chủ tiệm cười, rút sổ ra ghi khoản nợ to nhất chương:
 
-> ⚠️ **Cạm bẫy**: đừng optimize quá sớm, nhưng **biết** mình đang chấp nhận technical debt nào. LIKE search là conscious debt, không phải ignorance.
+> 🧾 **LIKE search hôm nay là khoản nợ ghi sổ — Day 16 trả lãi bằng GIN trigram index, Day 22 tất toán hẳn bằng Elasticsearch.**
+
+Một dòng sổ, hai cột mốc trả nợ, và một lương tâm trong sạch.
+
+> ⚠️ **Cạm bẫy:** đừng optimize quá sớm — nhưng phải **biết** mình đang nợ gì. `LIKE '%...%'` là **conscious debt**, không phải ignorance. Junior viết `LIKE` rồi quên; senior viết `LIKE` rồi ghi vào backlog kèm ngày trả. Cùng một dòng code, hai tư thế hoàn toàn khác.
 
 ---
 
-## Kết thúc ngày 3
+## 🏁 Kết thúc ngày 3
 
 ```
 📊 Scorecard:
 ├── Services:        2 (auth + product)
 ├── Endpoints:       ~12 (CRUD + search + pagination)
-├── Traps dodged:    Entity leak, OSIV, unbounded pagination
-├── Conscious debt:  LIKE search (sẽ trả Day 16 + Day 22)
+├── Traps né được:   Entity leak (màn hình trắng), OSIV, unbounded pagination
+├── Sổ nợ ghi rõ:    JSONB (→ Mongo Day 23) · offset (→ keyset Day 18) · LIKE (→ GIN Day 16, ES Day 22)
 ├── Docs:            4 (lesson pagination, perf search, issue entity-leak, interview)
-└── Vibe:            "Kệ hàng đã có. Nhưng ai canh kho?"
+└── Vibe:            "Kệ hàng đã đầy. Sổ nợ đã ghi. Nhưng ai canh kho?" 🧾
 ```
 
-> 💡 **Senior vs Junior**: Junior viết CRUD xong nói "done". Senior viết CRUD xong nói "done, nhưng search sẽ chết ở 100k rows — đây là plan migrate."
+> 💡 **Bẫy phỏng vấn kinh điển:** *"Technical debt — khi nào chấp nhận, khi nào không?"*
+>
+> **Strong answer:** Phân biệt **conscious debt** với **accidental debt**. Conscious: tôi chọn LIKE search vì 100 rows, biết nó chết ở 100k, đã ghi backlog kèm ngày trả (GIN Day 16, ES Day 22) — đây là đòn bẩy hợp lý để ship nhanh. Accidental: trả thẳng entity ra API mà không biết mình đang leak proxy + coupling contract — đây là nợ phải diệt ngay, không thương lượng. Câu hỏi không phải "nợ hay không nợ", mà là "**có ghi sổ và trả được không**".
+>
+> 🪤 **Follow-up trap:** *"Lấy gì đảm bảo nợ được trả thật, không để mãi?"* → Conscious debt phải có **trigger cụ thể** (đo được: "khi data > 100k rows" / "khi p99 search > 200ms"), không phải "khi nào rảnh". Không có trigger đo được thì conscious debt thoái hóa thành accidental debt — vẫn vỡ nợ, chỉ chậm hơn.
 
 ---
 
-*→ Hàng đã trên kệ. Nhưng ai đảm bảo không bán quá số lượng tồn kho?...*
+*→ Kệ hàng đã đầy, sổ nợ đã ghi tử tế. Nhưng hàng trên kệ có một con số đáng sợ: **tồn kho**. Điều gì xảy ra khi hai khách cùng giành mua chiếc cuối cùng trong kho đúng một phần nghìn giây? Ai canh để không bán quá số hàng mình có?...* 📊

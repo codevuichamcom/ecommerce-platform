@@ -8,7 +8,11 @@
 
 ---
 
-## Bối cảnh — Cuộc phẫu thuật lớn
+> 🎬 **Chương này có gì:** một ca phẫu thuật cắt bỏ toàn bộ sync call, một bài học buông tay tập thở, một anh consumer học cách "nghe trùng mà không hoảng", một sợi chỉ Ariadne xuyên ba service, vài hộ dân lấy nước từ cùng một ống, và một cạm bẫy khiến Kafka quay cuồng vô tận. Đeo khẩu trang vào phòng mổ. 🩺
+
+---
+
+## 🔪 Bối cảnh — Cuộc phẫu thuật lớn
 
 Day 6, `PlaceOrderUseCase` là một orchestrator gọn gàng:
 
@@ -20,13 +24,13 @@ Day 6, `PlaceOrderUseCase` là một orchestrator gọn gàng:
 5. Return response
 ```
 
-Đẹp. Dễ hiểu. Dễ debug. Và **không scale được** trong distributed system.
+Đẹp. Dễ hiểu. Dễ debug. Và **không scale được** trong distributed system — vì mỗi dòng `sync` là một lần `Order` nắm chặt tay `Inventory` không dám buông.
 
-Chương 8 đã giải thích tại sao sync coupling là vấn đề. Day 9 không chỉ nói nữa — Day 9 **cắt bỏ toàn bộ** sync call tới Inventory. Thay bằng: publish event, rồi **buông tay**.
+Chương 8 đào xong đường ống ngầm và siết van. Day 9 không nói lý thuyết nữa — Day 9 cầm dao mổ, **cắt bỏ toàn bộ** sync call tới Inventory. Thay bằng đúng một động tác: bơm event vào ống, rồi **buông tay**. Nghe thì gọn. Làm thì run. 😬
 
 ---
 
-## Kiến trúc mới — Eventually Consistent
+## 🫁 Kiến trúc mới — Eventually Consistent
 
 ```mermaid
 sequenceDiagram
@@ -56,18 +60,18 @@ sequenceDiagram
 
 **Sự khác biệt cốt lõi**: User nhận response **trước khi** inventory reserve xong. Order được tạo với `reservation_status = PENDING`. Vài trăm milliseconds sau, inventory reserve thành công, order chuyển sang `RESERVED`.
 
-Đây là **eventual consistency**. Và đây là trade-off có ý thức:
+Đây là **eventual consistency**. Và đây là trade-off được chọn một cách tỉnh táo, không phải nhắm mắt theo trend:
 
-| | Sync (Day 6) | Async (Day 9) |
+| Tiêu chí | 🤝 Sync (Day 6) | 🫳 Async (Day 9) |
 |---|---|---|
-| User experience | Chờ lâu, nhưng biết ngay kết quả | Response nhanh, nhưng "đang xử lý" |
-| Availability | 1 service down = all down | 1 service down = delay, not failure |
-| Consistency | Strong (biết ngay có hàng không) | Eventual (biết sau vài trăm ms) |
-| Complexity | Đơn giản | Phức tạp hơn (idempotent consumer, DLT, monitoring) |
+| 😊 User experience | Chờ lâu, nhưng biết ngay kết quả | Response nhanh, nhưng "đang xử lý" |
+| 🛡️ Availability | 1 service chết = cả cụm chết | 1 service chết = chậm, không sập |
+| 🎯 Consistency | Strong (biết ngay còn hàng không) | Eventual (biết sau vài trăm ms) |
+| 🧩 Complexity | Đơn giản | Phức tạp hơn (idempotent consumer, DLT, monitoring) |
 
 ---
 
-## Idempotent consumer — vì Kafka gửi ít nhất 1 lần
+## ♻️ Idempotent consumer — vì Kafka gửi ít nhất 1 lần
 
 At-least-once delivery = consumer có thể nhận cùng message 2 lần. Nếu `markReserved()` không idempotent:
 
@@ -92,18 +96,18 @@ public boolean markReserved() {
 
 ---
 
-## 🆕 Distributed Tracing — nhìn xuyên 3 service
+## 🧵 Distributed Tracing — nhìn xuyên 3 service
 
-Khi mọi thứ async, debug trở thành ác mộng. Request vào Order, event bay qua Kafka, Inventory process, event bay lại... Lỗi ở đâu? Chậm ở đâu?
+Buông tay rồi thì làm sao biết lá thư đã trôi tới đâu? Khi mọi thứ async, debug trở thành ác mộng. Request vào Order, event bay qua Kafka, Inventory xử lý, event bay ngược lại... Lỗi nằm ở chặng nào? Chậm ở khúc nào? Ta cần đúng cái mà [Chương 1](01-khai-thien-lap-dia.md) đã hứa hẹn: một **sợi chỉ Ariadne** — buộc vào request từ lúc sinh ra, theo nó qua mọi đường ống, để bất cứ lúc nào cũng kéo ra dò ngược, lần đường ra khỏi mê cung log. 🧶
 
-**OpenTelemetry + Micrometer Tracing** giải quyết:
+**OpenTelemetry + Micrometer Tracing** chính là sợi chỉ đó:
 
 ```yaml
-# Mỗi service
+# Cau hinh o moi service
 management:
   tracing:
     sampling:
-      probability: 1.0  # Dev: trace 100%. Prod: 10-20%
+      probability: 1.0  # Dev trace 100%, prod chi 10-20%
   zipkin:
     tracing:
       endpoint: http://zipkin:9411/api/v2/spans
@@ -121,20 +125,20 @@ Mở Zipkin → thấy 1 trace xuyên: Order (publish) → Kafka → Inventory (
 
 ---
 
-## Fan-out pattern — cùng event, nhiều consumer
+## 🪢 Fan-out pattern — cùng một ống, nhiều hộ dân
 
-`inventory.reserved` event được consume bởi **2 consumer group khác nhau**:
+`inventory.reserved` event được consume bởi **2 consumer group khác nhau** — như hai hộ dân cắm vòi vào cùng một ống chính, ai lấy nước nhà nấy:
 
 1. `order-service` (group: `order-inv`) → markReserved()
 2. `notification-service` (group: `notification-inv`) → gửi email xác nhận
 
 Kafka guarantee: mỗi group nhận **tất cả** message. Các group **độc lập** — notification chậm không block order. Notification down không ảnh hưởng order flow.
 
-Đây là sức mạnh của event-driven: **publisher không biết (và không cần biết) ai đang listen.**
+Đây là sức mạnh của event-driven: **publisher không biết (và không cần biết) ai đang listen.** Order bơm nước vào ống xong là phủi tay đi pha cà phê — ai uống, uống thế nào, kệ. ☕
 
 ---
 
-## Failure handling — khi inventory không đủ hàng
+## 🚨 Failure handling — khi inventory không đủ hàng
 
 ```java
 // Inventory consumer
@@ -149,11 +153,11 @@ try {
 }
 ```
 
-> ⚠️ **Cạm bẫy chết người**: throw exception trong Kafka consumer = message retry vĩnh viễn (hoặc đến max retry). Nếu business logic fail (không phải infra fail), **log + handle gracefully**. Day 12 sẽ thêm DLT cho infra failure.
+> ⚠️ **Cạm bẫy chết người:** throw exception trong Kafka consumer = message bị retry vĩnh viễn (hoặc đến max retry). Hết hàng là chuyện business, không phải lỗi hạ tầng — mà bạn ném exception thì Kafka cứ tưởng "lỗi tạm thời, thử lại đi", và thế là nó gửi lại cái message hết-hàng đó mãi mãi, như con vẹt lặp một câu. Nếu business logic fail, **log + handle gracefully**. Day 12 mới thêm DLT cho infra failure thật sự.
 
 ---
 
-## Kết thúc ngày 9
+## 🏁 Kết thúc ngày 9
 
 ```
 📊 Scorecard:

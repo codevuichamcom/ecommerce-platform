@@ -4,65 +4,113 @@
 
 ---
 
-> *"Mọi vương quốc đều cần một cánh cổng. Và mọi cánh cổng đều cần người biết ai được vào, ai phải đứng ngoài."*
+> *"Mọi vương quốc đều cần một cánh cổng. Và mọi cánh cổng đều cần một người gác — biết ai được vào, ai phải đứng ngoài, và ai đang cầm thẻ bài giả."*
 
 ---
 
-## Bối cảnh
-
-Hệ thống đã có móng. Giờ cần trả lời câu hỏi cơ bản nhất của mọi ứng dụng: **"Ai đang nói chuyện với tôi?"**
-
-Không có auth, mọi endpoint đều là cửa mở toang. Bất kỳ ai cũng có thể xóa product, cancel order, xem thông tin người khác. Day 2 đóng cánh cổng lại.
+> 🎬 **Chương này có gì:** một người gác cổng thành, một tấm thẻ bài có dấu niêm đọc-được-mà-không-cần-hỏi-vua, một khẩu lệnh đổi mỗi lượt qua cổng, một cú suýt cho nhầm người vì hai mật khẩu cùng một dấu vân tay, và ba món vũ khí hiện đại giắt lưng. ⚔️
 
 ---
 
-## Cuộc chiến JWT vs Session
+## 🎬 Bối cảnh: tuyển người đứng cổng
 
-Đây không phải quyết định kỹ thuật — đây là quyết định **kiến trúc**.
+Chương trước, kiến trúc sư đã đổ móng và kẻ ranh giới — nhưng toà thành vẫn mở toang. Mọi endpoint là một cửa không khóa: ai cũng vào xóa product, cancel order, đọc thông tin người lạ. Một toà thành không người gác chỉ là một cái sân rộng.
 
-| | Session (stateful) | JWT (stateless) |
-|---|---|---|
-| Scale | Cần sticky session hoặc shared store | Bất kỳ instance nào cũng verify được |
-| Revoke | Xóa session → instant logout | Phải chờ hết hạn (hoặc blacklist) |
-| Microservice | Mỗi service phải gọi auth-service verify | Mỗi service tự verify bằng shared secret |
-| Complexity | Đơn giản hơn | Phức tạp hơn (refresh rotation, token theft) |
+Nên Day 2, ta tuyển nhân vật mới: **người gác cổng thành** 💂. Việc của bác chỉ một câu, nhưng là câu sống còn nhất của mọi hệ thống:
 
-**Chọn JWT.** Lý do: 9 microservice sẽ cần verify token. Nếu mỗi request phải gọi auth-service, auth-service trở thành single point of failure + bottleneck. JWT cho phép **verify tại chỗ** — chỉ cần biết secret key.
+> 🗣️ *"Ngươi là ai? Và ngươi được phép vào không?"*
 
-Trade-off chấp nhận: không instant revoke. Mitigation: access token sống 15 phút (đủ ngắn), refresh token 7 ngày (rotate mỗi lần dùng).
+Nghe đơn giản. Cho đến khi bạn nhận ra: vương quốc này không có **một** cổng. Nó sắp có **9 cổng** (9 microservice), mỗi cổng một người lính gác. Và đây là câu hỏi định mệnh: mỗi khi có người chìa thẻ, người lính có phải **chạy về hỏi vua** không?
 
 ---
 
-## Refresh Token Rotation — cuộc đua ngầm
+## 🏰 Thẻ bài có dấu niêm vs Sổ khách của vua — JWT vs Session
 
-Đây là nơi mọi thứ trở nên thú vị.
+Đây không phải quyết định kỹ thuật vặt. Đây là quyết định **kiến trúc**, và nó xoay quanh đúng một câu hỏi: lính gác xác minh khách **tại chỗ**, hay phải chạy về cung tra sổ?
 
-User mở 2 tab. Cả 2 tab đều gọi `/auth/refresh` cùng lúc với cùng 1 refresh token. Nếu không cẩn thận:
+| | 📖 Session (sổ khách của vua) | 🎫 Thẻ bài có dấu niêm (JWT) |
+| --- | --- | --- |
+| **Xác minh** | Lính phải chạy về cung tra sổ mỗi lượt | Lính đọc dấu niêm tại chỗ, biết thật-giả ngay |
+| **Scale** | Cần sticky session hoặc kho chung | Cổng nào cũng verify được, không phụ thuộc nhau |
+| **Thu hồi** | Xé tờ sổ → đuổi tức thì | Phải chờ thẻ hết hạn (hoặc blacklist) |
+| **9 cổng** | Vua thành nút thắt cổ chai + điểm chết duy nhất | Mỗi cổng tự lo, vua được nghỉ |
+| **Độ phức tạp** | Đơn giản hơn | Phức tạp hơn (rotation, token theft) |
+
+**Chọn thẻ bài — JWT.** Lý do nằm ở cột "9 cổng": nếu mỗi request đều bắt lính chạy về hỏi auth-service, thì auth-service trở thành **single point of failure** kiêm **bottleneck** — vua ốm là cả vương quốc tê liệt. JWT cho phép **verify tại chỗ**: lính chỉ cần biết con dấu của vua (shared secret) là đọc được thẻ thật hay giả, không cần hỏi ai.
+
+**Trade-off chấp nhận:** không thu hồi tức thì. Một thẻ đã phát thì còn hiệu lực tới lúc hết hạn. Cách hoá giải: làm **thẻ bài sống ngắn** (access token 15 phút — đủ ngắn để thiệt hại có trần) kèm **khẩu lệnh đổi liên tục** (refresh token 7 ngày, rotate mỗi lần dùng).
+
+> 💡 **Ăn điểm phỏng vấn:** đừng nói "JWT vì nó stateless cho ngầu". Nói: *"9 service đều cần verify — nếu stateful thì auth-service thành SPOF + bottleneck. JWT đẩy việc verify ra biên, đánh đổi bằng việc mất instant-revoke, và tôi bù lại bằng access token 15 phút + refresh rotation."* Nêu được cả trade-off lẫn mitigation mới là senior.
+
+---
+
+## 🔄 Đổi khẩu lệnh mỗi lượt qua cổng — và cuộc đua ngầm
+
+Thẻ bài sống ngắn, nên khách phải định kỳ ra cổng đổi thẻ mới bằng **khẩu lệnh** (refresh token). Luật của người gác: mỗi lần dùng một khẩu lệnh, nó **cháy ngay**, và khách nhận một khẩu lệnh mới. Đây là **refresh token rotation** — kẻ trộm có lấy được khẩu lệnh cũ cũng vô dụng, vì nó đã cháy.
+
+Nghe ổn. Cho đến khi khách mở **hai cánh cửa sổ cùng lúc** (hai tab trình duyệt), và cả hai cùng chìa **một** khẩu lệnh ra cổng đúng một khoảnh khắc:
 
 ```
-Tab A: đọc token "abc123" → valid → issue new token "def456"
-Tab B: đọc token "abc123" → valid → issue new token "ghi789"
-                                     ↑ RACE CONDITION!
+Tab A: đọc khẩu lệnh "abc123" → hợp lệ → phát khẩu lệnh mới "def456"
+Tab B: đọc khẩu lệnh "abc123" → hợp lệ → phát khẩu lệnh mới "ghi789"
+                                          ↑ RACE CONDITION!
 ```
 
-Giờ có 2 refresh token active. Attacker steal 1 trong 2 → dùng mãi mà user không biết.
+Giờ có **hai** khẩu lệnh cùng sống. Kẻ trộm tóm được một cái — dùng mãi mà khách không hề hay. Lưới phòng thủ vừa thủng đúng cái khe phần nghìn giây.
 
-**Fix**: Atomic UPDATE với WHERE clause:
+**Cách bịt:** không lock, không distributed mutex, không nghi lễ rườm rà. Chỉ một câu SQL **atomic** với mệnh đề `WHERE` làm trọng tài:
 
 ```sql
 UPDATE refresh_tokens
 SET token_hash = :newHash, expires_at = :newExpiry
 WHERE token_hash = :oldHash AND revoked = false
--- Rows affected = 0? → Token đã bị dùng bởi tab khác → REJECT
+-- Rows affected = 0?  → khẩu lệnh đã bị tab kia dùng trước → REJECT, đuổi cả hai làm lại
 ```
 
-Không lock. Không distributed mutex. Chỉ 1 câu SQL atomic. Elegant.
+Database chọn ra **một kẻ thắng** được phép đổi. Kẻ thua nhận `rows affected = 0` và bị từ chối. Một câu SQL, không mutex, không phức tạp. Elegant.
+
+> 🧠 **Senior insight:** rất nhiều race condition trong đời thực không cần lock phân tán hay Redis lock cho oách. Một câu `UPDATE ... WHERE <điều kiện kỳ vọng>` rồi kiểm `rows affected` là **compare-and-set** ngay trong DB — atomic, rẻ, và database đã lo phần khó nhất. Reach cho công cụ nặng trước khi thử công cụ nhẹ là một dạng over-engineering.
 
 ---
 
-## 🆕 Virtual Threads — tuyên ngôn hiện đại
+## 🔑 Cú suýt cho nhầm người: hai mật khẩu, một dấu vân tay
 
-Một dòng config thay đổi mọi thứ:
+Người gác không cất mật khẩu của khách. Bác cất **dấu vân tay** của nó — một hash BCrypt. Khách chìa mật khẩu, bác lăn vân tay, so với cái đã lưu. Khớp thì mở cổng.
+
+Nhưng có một đêm, suýt nữa người gác cho nhầm người.
+
+> 🎬 **Cảnh phim:** một kẻ lạ chìa ra một mật khẩu dài 100 ký tự, **khác hẳn** mật khẩu thật của khách ở ký tự thứ 73 trở đi. Người gác lăn vân tay... và tái mặt: **vân tay khớp.** Hai mật khẩu khác nhau, một dấu vân tay y hệt. Sao có thể?
+
+Thủ phạm là **BCrypt 72-byte trap**: BCrypt âm thầm **cắt cụt input ở byte thứ 72**. Mọi thứ sau byte 72 bị vứt không một lời cảnh báo. Nên "aaaa…a" (100 ký tự) và "aaaa…a" (72 ký tự) cho ra **cùng một hash** — cùng một dấu vân tay. Người gác không hề biết mình bị lừa.
+
+Cách bịt: chặn ngay từ cổng ngoài, đừng để input dài lọt tới tầng hash. Và đây là lúc người gác rút món vũ khí hiện đại đầu tiên ra khỏi thắt lưng — **Record** của Java 21, gọn đến mức validate ngay tại khai báo:
+
+```java
+// Trước (Java 8 style) — 40 dòng boilerplate: getter, setter, equals, hashCode, toString...
+public class LoginRequest {
+    private String email;
+    private String password;
+    // ... mệt mỏi ...
+}
+
+// Sau (Java 21) — 1 record, immutable, validate ngay tại chỗ
+public record LoginRequest(
+    @Email String email,
+    @Size(min = 8, max = 72) String password   // ← chặn 72-byte trap NGAY ở input
+) {}
+```
+
+> ⚠️ **Trap kinh điển:** không validate `max = 72` thì hai mật khẩu khác nhau có thể đăng nhập như nhau, và tệ hơn — không ai phát hiện cho đến khi pentest hỏi. Cắt cụt **âm thầm** là loại bug tệ nhất: không lỗi, không log, chỉ sai. Validate ở input là chặn từ trứng nước.
+
+---
+
+## ⚔️ Trang bị cho người gác: ba món vũ khí hiện đại
+
+Một người gác giỏi không chỉ có con mắt tinh. Bác còn cần đồ nghề tốt. Day 2 giắt cho bác ba món vũ khí Java 21 / Spring Boot hiện đại — và mỗi món được rút ra ngay từ Day 2 có chủ đích, không phải để khoe.
+
+### 🧵 Vũ khí 1: Virtual Threads — một đạo quân lính gác nhẹ tênh
+
+Một dòng config, và mỗi request được một **virtual thread** riêng đứng gác — siêu nhẹ, không ghim cứng OS thread khi ngồi chờ I/O:
 
 ```yaml
 spring:
@@ -71,72 +119,63 @@ spring:
       enabled: true
 ```
 
-Mọi request handler giờ chạy trên **virtual thread** — lightweight, không block OS thread khi chờ I/O. Endpoint `/auth/me` trả về:
+Endpoint `/auth/me` còn cắm cờ tuyên ngôn:
 
 ```json
 {
   "email": "tonny@example.com",
-  "virtualThread": true  ← "Tôi modern từ ngày đầu"
+  "virtualThread": true
 }
 ```
 
-Tại sao bật ngay Day 2 mà không đợi? Vì muốn **sống với nó** 38 ngày — phát hiện gotcha sớm (Day 19 sẽ gặp pinning problem với `synchronized`), không phải migrate cuối project.
+Vì sao bật ngay Day 2 mà không đợi? Vì người gác muốn **sống chung với đạo quân này 38 ngày** — để gặp gotcha sớm (Day 19 sẽ chạm trán bài toán **pinning** với khối `synchronized`), chứ không phải migrate cập rập vào cuối dự án rồi vỡ trận.
 
----
+### 📋 Vũ khí 2: Records — sổ ghi gọn, không bịa thêm chữ
 
-## 🆕 Records thay DTO class
+Đã gặp ở cảnh BCrypt trên: Record thay class DTO 40 dòng boilerplate bằng 1 dòng — **immutable**, có sẵn `equals`/`hashCode`/`toString`, validate cắm thẳng tại field. Người gác ghi chép gọn, không dây mực.
 
-```java
-// Trước (Java 8 style) — 40 dòng boilerplate
-public class LoginRequest {
-    private String email;
-    private String password;
-    // getter, setter, constructor, equals, hashCode, toString...
-}
+### 🧪 Vũ khí 3: Testcontainers `@ServiceConnection` — diễn tập với địch thật
 
-// Sau (Java 21) — 1 dòng, immutable, done
-public record LoginRequest(
-    @Email String email,
-    @Size(min = 8, max = 72) String password
-) {}
-```
-
-Tại sao `max = 72`? Vì BCrypt có **72-byte trap** — input dài hơn 72 bytes bị cắt âm thầm. Password "aaaa...a" (100 ký tự) và "aaaa...a" (72 ký tự) hash giống nhau. Validate ngay input, không để lọt vào hashing layer.
-
----
-
-## 🆕 Testcontainers `@ServiceConnection`
-
-Không H2. Không mock database. Test với **Postgres thật** chạy trong Docker container:
+Người gác không tập đánh với hình nộm (H2, mock DB). Bác tập với **Postgres thật** trong Docker container:
 
 ```java
 @Testcontainers
 @SpringBootTest
 class AuthIntegrationTest {
     @Container
-    @ServiceConnection  // Spring Boot 3.1+ auto-wire datasource
+    @ServiceConnection   // Spring Boot 3.1+ tự wire datasource — khỏi @DynamicPropertySource boilerplate
     static PostgreSQLContainer<?> pg = new PostgreSQLContainer<>("postgres:16");
 }
 ```
 
-`@ServiceConnection` tự động inject connection string vào Spring context. Không cần `@DynamicPropertySource` boilerplate. Testcontainers start Postgres, Flyway migrate schema, test chạy trên real database, container die sau test.
+`@ServiceConnection` tự bơm connection string vào Spring context. Testcontainers dựng Postgres, Flyway migrate schema, test chạy trên DB thật, container chết sau test. Diễn tập sát thực chiến — không phải "ở H2 thì pass, lên Postgres thì khóc".
+
+| ⚔️ Vũ khí | Thay cho cái cũ | Vì sao rút ra từ Day 2 |
+| --- | --- | --- |
+| 🧵 Virtual Threads | Thread pool truyền thống | Sống chung 38 ngày để gặp pinning sớm (Day 19) |
+| 📋 Records | DTO class 40 dòng | Immutable + validate tại field, chống 72-byte trap |
+| 🧪 Testcontainers `@ServiceConnection` | H2 / mock DB | Test sát Postgres thật, khỏi "pass dỏm" |
 
 ---
 
-## Kết thúc ngày 2
+## 🏁 Kết thúc ngày 2
 
 ```
 📊 Scorecard:
 ├── Services:        1 (auth-service)
 ├── Endpoints:       4 (register, login, refresh, /me)
-├── Modernity:       Virtual Threads ✓ · Records ✓ · Testcontainers ✓
-├── Security traps:  2 caught (BCrypt 72-byte, refresh race)
+├── Vũ khí hiện đại: Virtual Threads ✓ · Records ✓ · Testcontainers ✓
+├── Security traps:  2 chặn được (BCrypt 72-byte, refresh rotation race)
 ├── Docs:            5 (ADR-002, lesson, 2 issues, interview)
-└── Vibe:            "Cổng thành đã đóng. Chỉ người có token mới vào."
+└── Vibe:            "Cổng thành đã khóa. Chỉ kẻ cầm thẻ thật mới qua." 💂
 ```
 
-> 💡 **Bẫy phỏng vấn**: *"JWT stateless thì làm sao force logout?"* — Câu trả lời: short-lived access (15min) + refresh rotation + optional Redis blacklist cho emergency revoke. Trade-off: thêm 1 Redis call mỗi request nếu bật blacklist.
+> 💡 **Bẫy phỏng vấn kinh điển:** *"JWT stateless thì force logout kiểu gì?"*
+>
+> **Strong answer:** Không có nút "đuổi tức thì" miễn phí với JWT. Cách thật dùng: access token sống ngắn (15 phút) + refresh rotation (khẩu lệnh cháy mỗi lần dùng) + optional Redis blacklist cho ca khẩn cấp. Trade-off của blacklist: thêm 1 Redis call mỗi request — nên chỉ bật khi thực sự cần, không bật mặc định kẻo mất luôn cái lợi "verify tại chỗ" của JWT.
+>
+> 🪤 **Follow-up trap:** *"Refresh rotation chống được token theft thật không?"* → Chống được **reuse**: nếu kẻ trộm dùng khẩu lệnh đã cháy, ta phát hiện (rows affected = 0 / token đã revoked) và có thể **thu hồi cả họ token** của user đó — coi như tín hiệu bị xâm nhập. Không chống được kẻ trộm dùng token **trước** chủ nhân, nhưng thu hẹp cửa sổ tấn công xuống còn một lượt.
 
 ---
 
-*→ Cổng thành đã có. Giờ cần hàng hóa bên trong...*
+*→ Cổng đã có người gác, thẻ bài đã có dấu niêm. Nhưng một vương quốc chỉ có cổng mà không có hàng trong kho thì gác để làm gì? Ngày mai, ta dựng kệ hàng — và một chủ tiệm khôn ngoan sẽ dạy ta một bài: đôi khi xây nhanh là phải biết mình đang **nợ** những gì...* 📦
