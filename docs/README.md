@@ -56,9 +56,9 @@ graph LR
     end
 
     subgraph Week3[Week 3 — Performance]
-        D15[Day 15<br/>2-tier Cache]:::planned
-        D16[Day 16<br/>SQL tuning]:::planned
-        D17[Day 17<br/>N+1]:::planned
+        D15[Day 15<br/>2-tier Cache]:::done
+        D16[Day 16<br/>SQL tuning]:::done
+        D17[Day 17<br/>N+1]:::done
         D18[Day 18<br/>Pagination]:::planned
         D19[Day 19<br/>Concurrency]:::planned
         D20[Day 20<br/>Load test]:::planned
@@ -235,6 +235,7 @@ graph LR
 | [`lessons/13b-dual-write-problem.md`](lessons/13b-dual-write-problem.md) | ✅ | Dual-write concept, tại sao 2PC fail, solution family (outbox / CDC / saga) |
 | [`lessons/15-cache-strategies.md`](lessons/15-cache-strategies.md) | ✅ | 4 cache strategy (cache-aside/read-through/write-through/write-behind), stampede/penetration/avalanche traps |
 | [`lessons/16-postgres-indexing.md`](lessons/16-postgres-indexing.md) | ✅ | 5 loại index Postgres (B-tree / GIN trigram / tsvector / partial / covering) + decision matrix theo predicate shape + `CONCURRENTLY` |
+| [`lessons/17-jpa-fetch-strategies.md`](lessons/17-jpa-fetch-strategies.md) | ✅ | EntityGraph vs JOIN FETCH vs projection — decision matrix + 4 cạm bẫy (HHH000104 in-memory pagination / MultipleBagFetchException / LazyInit + open-in-view / constructor expression) |
 | `lessons/19-java-locking.md` | ⏳ Day 19 | synchronized / ReentrantLock / StampedLock |
 | `lessons/19b-virtual-threads-deep.md` | ⏳ Day 19 | Loom internals, pinning, structured concurrency |
 | `lessons/19c-distributed-lock-redlock.md` | ⏳ Day 19 | Redis SET NX PX, Redlock + Kleppmann/antirez debate, fencing token |
@@ -271,7 +272,7 @@ graph LR
 | `issues/15-cache-stampede.md` | ✅ | Hot key TTL expire → 1000 req hit DB. Single-flight vs probabilistic early expiration vs lock |
 | `issues/15b-hot-key.md` | ✅ | 1 product viral → Redis 1 key bottleneck. Local cache fallback / key sharding |
 | [`issues/16-slow-like-search-seq-scan.md`](issues/16-slow-like-search-seq-scan.md) | ✅ | `LIKE '%kw%'` non-sargable Seq Scan ở 1M rows — 4 approaches (prefix-only / GIN trigram chosen / tsvector / ES) |
-| `issues/17-jpa-n-plus-one.md` | ⏳ Day 17 | List orders → N+1 query items |
+| [`issues/17-jpa-n-plus-one.md`](issues/17-jpa-n-plus-one.md) | ✅ | `GET /orders` list 40 đơn → 41 query (EAGER N+1) — 4 approaches (BatchSize / EntityGraph / JOIN FETCH / projection chosen), 41→2 query |
 | `issues/19-redlock-correctness.md` | ⏳ Day 19 | GC pause → lock expire → 2 process cùng giữ lock. Fencing token approach |
 | `issues/23-mongodb-no-transaction-trap.md` | ⏳ Day 23 | Mongo cross-document transaction trước v4.0 — pitfall thường gặp |
 
@@ -314,6 +315,7 @@ graph LR
 | [`interview/day-13-outbox.md`](interview/day-13-outbox.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (dual-write · outbox vs CDC · multi-instance race SKIP LOCKED · ordering per-aggregate · table bloat cleanup) + AI Playbook + Tech Lead Lens |
 | [`interview/day-15-cache.md`](interview/day-15-cache.md) | ✅ | Bối cảnh NexaShop + 5 Q&A (2-tier vs single · stampede XFetch · invalidation · hit ratio · thrashing) + AI Playbook + Tech Lead Lens |
 | [`interview/day-16-sql-tuning.md`](interview/day-16-sql-tuning.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (LIKE sargability · Seq Scan dù có index · CONCURRENTLY · covering INCLUDE · GIN vs tsvector vs ES) + AI Playbook |
+| [`interview/day-17-n-plus-one.md`](interview/day-17-n-plus-one.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (N+1 nghịch lý EAGER · JOIN FETCH + Pageable in-memory · MultipleBagFetchException · projection vs EntityGraph · chặn tái phát) + AI Playbook |
 | [`interview/week-02-mock.md`](interview/week-02-mock.md) | ✅ | 10 Q Kafka senior (5 fundamentals + 5 production), self-grade 9 strong / 1 borderline (trace outbox path verify) / 0 fail |
 | [`interview/week-02-cv-bullets.md`](interview/week-02-cv-bullets.md) | ✅ | 2 bullet metric-driven (event-driven foundation + dual-write resolution; resilience + 4 ADR/week discipline) + elevator pitch v2 90s |
 | [`review/kafka-week2-findings.md`](review/kafka-week2-findings.md) | ✅ | Day 14 review brutally honest Week 2 — 9 finding (🔴 3 + 🟡 4 + 🟢 2) với severity + file:line + gap list Week 3 |
