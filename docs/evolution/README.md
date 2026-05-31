@@ -39,6 +39,7 @@
 | Chương | Tên | Day | 🎭 Metaphor xuyên suốt |
 |--------|-----|-----|------------------------|
 | 15 | [Tầng tầng bộ nhớ](./15-tang-tang-bo-nho.md) | Day 15 — Two-tier cache (Caffeine + Redis) | ⚡ Dãy phòng bộ nhớ (càng gần càng nhanh càng dễ quên) |
+| 16 | [Kính hiển vi](./16-kinh-hien-vi.md) | Day 16 — Slow query tuning (EXPLAIN ANALYZE + GIN trigram) | 🔬 Kính hiển vi soi DB (EXPLAIN = thấy planner đang nghĩ gì) |
 
 ### [Phần III → VII — Preview Day 16→40](./12-40-preview.md)
 *Tốc độ → Polyglot → Frontend → System Design → Final Mock*
@@ -90,9 +91,8 @@ graph LR
     classDef current fill:#fde68a,stroke:#d97706,color:#000
     classDef future fill:#e5e7eb,stroke:#6b7280,color:#000
 
-    class D1,D2,D3,D4,D5,D6,D7,D8,D9,D10,D11,D12,D13 done
-    class D15 current
-    class D16,D19,D20,D22,D23,D25,D26,D31,D40 future
+    class D1,D2,D3,D4,D5,D6,D7,D8,D9,D10,D11,D12,D13,D15,D16 done
+    class D19,D20,D22,D23,D25,D26,D31,D40 future
 ```
 
 ---

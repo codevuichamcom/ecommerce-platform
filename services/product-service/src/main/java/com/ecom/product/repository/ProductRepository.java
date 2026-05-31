@@ -13,8 +13,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Day 3 search dùng LIKE basic — chỉ tham khảo, sẽ rất chậm khi 1M rows
- * (Day 16 sẽ EXPLAIN ANALYZE + GIN trigram, Day 22 migrate ES).
+ * Day 3 search dùng LIKE substring (`LIKE '%kw%'`) — non-sargable với B-tree
+ * thông thường. Day 16 (V5 migration) bật {@code pg_trgm} + GIN trigram trên
+ * {@code LOWER(name)} → planner chuyển Seq Scan → Bitmap Index Scan, p95
+ * search ở 1M rows từ ~2.5s → ~45ms (xem `docs/performance/16-sql-explain-analyze.md`).
+ * Day 22 sẽ migrate sang Elasticsearch khi cần relevance scoring + faceting.
  *
  * <p>{@code @EntityGraph} trên list query — eager-fetch category để
  * tránh N+1 khi map sang DTO (mỗi product trigger 1 query category).
