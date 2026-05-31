@@ -234,6 +234,7 @@ graph LR
 | [`lessons/13-outbox-pattern.md`](lessons/13-outbox-pattern.md) | ✅ | Transactional outbox + scheduled relay, SKIP LOCKED, 5 cạm bẫy, 5 approaches comparison |
 | [`lessons/13b-dual-write-problem.md`](lessons/13b-dual-write-problem.md) | ✅ | Dual-write concept, tại sao 2PC fail, solution family (outbox / CDC / saga) |
 | [`lessons/15-cache-strategies.md`](lessons/15-cache-strategies.md) | ✅ | 4 cache strategy (cache-aside/read-through/write-through/write-behind), stampede/penetration/avalanche traps |
+| [`lessons/16-postgres-indexing.md`](lessons/16-postgres-indexing.md) | ✅ | 5 loại index Postgres (B-tree / GIN trigram / tsvector / partial / covering) + decision matrix theo predicate shape + `CONCURRENTLY` |
 | `lessons/19-java-locking.md` | ⏳ Day 19 | synchronized / ReentrantLock / StampedLock |
 | `lessons/19b-virtual-threads-deep.md` | ⏳ Day 19 | Loom internals, pinning, structured concurrency |
 | `lessons/19c-distributed-lock-redlock.md` | ⏳ Day 19 | Redis SET NX PX, Redlock + Kleppmann/antirez debate, fencing token |
@@ -269,6 +270,7 @@ graph LR
 | [`issues/13-order-paid-inventory-not-reserved.md`](issues/13-order-paid-inventory-not-reserved.md) | ✅ | Kafka broker restart 90s → 23 order DB OK, Kafka publish fail silently — 4 approaches (sync ack / outbox poll / Debezium CDC / reconciler), chosen outbox |
 | `issues/15-cache-stampede.md` | ✅ | Hot key TTL expire → 1000 req hit DB. Single-flight vs probabilistic early expiration vs lock |
 | `issues/15b-hot-key.md` | ✅ | 1 product viral → Redis 1 key bottleneck. Local cache fallback / key sharding |
+| [`issues/16-slow-like-search-seq-scan.md`](issues/16-slow-like-search-seq-scan.md) | ✅ | `LIKE '%kw%'` non-sargable Seq Scan ở 1M rows — 4 approaches (prefix-only / GIN trigram chosen / tsvector / ES) |
 | `issues/17-jpa-n-plus-one.md` | ⏳ Day 17 | List orders → N+1 query items |
 | `issues/19-redlock-correctness.md` | ⏳ Day 19 | GC pause → lock expire → 2 process cùng giữ lock. Fencing token approach |
 | `issues/23-mongodb-no-transaction-trap.md` | ⏳ Day 23 | Mongo cross-document transaction trước v4.0 — pitfall thường gặp |
@@ -282,7 +284,7 @@ graph LR
 | [`performance/03-product-search-indexing.md`](performance/03-product-search-indexing.md) | ✅ | Index strategy cho LIKE → GIN trigram (Day 16) → ES (Day 22) |
 | `performance/15-cache-aside.md` | ✅ | Cache-aside pattern, TTL, invalidation |
 | `performance/15b-two-tier-cache.md` | ✅ | Caffeine L1 + Redis L2, hit ratio |
-| `performance/16-sql-explain-analyze.md` | ⏳ Day 16 | EXPLAIN ANALYZE, B-tree, partial, GIN index |
+| [`performance/16-sql-explain-analyze.md`](performance/16-sql-explain-analyze.md) | ✅ | EXPLAIN ANALYZE breakdown (cost/rows/actual/buffers) + before/after Seq Scan→Bitmap Index Scan + covering index Index-Only Scan + 5-step diagnostic |
 | `performance/18-seek-pagination.md` | ⏳ Day 18 | Convert offset → keyset pagination |
 | `performance/20-load-test-report-template.md` | ⏳ Day 20 | k6 + Grafana + OTel trace timeline |
 | `performance/20b-vt-vs-platform-thread-bench.md` | ⏳ Day 20 | Virtual thread vs platform thread benchmark report |
@@ -311,6 +313,7 @@ graph LR
 | [`interview/day-12-resilience.md`](interview/day-12-resilience.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (exp backoff vs fixed · CB state machine · khi nào KHÔNG retry · DLT vs retry topic · Bulkhead semaphore vs threadpool) + AI Playbook + Tech Lead Lens |
 | [`interview/day-13-outbox.md`](interview/day-13-outbox.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (dual-write · outbox vs CDC · multi-instance race SKIP LOCKED · ordering per-aggregate · table bloat cleanup) + AI Playbook + Tech Lead Lens |
 | [`interview/day-15-cache.md`](interview/day-15-cache.md) | ✅ | Bối cảnh NexaShop + 5 Q&A (2-tier vs single · stampede XFetch · invalidation · hit ratio · thrashing) + AI Playbook + Tech Lead Lens |
+| [`interview/day-16-sql-tuning.md`](interview/day-16-sql-tuning.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (LIKE sargability · Seq Scan dù có index · CONCURRENTLY · covering INCLUDE · GIN vs tsvector vs ES) + AI Playbook |
 | [`interview/week-02-mock.md`](interview/week-02-mock.md) | ✅ | 10 Q Kafka senior (5 fundamentals + 5 production), self-grade 9 strong / 1 borderline (trace outbox path verify) / 0 fail |
 | [`interview/week-02-cv-bullets.md`](interview/week-02-cv-bullets.md) | ✅ | 2 bullet metric-driven (event-driven foundation + dual-write resolution; resilience + 4 ADR/week discipline) + elevator pitch v2 90s |
 | [`review/kafka-week2-findings.md`](review/kafka-week2-findings.md) | ✅ | Day 14 review brutally honest Week 2 — 9 finding (🔴 3 + 🟡 4 + 🟢 2) với severity + file:line + gap list Week 3 |
