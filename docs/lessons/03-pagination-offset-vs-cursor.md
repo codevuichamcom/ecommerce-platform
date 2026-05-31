@@ -1,7 +1,8 @@
 # 📖 Lesson 03 — Pagination: Offset vs Cursor (Keyset)
 
-> **Day 3 deliverable.** Day 18 sẽ migrate sang keyset cho dataset 10M+
-> rows. Lesson này giải thích lý thuyết + trade-off để hiểu vì sao Day 3
+> **Day 3 deliverable.** ✅ Day 18 đã migrate sang keyset cho dataset 1M+
+> rows — xem benchmark thật + code ở [performance/18-seek-pagination.md](../performance/18-seek-pagination.md).
+> Lesson này giải thích lý thuyết + trade-off để hiểu vì sao Day 3
 > chấp nhận offset (đơn giản) còn Day 18 phải đổi.
 
 ## TL;DR
@@ -66,7 +67,8 @@ to, frontend render lag. Pagination khắc phục cả 3.
 ## 🔗 Related
 
 - Code: [`services/product-service/src/main/java/com/ecom/product/service/ProductService.java`](../../services/product-service/src/main/java/com/ecom/product/service/ProductService.java)
-- Performance deep-dive (Day 18): `performance/18-seek-pagination.md` ⏳
+- Performance deep-dive (Day 18): [`performance/18-seek-pagination.md`](../performance/18-seek-pagination.md) ✅
+- Issue (Day 18): [`issues/18-deep-offset-pagination-slow.md`](../issues/18-deep-offset-pagination-slow.md) ✅
 - Migrate ES search (Day 22): `lessons/22-elasticsearch-basics.md` ⏳
 - Issue về entity leak liên quan list endpoint: [`issues/03-entity-leak-in-response.md`](../issues/03-entity-leak-in-response.md)
 - Interview: [`interview/day-03-product.md`](../interview/day-03-product.md)
