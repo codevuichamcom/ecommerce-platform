@@ -59,7 +59,7 @@ graph LR
         D15[Day 15<br/>2-tier Cache]:::done
         D16[Day 16<br/>SQL tuning]:::done
         D17[Day 17<br/>N+1]:::done
-        D18[Day 18<br/>Pagination]:::planned
+        D18[Day 18<br/>Pagination]:::done
         D19[Day 19<br/>Concurrency]:::planned
         D20[Day 20<br/>Load test]:::planned
         D21[Day 21<br/>Mock W3]:::planned
@@ -273,6 +273,7 @@ graph LR
 | `issues/15b-hot-key.md` | ✅ | 1 product viral → Redis 1 key bottleneck. Local cache fallback / key sharding |
 | [`issues/16-slow-like-search-seq-scan.md`](issues/16-slow-like-search-seq-scan.md) | ✅ | `LIKE '%kw%'` non-sargable Seq Scan ở 1M rows — 4 approaches (prefix-only / GIN trigram chosen / tsvector / ES) |
 | [`issues/17-jpa-n-plus-one.md`](issues/17-jpa-n-plus-one.md) | ✅ | `GET /orders` list 40 đơn → 41 query (EAGER N+1) — 4 approaches (BatchSize / EntityGraph / JOIN FETCH / projection chosen), 41→2 query |
+| [`issues/18-deep-offset-pagination-slow.md`](issues/18-deep-offset-pagination-slow.md) | ✅ | Mobile feed page 49000 timeout — `OFFSET 980000` scan+discard 980K rows. 4 approaches (cap page / keyset chosen / cached approximate count / ES search_after) |
 | `issues/19-redlock-correctness.md` | ⏳ Day 19 | GC pause → lock expire → 2 process cùng giữ lock. Fencing token approach |
 | `issues/23-mongodb-no-transaction-trap.md` | ⏳ Day 23 | Mongo cross-document transaction trước v4.0 — pitfall thường gặp |
 
@@ -286,6 +287,7 @@ graph LR
 | `performance/15-cache-aside.md` | ✅ | Cache-aside pattern, TTL, invalidation |
 | `performance/15b-two-tier-cache.md` | ✅ | Caffeine L1 + Redis L2, hit ratio |
 | [`performance/16-sql-explain-analyze.md`](performance/16-sql-explain-analyze.md) | ✅ | EXPLAIN ANALYZE breakdown (cost/rows/actual/buffers) + before/after Seq Scan→Bitmap Index Scan + covering index Index-Only Scan + 5-step diagnostic |
+| [`performance/18-seek-pagination.md`](performance/18-seek-pagination.md) | ✅ | OFFSET scan+discard cơ chế + keyset row-value `(created_at,id)<(cursor)` + index ordering direction + benchmark offset vs keyset (1M rows, 2.4s→3ms) |
 | `performance/18-seek-pagination.md` | ⏳ Day 18 | Convert offset → keyset pagination |
 | `performance/20-load-test-report-template.md` | ⏳ Day 20 | k6 + Grafana + OTel trace timeline |
 | `performance/20b-vt-vs-platform-thread-bench.md` | ⏳ Day 20 | Virtual thread vs platform thread benchmark report |
@@ -316,6 +318,7 @@ graph LR
 | [`interview/day-15-cache.md`](interview/day-15-cache.md) | ✅ | Bối cảnh NexaShop + 5 Q&A (2-tier vs single · stampede XFetch · invalidation · hit ratio · thrashing) + AI Playbook + Tech Lead Lens |
 | [`interview/day-16-sql-tuning.md`](interview/day-16-sql-tuning.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (LIKE sargability · Seq Scan dù có index · CONCURRENTLY · covering INCLUDE · GIN vs tsvector vs ES) + AI Playbook |
 | [`interview/day-17-n-plus-one.md`](interview/day-17-n-plus-one.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (N+1 nghịch lý EAGER · JOIN FETCH + Pageable in-memory · MultipleBagFetchException · projection vs EntityGraph · chặn tái phát) + AI Playbook |
+| [`interview/day-18-pagination.md`](interview/day-18-pagination.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (page 50000 fix · tie-break (created_at,id) · total + jump-to-page · opaque cursor + HMAC IDOR · sort động multi-index) + AI Playbook |
 | [`interview/week-02-mock.md`](interview/week-02-mock.md) | ✅ | 10 Q Kafka senior (5 fundamentals + 5 production), self-grade 9 strong / 1 borderline (trace outbox path verify) / 0 fail |
 | [`interview/week-02-cv-bullets.md`](interview/week-02-cv-bullets.md) | ✅ | 2 bullet metric-driven (event-driven foundation + dual-write resolution; resilience + 4 ADR/week discipline) + elevator pitch v2 90s |
 | [`review/kafka-week2-findings.md`](review/kafka-week2-findings.md) | ✅ | Day 14 review brutally honest Week 2 — 9 finding (🔴 3 + 🟡 4 + 🟢 2) với severity + file:line + gap list Week 3 |

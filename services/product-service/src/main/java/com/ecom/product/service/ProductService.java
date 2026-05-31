@@ -2,6 +2,7 @@ package com.ecom.product.service;
 
 import com.ecom.common.exception.BusinessException;
 import com.ecom.common.exception.ErrorCode;
+import com.ecom.common.response.KeysetPage;
 import com.ecom.common.response.PageResponse;
 import com.ecom.product.domain.Category;
 import com.ecom.product.domain.Product;
@@ -10,6 +11,7 @@ import com.ecom.product.mapper.ProductMapper;
 import com.ecom.product.repository.CategoryRepository;
 import com.ecom.product.repository.ProductRepository;
 import com.ecom.product.web.dto.ProductCreateRequest;
+import com.ecom.product.web.dto.ProductCursor;
 import com.ecom.product.web.dto.ProductResponse;
 import com.ecom.product.web.dto.ProductSnapshotResponse;
 import com.ecom.product.web.dto.ProductUpdateRequest;
@@ -20,6 +22,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -31,6 +34,7 @@ import static com.ecom.product.config.cache.CacheConfig.CACHE_PRODUCT_BY_ID;
 import static com.ecom.product.config.cache.CacheConfig.CACHE_PRODUCT_BY_SLUG;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -49,6 +53,12 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ProductService {
+
+    /**
+     * Trần độ sâu offset. page 500 × size 100 = scan tối đa 50K rows — ngưỡng
+     * latency còn chấp nhận. Sâu hơn ép client chuyển keyset (infinite scroll).
+     */
+    private static final int MAX_OFFSET_PAGE = 500;
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
@@ -108,6 +118,14 @@ public class ProductService {
                                                 int size,
                                                 String sortBy,
                                                 Sort.Direction direction) {
+        // Day 18 — hard cap độ sâu offset. Deep page (vd 49000) buộc Postgres
+        // scan + discard hàng trăm K rows → p99 spike + nguy cơ enumerate cả
+        // catalog. Vượt ngưỡng → 400 + hướng client sang keyset endpoint.
+        if (page > MAX_OFFSET_PAGE) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST,
+                    "Offset pagination giới hạn page ≤ " + MAX_OFFSET_PAGE
+                            + ". Dùng GET /products/keyset cho deep scroll.");
+        }
         String safeSort = switch (sortBy == null ? "createdAt" : sortBy) {
             case "price" -> "price";
             case "name"  -> "name";
@@ -121,6 +139,61 @@ public class ProductService {
         String kw = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
         Page<Product> result = productRepository.search(kw, categoryId, status, pageable);
         return PageResponse.from(result).map(productMapper::toResponse);
+    }
+
+    /**
+     * Day 18 — <b>keyset (seek) pagination</b> cho large dataset (1M+ rows).
+     *
+     * <p>Tại sao tồn tại song song với {@link #search} (offset)? Offset chậm
+     * tuyến tính theo độ sâu: {@code OFFSET 980000} buộc Postgres scan + discard
+     * 980K rows trước khi trả 20 → p99 nhảy lên hàng giây. Keyset seek thẳng
+     * tới vị trí cursor qua index {@code (created_at DESC, id DESC)} → cost
+     * gần như hằng số bất kể page sâu. Đổi lại: mất jump-to-page (chỉ next),
+     * mất {@code total} (không COUNT). Mobile infinite-scroll xài keyset, admin
+     * cần "page 5/100" giữ offset.
+     *
+     * <p>Sort cố định {@code created_at DESC, id DESC} — KHÔNG cho sort động ở
+     * đây. Mỗi sort khác = 1 composite index + 1 cursor encode khác (xem
+     * lesson 03 §Cạm bẫy #4). Day 22 đẩy multi-sort/relevance sang ES.
+     *
+     * <p>Cơ chế {@code hasNext} không cần COUNT: fetch {@code size + 1} row.
+     * Nếu DB trả về dư 1 ⇒ còn page sau → cắt row thừa, build cursor từ row
+     * <i>cuối cùng được giữ lại</i> (row thứ {@code size}).
+     *
+     * @param cursorToken opaque token từ response trước; {@code null}/blank = trang đầu
+     */
+    public KeysetPage<ProductResponse> searchKeyset(String keyword,
+                                                    UUID categoryId,
+                                                    ProductStatus status,
+                                                    String cursorToken,
+                                                    int size) {
+        int safeSize = Math.min(Math.max(1, size), 100);  // hard cap 100 — đồng bộ với offset
+        String kw = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
+
+        ProductCursor cursor = (cursorToken == null || cursorToken.isBlank())
+                ? null
+                : ProductCursor.decode(cursorToken);  // token rác → 400 (xem ProductCursor#decode)
+
+        // Fetch size+1 để dò hasNext mà không COUNT.
+        List<Product> rows = productRepository.searchKeyset(
+                kw, categoryId, status,
+                cursor == null ? null : cursor.createdAt(),
+                cursor == null ? null : cursor.id(),
+                Limit.of(safeSize + 1));
+
+        boolean hasNext = rows.size() > safeSize;
+        List<Product> pageRows = hasNext ? rows.subList(0, safeSize) : rows;
+
+        // nextCursor build từ row CUỐI của page (sau khi cắt row thừa). Nếu
+        // không còn page sau → null (KeysetPage.of suy ra hasNext=false).
+        String nextCursor = null;
+        if (hasNext) {
+            Product last = pageRows.get(pageRows.size() - 1);
+            nextCursor = new ProductCursor(last.getCreatedAt(), last.getId()).encode();
+        }
+
+        List<ProductResponse> items = pageRows.stream().map(productMapper::toResponse).toList();
+        return KeysetPage.of(items, nextCursor, safeSize);
     }
 
     @Transactional

@@ -1,6 +1,7 @@
 package com.ecom.product.web;
 
 import com.ecom.common.response.ApiResponse;
+import com.ecom.common.response.KeysetPage;
 import com.ecom.common.response.PageResponse;
 import com.ecom.product.domain.ProductStatus;
 import com.ecom.product.service.ProductService;
@@ -37,6 +38,13 @@ public class ProductController {
 
     private final ProductService productService;
 
+    /**
+     * Offset pagination — giữ cho admin/back-office cần jump-to-page ("page
+     * 5 / 100") + total count. Day 18 thêm hard cap {@code page ≤ 500}:
+     * deep offset (vd page 49000) scan + discard hàng trăm K rows → p99 spike.
+     * Chặn deep-scan abuse ở đây; client cần xem sâu hơn phải dùng
+     * {@code /products/keyset} (infinite scroll) hoặc filter hẹp lại.
+     */
     @GetMapping
     public ApiResponse<PageResponse<ProductResponse>> search(
             @RequestParam(required = false) String q,
@@ -47,6 +55,23 @@ public class ProductController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "DESC") Sort.Direction direction) {
         return ApiResponse.ok(productService.search(q, categoryId, status, page, size, sortBy, direction));
+    }
+
+    /**
+     * Day 18 — keyset (seek) pagination cho infinite-scroll (mobile feed).
+     * Sort cố định {@code created_at DESC, id DESC}. Không page number, không
+     * total: client gửi {@code cursor} (opaque token) lấy từ {@code nextCursor}
+     * của response trước; bỏ trống = trang đầu. Cost ổn định bất kể độ sâu —
+     * khác offset spike ở deep page. Xem {@code performance/18-seek-pagination.md}.
+     */
+    @GetMapping("/keyset")
+    public ApiResponse<KeysetPage<ProductResponse>> searchKeyset(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) UUID categoryId,
+            @RequestParam(required = false) ProductStatus status,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "20") int size) {
+        return ApiResponse.ok(productService.searchKeyset(q, categoryId, status, cursor, size));
     }
 
     @GetMapping("/{id}")

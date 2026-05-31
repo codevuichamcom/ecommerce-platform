@@ -41,6 +41,7 @@
 | 15 | [Tầng tầng bộ nhớ](./15-tang-tang-bo-nho.md) | Day 15 — Two-tier cache (Caffeine + Redis) | ⚡ Dãy phòng bộ nhớ (càng gần càng nhanh càng dễ quên) |
 | 16 | [Kính hiển vi](./16-kinh-hien-vi.md) | Day 16 — Slow query tuning (EXPLAIN ANALYZE + GIN trigram) | 🔬 Kính hiển vi soi DB (EXPLAIN = thấy planner đang nghĩ gì) |
 | 17 | [Anh bồi bàn chạy bộ](./17-anh-boi-ban.md) | Day 17 — JPA N+1 (EntityGraph / JOIN FETCH / Projection) | 🍽️ Anh bồi bàn EAGER chạy 41 vòng bếp (projection = ghi phiếu, bếp tự đếm) |
+| 18 | [Người thủ thư và cái kẹp sách](./18-nguoi-thu-thu.md) | Day 18 — Keyset pagination (offset → seek) | 📖 Thủ thư đếm-lại-từ-đầu vs cái kẹp sách (cursor = bookmark, OFFSET = đếm lại) |
 
 ### [Phần III → VII — Preview Day 16→40](./12-40-preview.md)
 *Tốc độ → Polyglot → Frontend → System Design → Final Mock*
@@ -73,7 +74,8 @@ graph LR
         D13 --> D15[⚡ Cache]
         D15 --> D16[🔍 SQL]
         D16 --> D17[🍽️ N+1]
-        D17 --> D19[🧵 Concurrency]
+        D17 --> D18[📖 Keyset]
+        D18 --> D19[🧵 Concurrency]
         D19 --> D20[📊 Load test]
     end
 
@@ -93,7 +95,7 @@ graph LR
     classDef current fill:#fde68a,stroke:#d97706,color:#000
     classDef future fill:#e5e7eb,stroke:#6b7280,color:#000
 
-    class D1,D2,D3,D4,D5,D6,D7,D8,D9,D10,D11,D12,D13,D15,D16,D17 done
+    class D1,D2,D3,D4,D5,D6,D7,D8,D9,D10,D11,D12,D13,D15,D16,D17,D18 done
     class D19,D20,D22,D23,D25,D26,D31,D40 future
 ```
 
