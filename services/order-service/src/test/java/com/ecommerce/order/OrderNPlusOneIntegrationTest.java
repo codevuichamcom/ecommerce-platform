@@ -17,9 +17,11 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.test.context.TestPropertySource;
 
 import java.util.List;
@@ -45,7 +47,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import(PostgresTestcontainerConfig.class)
+@Import({PostgresTestcontainerConfig.class, OrderNPlusOneIntegrationTest.AuditingConfig.class})
 @TestPropertySource(properties = {
         "spring.jpa.hibernate.ddl-auto=validate",
         "spring.jpa.properties.hibernate.generate_statistics=true",
@@ -53,6 +55,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 })
 @EnabledIfEnvironmentVariable(named = "RUN_ORDER_INTEGRATION_TESTS", matches = "true")
 class OrderNPlusOneIntegrationTest {
+
+    /**
+     * {@code @DataJpaTest} slice KHÔNG load common-lib auto-config, nên
+     * {@code @EnableJpaAuditing} không active → {@code @CreatedDate created_at}
+     * (NOT NULL ở BaseEntity) bị null khi insert. Bật auditing thủ công ở đây.
+     */
+    @TestConfiguration(proxyBeanMethods = false)
+    @EnableJpaAuditing
+    static class AuditingConfig {
+    }
 
     private static final int ORDER_COUNT = 5;
     private static final int ITEMS_PER_ORDER = 3;
