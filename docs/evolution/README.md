@@ -44,8 +44,9 @@
 | 18 | [Người thủ thư và cái kẹp sách](./18-nguoi-thu-thu.md) | Day 18 — Keyset pagination (offset → seek) | 📖 Thủ thư đếm-lại-từ-đầu vs cái kẹp sách (cursor = bookmark, OFFSET = đếm lại) |
 | 19 | [Anh bảo vệ phòng VIP một chìa](./19-anh-bao-ve.md) | Day 19 — Concurrency (locks · Virtual Threads · distributed lock) | 🕺 Anh bảo vệ giữ chìa (lock) + khách mượn ghế carrier (VT) + chìa rơi khi GC pause + vé số tăng dần (fencing token) |
 | 20 | [Ông huấn luyện viên tàn nhẫn](./20-ong-huan-luyen-vien.md) | Day 20 — Load testing (k6 · Grafana · OTel trace timeline) | 🏋️ HLV thể hình chất tạ tăng dần (open model) tìm cơ yếu nhất — gân (connection pool) gãy trước cơ (CPU/thread) |
+| 21 | [Gương soi và lưới đan](./21-guong-soi-luoi-dan.md) | Day 21 — Code review + interview round (Week 3 mock) | 🪞 Gương chỉ ra truth (23 findings) + lưới đan 10 câu hỏi (buộc phải nói rõ) |
 
-### [Phần III → VII — Preview Day 16→40](./12-40-preview.md)
+### [Phần IV → VII — Preview Day 22→40](./22-40-preview.md)
 *Tốc độ → Polyglot → Frontend → System Design → Final Mock*
 
 ---

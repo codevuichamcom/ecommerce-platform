@@ -279,6 +279,16 @@ graph LR
 | [`issues/20-connection-pool-exhaustion-under-vt.md`](issues/20-connection-pool-exhaustion-under-vt.md) | ✅ | Bật VT mà P99 nổ 120ms→2.1s, CPU 35%, Hikari pending 150+ → bottleneck dời sang connection pool. 4 approaches (pool mù / Little's Law chosen / reactive / read replica) |
 | `issues/23-mongodb-no-transaction-trap.md` | ⏳ Day 23 | Mongo cross-document transaction trước v4.0 — pitfall thường gặp |
 
+### 🔍 2.5b. Code Review (`review/`)
+
+> Format `topic-findings.md`. Cumulative code review checklist + pattern-based findings (AI/junior traps, severity-ranked).
+
+| Doc | Status | Mô tả |
+| --- | ------ | ----- |
+| [`review/ai-junior-traps.md`](review/ai-junior-traps.md) | ✅ | Cumulative checklist — AI/junior pattern errors (vd [03] premature-DRY, [04] auto-config kéo dependency, [05] catch-all RuntimeException, [06] dedup release sau side effect). Updated mỗi week. |
+| [`review/kafka-week2-findings.md`](review/kafka-week2-findings.md) | ✅ | Day 14 review — 9 findings (🔴 3 + 🟡 4 + 🟢 2) với severity + file:line + gap list |
+| [`review/performance-week3-findings.md`](review/performance-week3-findings.md) | ✅ | Day 21 review — 23 findings (🔴 6 + 🟡 8 + 🟢 9) severity matrix, Red gaps immediate (CONCURRENTLY, unused N+1, cursor checksum, lock race, k6 VU, metadata bloat), actionable day 22+ |
+
 ### ⚡ 2.6. Performance (`performance/`)
 
 > Format `NN-topic.md`. Tuning notes + before/after benchmark.
@@ -325,8 +335,9 @@ graph LR
 | [`interview/day-20-load-test.md`](interview/day-20-load-test.md) | ✅ | Bối cảnh NexaShop/Anh Khải + 5 Q&A (P95/P99 vs average · open vs closed/coordinated omission · VT nhanh hơn không · chỉ bottleneck bằng trace · Little's Law pool size) + AI Playbook |
 | [`interview/week-02-mock.md`](interview/week-02-mock.md) | ✅ | 10 Q Kafka senior (5 fundamentals + 5 production), self-grade 9 strong / 1 borderline (trace outbox path verify) / 0 fail |
 | [`interview/week-02-cv-bullets.md`](interview/week-02-cv-bullets.md) | ✅ | 2 bullet metric-driven (event-driven foundation + dual-write resolution; resilience + 4 ADR/week discipline) + elevator pitch v2 90s |
-| [`review/kafka-week2-findings.md`](review/kafka-week2-findings.md) | ✅ | Day 14 review brutally honest Week 2 — 9 finding (🔴 3 + 🟡 4 + 🟢 2) với severity + file:line + gap list Week 3 |
-| `interview/week-NN-cv-bullets.md` | ⏳ Day 21/25/30/37 | CV bullet draft cuối mỗi tuần (Day 7, 14 ✅) |
+| [`interview/week-03-mock.md`](interview/week-03-mock.md) | ✅ | 10 Q performance senior (5 system design: offset/keyset, cache 2-tier, optimistic lock, load test, storage matrix + 5 production: flash sale, cache hit but slow, keyset edge case, network partition lock, VT constrained prod). Self-grade 9 strong / 1 borderline / 0 fail. Confidence 8.5/10. Story: "3 pattern 10× throughput: cache XFetch + keyset seek + distributed lock fencing." |
+| [`interview/week-03-cv-bullets.md`](interview/week-03-cv-bullets.md) | ✅ | 2 bullet metric-driven (4× latency 200ms→50ms P95, 10× throughput 200→2000 req/s; distributed lock partition safety). Elevator pitch v3 90s accumulative Week 1-3. |
+| `interview/week-NN-cv-bullets.md` | ⏳ Day 25/30/37 | CV bullet draft cuối mỗi tuần (Day 7, 14, 21 ✅, Day 25/30/37 pending) |
 | `interview/day-22-elasticsearch.md` | ⏳ Day 22 | ES use case + decision rationale |
 | `interview/day-23-mongodb.md` | ⏳ Day 23 | Mongo use case + decision rationale |
 | `interview/day-24-storage-decisions.md` | ⏳ Day 24 | "Khi nào dùng NoSQL?" — câu phỏng vấn classic |
