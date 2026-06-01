@@ -100,6 +100,40 @@ services:
       timeout: 5s
       retries: 5
 
+  # Day 22 — Elasticsearch 8 single-node cho product full-text search.
+  # CHỦ Ý dev-only:
+  #   - discovery.type=single-node: bỏ qua bootstrap check cluster (1 node OK dev).
+  #   - xpack.security.enabled=false: tắt TLS + auth để Spring Data ES connect
+  #     plaintext http://localhost:9200 (PROD bật security + cert + api-key).
+  #   - ES_JAVA_OPTS=-Xms512m -Xmx512m: cap heap 512MB — ES default 50% RAM máy,
+  #     dev laptop chạy cả Postgres+Kafka+Redis sẽ OOM nếu để default.
+  #   - ulimit memlock: ES yêu cầu lock memory tránh swap (swap = chết p99).
+  elasticsearch:
+    image: elasticsearch:8.15.3
+    container_name: ecom-elasticsearch
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      xpack.security.http.ssl.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      bootstrap.memory_lock: "true"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"   # REST API (Spring Data ES connect cổng này)
+      - "9300:9300"   # transport (node-to-node, dev single-node không dùng)
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      # yellow OK cho single-node (replica chưa assign được vì chỉ 1 node).
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: ecom-kafka-ui
@@ -118,3 +152,4 @@ volumes:
   postgres-data:
   redis-data:
   kafka-data:
+  es-data:

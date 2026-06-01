@@ -46,8 +46,15 @@
 | 20 | [Ông huấn luyện viên tàn nhẫn](./20-ong-huan-luyen-vien.md) | Day 20 — Load testing (k6 · Grafana · OTel trace timeline) | 🏋️ HLV thể hình chất tạ tăng dần (open model) tìm cơ yếu nhất — gân (connection pool) gãy trước cơ (CPU/thread) |
 | 21 | [Gương soi và lưới đan](./21-guong-soi-luoi-dan.md) | Day 21 — Code review + interview round (Week 3 mock) | 🪞 Gương chỉ ra truth (23 findings) + lưới đan 10 câu hỏi (buộc phải nói rõ) |
 
-### [Phần IV → VII — Preview Day 22→40](./22-40-preview.md)
-*Tốc độ → Polyglot → Frontend → System Design → Final Mock*
+### Phần IV — Đa hình lưu trữ: mỗi kho một việc (Week 4)
+*"Không có kho hoàn hảo — chỉ có kho đúng việc. Postgres giữ sổ, ES bói, Mongo nới schema."*
+
+| Chương | Tên | Day | 🎭 Metaphor xuyên suốt |
+|--------|-----|-----|------------------------|
+| 22 | [Ông thầy bói đọc vị](./22-ong-thay-boi.md) | Day 22 — Elasticsearch search (inverted index · BM25 · fuzzy · facet · sync) | 🔮 Ông thầy bói đoán ý (đọc cả khi khách nói nhịu) nhưng chỉ đọc bản phô-tô — Postgres giữ sổ gốc, Kafka làm máy phô-tô, phô-tô lệch = drift |
+
+### [Phần V → VII — Preview Day 23→40](./22-40-preview.md)
+*Polyglot → Frontend → System Design → Final Mock*
 
 ---
 

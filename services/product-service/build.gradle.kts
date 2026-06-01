@@ -45,6 +45,18 @@ dependencies {
     implementation("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.postgresql:postgresql")
 
+    // Day 22 — Elasticsearch 8 full-text search.
+    // - starter-data-elasticsearch: Spring Data ES 5.4 + ES Java client 8.15
+    //   (managed bởi Boot 3.4.5 BOM — KHÔNG pin version tay). Repository +
+    //   ElasticsearchOperations + NativeQuery DSL.
+    implementation("org.springframework.boot:spring-boot-starter-data-elasticsearch")
+
+    // Day 22 — Kafka cho sync Postgres → ES (CDC-lite app-level).
+    // common-lib KafkaAutoConfiguration opt-in qua app.kafka.enabled=true.
+    // product-service VỪA producer (publish product.upserted/deleted) VỪA
+    // consumer (ProductIndexer index document vào ES).
+    implementation("org.springframework.kafka:spring-kafka")
+
     // JWT verify only (không issue token — đó là auth-service job).
     implementation(libs.jjwt.api)
     runtimeOnly(libs.jjwt.impl)
@@ -65,6 +77,8 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation(libs.bundles.testcontainers.default)
+    // Day 22 — ES integration test (gated RUN_PRODUCT_INTEGRATION_TESTS=true).
+    testImplementation(libs.testcontainers.elasticsearch)
     testCompileOnly(libs.lombok)
     testAnnotationProcessor(libs.lombok)
 }
@@ -85,5 +99,13 @@ tasks.withType<Test>().configureEach {
         environment("DOCKER_HOST", "npipe:////./pipe/dockerDesktopLinuxEngine")
         environment("TESTCONTAINERS_RYUK_DISABLED", "true")
         environment("DOCKER_API_VERSION", "1.45")
+    } else {
+        // Linux dev/CI: docker-java mặc định negotiate API 1.32, nhưng daemon
+        // mới (Docker Engine 25+) yêu cầu tối thiểu 1.40 → "client version too
+        // old". Pin API version (cả env lẫn system property docker-java đọc)
+        // để Testcontainers connect được (Day 22 ES IT). KHÔNG override
+        // DOCKER_HOST — để Testcontainers auto-detect /var/run/docker.sock.
+        environment("DOCKER_API_VERSION", "1.43")
+        systemProperty("api.version", "1.43")
     }
 }

@@ -34,6 +34,15 @@ spring:
       lettuce:
         client-name: product-service-l2
 
+  # Day 22 — Elasticsearch 8 cho full-text search. Spring Data ES auto-config
+  # bind ElasticsearchOperations + repository tới URI này. Dev: plaintext http,
+  # no auth (xpack.security.enabled=false ở docker-compose). PROD: https +
+  # api-key/cert + connection-timeout tighten.
+  elasticsearch:
+    uris: ${ES_URIS:http://localhost:9200}
+    connection-timeout: 2s
+    socket-timeout: 5s
+
 server:
   port: 8082
 
@@ -71,6 +80,16 @@ app:
     stampede:
       early-expiration-window-seconds: 30
       xfetch-beta: 1.0
+
+  # Day 22 — Kafka bật cho sync Postgres → ES (common-lib KafkaAutoConfiguration
+  # opt-in). product-service VỪA producer (publish product.upserted/deleted)
+  # VỪA consumer (ProductIndexer index vào ES). Tắt (enabled=false) ở môi
+  # trường không cần search → ProductService skip publish, write path vẫn chạy.
+  kafka:
+    enabled: ${KAFKA_ENABLED:true}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    client-id: product-service
+    consumer-group: product-service
 
 # JWT shared secret với auth-service. Day 7 refactor sang JWKS hoặc shared
 # common-lib JwtVerifier. KHÔNG để khác secret giữa services — token issue

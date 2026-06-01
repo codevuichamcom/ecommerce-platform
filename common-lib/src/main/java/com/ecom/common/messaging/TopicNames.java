@@ -21,4 +21,11 @@ public final class TopicNames {
     public static final String PAYMENT_COMPLETED     = "payment.completed";
     public static final String INVENTORY_RESERVED    = "inventory.reserved";
     public static final String NOTIFICATION_OUTGOING = "notification.outgoing";
+
+    // Day 22 — sync Postgres → Elasticsearch (CDC-lite app-level). product-service
+    // publish khi catalog đổi; ProductIndexer consume → index/delete ES document.
+    // Key = productId.toString() → mọi event của 1 product cùng partition →
+    // chuỗi upserted-rồi-deleted KHÔNG bị reorder (deleted không "vượt mặt" upserted).
+    public static final String PRODUCT_UPSERTED      = "product.upserted";
+    public static final String PRODUCT_DELETED       = "product.deleted";
 }

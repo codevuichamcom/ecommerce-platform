@@ -5,6 +5,7 @@ import com.ecom.product.domain.ProductStatus;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -37,6 +38,17 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     /** Day 8 — order-service snapshot lookup. KHÔNG cần fetch category. */
     Optional<Product> findBySku(String sku);
+
+    /**
+     * Day 22 — batch reindex Postgres → ES. {@code Slice} (không COUNT) cuốn
+     * từng batch tránh OOM khi 1M product. {@code @EntityGraph} eager category
+     * để {@code ReindexService} đọc {@code category.slug} không N+1.
+     */
+    @EntityGraph(attributePaths = {"category"})
+    Slice<Product> findByStatus(ProductStatus status, Pageable pageable);
+
+    /** Day 22 — drift metric: số ACTIVE ở Postgres so với doc count ở ES. */
+    long countByStatus(ProductStatus status);
 
     /**
      * Search theo name (LIKE case-insensitive) + filter optional category +

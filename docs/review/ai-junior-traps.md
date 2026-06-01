@@ -117,6 +117,30 @@
 
 ---
 
+### [07] ES Java client API cũ (7.x) không khớp 8.15 — `RangeQuery` tagged union
+
+- **Gặp ở**: Day 22 build — [product/search/ProductSearchService.java](../../services/product-service/src/main/java/com/ecom/product/search/ProductSearchService.java)
+- **AI viết** (compile fail):
+  ```java
+  b.filter(f -> f.range(r -> {
+      r.field("price");                 // ❌ field() không có trên RangeQuery.Builder 8.15
+      r.gte(JsonData.of(min));          // ❌
+  }));
+  ```
+- **Tại sao sai**: ES Java client 8.14+ đổi `RangeQuery` thành **tagged union**
+  (`untyped` / `date` / `number` / `term`). Method `field/gte/lte` nằm trên
+  `UntypedRangeQuery.Builder`, không trên `RangeQuery.Builder`. AI generate theo memory
+  API 7.x / 8.early → "cannot find symbol method field". Tương tự `withHighlightQuery`
+  cần `HighlightQuery` (wrap `Highlight`), không nhận `Highlight` trực tiếp.
+- **Đúng phải là**: `f.range(r -> r.untyped(u -> u.field("price").gte(JsonData.of(min))))`.
+- **Câu hỏi review**: "Code ES client này compile + chạy trên ĐÚNG version trong BOM
+  chưa, hay AI nhớ API version khác? Đã chạy integration test thật trên container
+  chưa?" — API ES client đổi nhiều giữa minor version; **đừng tin code 'trông đúng',
+  phải compile + IT thật**.
+- **Tag**: #elasticsearch #api-version-drift #ai-stale-knowledge #verify-by-running
+
+---
+
 ## Top recurring AI failure modes (cập nhật khi gặp đủ 3+ ví dụ)
 
 > Sau ≥3 entry cùng pattern, lift lên đây thành "rule of thumb".
