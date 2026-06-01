@@ -1,0 +1,28 @@
+# Day 20 — Profile 'platform': TẮT virtual thread để benchmark đối chứng.
+#
+# Mặc định (không profile) order-service chạy Virtual Threads (Day 2,
+# application.yml: spring.threads.virtual.enabled=true). Profile này ép về
+# platform thread pool cổ điển để đo "VT thực sự đáng giá bao nhiêu under
+# load" — KHÔNG đoán, đo bằng số (xem docs/performance/20b-...).
+#
+# Chạy:
+#   SPRING_PROFILES_ACTIVE=platform ./gradlew :services:order-service:bootRun
+#
+# ⚠️ Pool 200 = giới hạn concurrency request đồng thời. Khi tải vượt 200,
+# request xếp hàng ở Tomcat accept queue → latency tăng. Đó CHÍNH là điểm
+# VT khắc phục (mỗi request 1 virtual thread, không cap cứng ở 200).
+spring:
+  threads:
+    virtual:
+      enabled: false
+
+server:
+  tomcat:
+    threads:
+      # 200 = default Tomcat. Giữ nguyên để so "VT vs Tomcat mặc định" —
+      # con số mọi backend đều quen.
+      max: 200
+      min-spare: 20
+    # accept-count: hàng đợi OS-level khi cả 200 thread đều bận. Vượt = từ
+    # chối connection (ECONNREFUSED) → k6 thấy error tăng vọt.
+    accept-count: 100

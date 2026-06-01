@@ -63,11 +63,24 @@ management:
       probability: 1.0
   zipkin:
     tracing:
+      # Day 20 — trỏ sang Tempo (cổng 9412) khi load test để xem trace
+      # timeline trong Grafana; mặc định vẫn Zipkin 9411 cho dev thường.
       endpoint: "${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}"
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        # Day 20 — thêm prometheus để Grafana scrape latency/Hikari/JVM.
+        include: health,info,metrics,prometheus
+  metrics:
+    distribution:
+      # Day 20 — bật histogram bucket cho http.server.requests → cho phép
+      # histogram_quantile() tính P50/P95/P99 phía Prometheus (server-side
+      # percentile, gộp nhiều instance — khác client-side percentile của k6).
+      # SLO bucket khớp threshold k6 (200ms/500ms).
+      percentiles-histogram:
+        http.server.requests: true
+      slo:
+        http.server.requests: 50ms,100ms,200ms,300ms,500ms,1s,2s
 
 # JWT shared secret với auth-service (xem product/inventory-service).
 auth:

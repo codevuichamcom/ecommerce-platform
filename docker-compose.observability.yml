@@ -1,0 +1,66 @@
+# Day 20 — Observability overlay cho load test.
+#
+# Overlay riêng (KHÔNG nhét vào docker-compose.yml chính) vì 3 service này
+# chỉ cần khi đo tải, không phải mỗi lần dev. Chạy:
+#   docker compose -f docker-compose.yml -f docker-compose.observability.yml up -d \
+#     prometheus tempo grafana
+#
+# Zipkin (Day 9) vẫn ở compose chính, cổng 9411 — chạy song song. Tempo nhận
+# Zipkin-format ở 9412 để Grafana link metric ↔ trace inline.
+services:
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: ecom-prometheus
+    restart: unless-stopped
+    # Service đo chạy trên HOST (gradle bootRun) → cho container resolve
+    # host.docker.internal trên Linux.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./infra/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=6h"
+    ports:
+      - "9090:9090"
+
+  tempo:
+    image: grafana/tempo:2.6.0
+    container_name: ecom-tempo
+    restart: unless-stopped
+    command: ["-config.file=/etc/tempo/tempo.yml"]
+    volumes:
+      - ./infra/observability/tempo.yml:/etc/tempo/tempo.yml:ro
+      - tempo-data:/var/tempo
+    ports:
+      - "3200:3200"     # Tempo query API (Grafana datasource)
+      - "9412:9411"     # Zipkin receiver (order-service export sang đây)
+      - "4317:4317"     # OTLP gRPC (service tương lai)
+      - "4318:4318"     # OTLP HTTP
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: ecom-grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+      - tempo
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"   # dev: xem dashboard không cần login
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      # Bật tracesToMetrics / exemplar UI.
+      GF_FEATURE_TOGGLES_ENABLE: traceToMetrics
+    volumes:
+      - ./infra/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+
+volumes:
+  prometheus-data:
+  tempo-data:
+  grafana-data:

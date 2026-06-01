@@ -1,0 +1,32 @@
+# Day 20 — Grafana datasource provisioning (auto-load lúc start, không cần
+# config tay qua UID).
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    jsonData:
+      timeInterval: 5s
+      # Exemplar: nhảy từ điểm latency cao trên đồ thị → trace tương ứng
+      # trong Tempo (cần app expose exemplar — Micrometer hỗ trợ qua histogram).
+      exemplarTraceIdDestinations:
+        - name: trace_id
+          datasourceUid: tempo
+
+  - name: Tempo
+    type: tempo
+    uid: tempo
+    access: proxy
+    url: http://tempo:3200
+    jsonData:
+      # Link trace → log/metric. Service graph từ span-metrics generator.
+      serviceMap:
+        datasourceUid: prometheus
+      tracesToMetrics:
+        datasourceUid: prometheus
+      nodeGraph:
+        enabled: true

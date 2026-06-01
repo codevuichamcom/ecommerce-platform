@@ -1,0 +1,13 @@
+# Day 20 — Grafana dashboard provider: load dashboard JSON từ folder.
+apiVersion: 1
+
+providers:
+  - name: 'load-test'
+    orgId: 1
+    folder: 'Load Test'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

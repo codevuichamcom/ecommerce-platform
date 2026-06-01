@@ -61,3 +61,4 @@ coverage/
 # Leadership docs có thể chứa info nhạy cảm Sotatek — tự quyết commit hay không
 # (xóa dòng dưới nếu muốn share)
 # docs/leadership/incidents.md
+load/results/
