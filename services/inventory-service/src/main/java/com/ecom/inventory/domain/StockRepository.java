@@ -1,6 +1,7 @@
 package com.ecom.inventory.domain;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 /**
  * Port repository cho aggregate {@link Stock}. Spring Data JPA tự generate
@@ -16,4 +17,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * {@code findByLowStock}). Day 4 chỉ cần load by PK.
  */
 public interface StockRepository extends JpaRepository<Stock, String> {
+
+    /** Tổng reserved toàn kho — dùng cho daily snapshot job (Day 19). */
+    @Query("select coalesce(sum(s.reserved), 0) from Stock s")
+    long sumReserved();
 }

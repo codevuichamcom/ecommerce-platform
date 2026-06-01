@@ -33,6 +33,10 @@ jjwt                      = "0.12.6"
 testcontainers            = "1.21.3"
 mockito                   = "5.14.2"
 
+# Concurrency lab (Day 19) — JMH microbenchmark harness (no Gradle plugin,
+# chạy programmatic qua Runner để tránh phụ thuộc plugin portal offline)
+jmh                       = "1.37"
+
 [libraries]
 # BOMs
 spring-cloud-bom    = { module = "org.springframework.cloud:spring-cloud-dependencies", version.ref = "spring-cloud" }
@@ -66,6 +70,10 @@ testcontainers-junit      = { module = "org.testcontainers:junit-jupiter" }
 
 # Spring Boot Testcontainers integration (@ServiceConnection — Boot 3.1+)
 spring-boot-testcontainers = { module = "org.springframework.boot:spring-boot-testcontainers" }
+
+# JMH (Day 19 concurrency lab)
+jmh-core         = { module = "org.openjdk.jmh:jmh-core",                 version.ref = "jmh" }
+jmh-annprocess   = { module = "org.openjdk.jmh:jmh-generator-annprocess", version.ref = "jmh" }
 
 [bundles]
 testcontainers-default = ["testcontainers-junit", "testcontainers-postgres", "spring-boot-testcontainers"]

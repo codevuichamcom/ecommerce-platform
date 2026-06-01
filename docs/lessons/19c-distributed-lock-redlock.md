@@ -1,13 +1,16 @@
 # Lesson 19c — Distributed Lock (Redis SET NX, Redlock, Fencing Token)
 
-> **Status**: ⏳ Skeleton — fill khi build Day 19.
-> **Related day**: Day 19 (Java concurrency).
+> **Status**: ✅ Done · Day 19
+> **Related code**: [`RedisDistributedLock.java`](../../common-lib/src/main/java/com/ecom/common/lock/RedisDistributedLock.java) · [`InventorySnapshotJob.java`](../../services/inventory-service/src/main/java/com/ecom/inventory/application/InventorySnapshotJob.java)
 
 ---
 
 ## 🎯 TL;DR
 
-> 1-2 câu: Distributed lock cần thiết cho cross-process critical section (vd: refresh token, scheduled job leader). Redis `SET NX PX` đủ cho 95% case; Redlock controversy → cho mission-critical phải dùng **fencing token**, không lock alone.
+> Distributed lock cần cho cross-process critical section (vd: scheduled job
+> leader election). Redis `SET NX PX` đủ cho 95% case (best-effort mutual
+> exclusion). NHƯNG lock alone **KHÔNG** chống được GC-pause split-brain →
+> mission-critical phải dùng **fencing token** enforce ở resource, không tin lock.
 
 ---
 
@@ -30,6 +33,9 @@ else
 end
 ```
 
+Code thật: [`RedisDistributedLock`](../../common-lib/src/main/java/com/ecom/common/lock/RedisDistributedLock.java)
+— `setIfAbsent(key, token, ttl)` để acquire, `DefaultRedisScript` Lua để release.
+
 ---
 
 ## ⚠️ The Big Trap — GC pause / network delay
@@ -45,41 +51,74 @@ end
 
 ## 🆚 Approaches compared
 
-| Approach                  | Safety guarantee                           | Cost                                          | Khi nào dùng                                     |
-| ------------------------- | ------------------------------------------ | --------------------------------------------- | ------------------------------------------------ |
-| Single Redis SET NX       | "Best effort" — KHÔNG safe vs GC pause     | Trivial                                       | Job scheduler, refresh task — chấp nhận overlap  |
-| Redlock (≥3 Redis node)   | Tốt hơn nhưng vẫn có debate                | Phức tạp, latency cao hơn                     | (controversial) — nhiều người không recommend    |
-| ZooKeeper / etcd ephemeral node | Strong consistency (consensus)        | Cost ops cao, latency 10-50ms                 | Critical leader election                         |
-| **Fencing token**         | Provable correct — kết hợp với resource    | Cần resource support compare-and-set          | **Recommended cho money/inventory work**         |
+| Approach | Safety guarantee | Cost | Khi nào dùng |
+| --- | --- | --- | --- |
+| Single Redis SET NX | "Best effort" — KHÔNG safe vs GC pause | Trivial | Job scheduler, refresh task — chấp nhận overlap |
+| Redlock (≥3 Redis node) | Tốt hơn nhưng vẫn có debate | Phức tạp, latency cao hơn | (controversial) — nhiều người không recommend |
+| ZooKeeper / etcd ephemeral node | Strong consistency (consensus) | Cost ops cao, latency 10-50ms | Critical leader election |
+| **Fencing token** | Provable correct — kết hợp với resource | Cần resource support compare-and-set | **Recommended cho money/inventory work** |
 
 ## 🛡️ Fencing token — cách giải đúng
 
-- (TODO) Mỗi lần acquire lock, tăng counter, trả về token (1, 2, 3, ...).
-- (TODO) Khi process A write to resource, gửi kèm token. Resource (DB / file storage) reject nếu token < token đã thấy lần trước.
-- (TODO) GC pause scenario: A có token=10, B sau acquire có token=11 và write trước. A wake up gửi token=10 → DB reject vì đã thấy 11.
+- Mỗi lần acquire lock, `INCR` 1 counter bền → trả về token tăng đơn điệu (1, 2, 3, ...).
+- Khi process write to resource, gửi kèm token. **Resource** (DB) reject nếu token
+  nhỏ hơn token đã thấy lần trước. Lock không cần "đúng" — resource mới là trọng tài.
+- GC pause scenario: A có token=10, B sau acquire có token=11 và write trước. A
+  wake up gửi token=10 → DB từ chối vì đã thấy 11. **Split-brain bị chặn tại DB.**
+
+Code thật: [`LockHandle.fencingToken`](../../common-lib/src/main/java/com/ecom/common/lock/LockHandle.java)
++ enforce ở [`InventorySnapshotRepository.upsertWithFence`](../../services/inventory-service/src/main/java/com/ecom/inventory/domain/InventorySnapshotRepository.java)
+(`ON CONFLICT ... WHERE last_fencing_token < EXCLUDED.last_fencing_token`).
+
+```mermaid
+sequenceDiagram
+    participant A as Instance A
+    participant R as Redis
+    participant DB as Postgres (fence guard)
+    A->>R: SET NX → OK, INCR fence → token=10
+    Note over A: GC pause 35s 😴
+    R-->>R: lock TTL expire
+    participant B as Instance B
+    B->>R: SET NX → OK, INCR fence → token=11
+    B->>DB: write WHERE last_token < 11 → OK (lưu 11)
+    A->>DB: write WHERE last_token < 10 → 0 row ❌ REJECTED
+```
 
 ## 🎯 Chosen cho project
 
-- (TODO) Default: Redis SET NX PX cho idempotency dedup, scheduled job lock.
-- (TODO) Critical (payment idempotent processing): KHÔNG dùng distributed lock — dùng DB unique constraint + idempotency key (Day 10).
-- (TODO) NOT use Redlock vì project không có scenario đáng dùng.
+- **Default**: Redis SET NX PX cho leader-elect daily snapshot job (nhiều instance).
+- **Correctness**: thêm fencing token enforce ở DB upsert — chống stale writer.
+- **Payment idempotent**: KHÔNG dùng distributed lock — dùng DB unique constraint
+  + idempotency key ([Day 10](10-idempotency.md)). Lock không cần thiết ở đó.
+- **NOT Redlock**: project chỉ 1 Redis node; Redlock thêm phức tạp mà vẫn không
+  cứu GC pause → fencing token là câu trả lời đúng, không phải thêm node.
 
 ## ⚠️ Cạm bẫy
 
-- (TODO) Quên Lua script khi release → race condition khi TTL expire giữa GET và DEL.
-- (TODO) TTL quá ngắn → process bình thường cũng bị mất lock.
-- (TODO) TTL quá dài → process chết = block lâu.
-- (TODO) Single Redis = SPOF; nhưng Redlock cũng không cứu được hết case.
+- Quên Lua script khi release → race khi TTL expire xen giữa GET và DEL.
+- TTL quá ngắn → process bình thường cũng mất lock giữa chừng.
+- TTL quá dài → process chết = block lâu (tới khi expire).
+- Fencing counter đặt TTL → token reset → mất tính đơn điệu. Phải để bền (no expire).
+- Tin "acquire lock OK = an toàn write" → đúng bug gây sự cố ([issue 19](../issues/19-redlock-correctness.md)).
 
 ## 🎤 Trả lời phỏng vấn
 
-> (TODO) "Redis distributed lock có safe không?"
-> (TODO) "Redlock là gì? Tại sao có debate?"
-> (TODO) "Fencing token giải quyết vấn đề gì?"
-> (TODO) "Khi nào em chọn distributed lock vs DB unique constraint?"
+> **"Redis distributed lock có safe không?"** Best-effort. An toàn cho mutual
+> exclusion thông thường (giảm trùng), KHÔNG an toàn vs GC pause/STW dài — đó là
+> lý do mission-critical cần fencing token.
+
+> **"Redlock là gì, sao có debate?"** Redlock = lock qua ≥3 Redis node độc lập,
+> majority quorum. Kleppmann phản biện: vẫn không an toàn vs pause vì giả định
+> đồng hồ/timing. antirez phản biện lại. Kết luận thực dụng: cần correctness thì
+> dùng fencing token + resource, đừng phụ thuộc lock alone.
+
+> **"Khi nào distributed lock vs DB unique constraint?"** Unique constraint khi
+> có thể biểu diễn invariant bằng key (idempotency, dedup) — đơn giản + đúng.
+> Distributed lock khi cần serialize một đoạn xử lý không map được vào 1 key (vd
+> leader-elect job) — và vẫn nên kèm fencing nếu write quan trọng.
 
 ## 🔗 Related
 
 - [`issues/19-redlock-correctness.md`](../issues/19-redlock-correctness.md)
-- [`lessons/10-idempotency.md`](10-idempotency.md)
+- [`lessons/10-idempotency.md`](10-idempotency.md) · [`lessons/19-java-locking.md`](19-java-locking.md)
 - Refs: Martin Kleppmann "How to do distributed locking", antirez response.

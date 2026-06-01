@@ -32,6 +32,10 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 include("common-lib")
 
+// Day 19 — JMH microbenchmark + Structured Concurrency (preview) lab.
+// Isolate ở module riêng để `--enable-preview` KHÔNG lan ra service production.
+include("concurrency-lab")
+
 include("services:auth-service")
 include("services:product-service")
 include("services:inventory-service")
