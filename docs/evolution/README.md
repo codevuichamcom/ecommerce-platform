@@ -43,6 +43,7 @@
 | 17 | [Anh bồi bàn chạy bộ](./17-anh-boi-ban.md) | Day 17 — JPA N+1 (EntityGraph / JOIN FETCH / Projection) | 🍽️ Anh bồi bàn EAGER chạy 41 vòng bếp (projection = ghi phiếu, bếp tự đếm) |
 | 18 | [Người thủ thư và cái kẹp sách](./18-nguoi-thu-thu.md) | Day 18 — Keyset pagination (offset → seek) | 📖 Thủ thư đếm-lại-từ-đầu vs cái kẹp sách (cursor = bookmark, OFFSET = đếm lại) |
 | 19 | [Anh bảo vệ phòng VIP một chìa](./19-anh-bao-ve.md) | Day 19 — Concurrency (locks · Virtual Threads · distributed lock) | 🕺 Anh bảo vệ giữ chìa (lock) + khách mượn ghế carrier (VT) + chìa rơi khi GC pause + vé số tăng dần (fencing token) |
+| 20 | [Ông huấn luyện viên tàn nhẫn](./20-ong-huan-luyen-vien.md) | Day 20 — Load testing (k6 · Grafana · OTel trace timeline) | 🏋️ HLV thể hình chất tạ tăng dần (open model) tìm cơ yếu nhất — gân (connection pool) gãy trước cơ (CPU/thread) |
 
 ### [Phần III → VII — Preview Day 16→40](./12-40-preview.md)
 *Tốc độ → Polyglot → Frontend → System Design → Final Mock*
@@ -96,8 +97,8 @@ graph LR
     classDef current fill:#fde68a,stroke:#d97706,color:#000
     classDef future fill:#e5e7eb,stroke:#6b7280,color:#000
 
-    class D1,D2,D3,D4,D5,D6,D7,D8,D9,D10,D11,D12,D13,D15,D16,D17,D18 done
-    class D19,D20,D22,D23,D25,D26,D31,D40 future
+    class D1,D2,D3,D4,D5,D6,D7,D8,D9,D10,D11,D12,D13,D15,D16,D17,D18,D19,D20 done
+    class D22,D23,D25,D26,D31,D40 future
 ```
 
 ---

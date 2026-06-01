@@ -61,7 +61,7 @@ graph LR
         D17[Day 17<br/>N+1]:::done
         D18[Day 18<br/>Pagination]:::done
         D19[Day 19<br/>Concurrency]:::done
-        D20[Day 20<br/>Load test]:::planned
+        D20[Day 20<br/>Load test]:::done
         D21[Day 21<br/>Mock W3]:::planned
     end
 
@@ -239,6 +239,7 @@ graph LR
 | [`lessons/19-java-locking.md`](lessons/19-java-locking.md) | ✅ | synchronized / ReentrantLock / StampedLock + DB optimistic vs pessimistic — JMH 7K/21K/5.6M ops/ms, decision matrix theo contention |
 | [`lessons/19b-virtual-threads-deep.md`](lessons/19b-virtual-threads-deep.md) | ✅ | Loom mount/unmount, pinning (JFR `jdk.VirtualThreadPinned` proof), structured concurrency `StructuredTaskScope`, KHÔNG overclaim CPU-bound |
 | [`lessons/19c-distributed-lock-redlock.md`](lessons/19c-distributed-lock-redlock.md) | ✅ | Redis SET NX PX + Lua owner-check release, Redlock + Kleppmann/antirez debate, fencing token enforce ở resource |
+| [`lessons/20-load-testing-methodology.md`](lessons/20-load-testing-methodology.md) | ✅ | Open vs closed model, coordinated omission, percentile≠average, warmup, load-gen bottleneck, 4-tool compare (k6/JMeter/Gatling/wrk) |
 | `lessons/22-elasticsearch-basics.md` | ⏳ Day 22 | Inverted index, analyzer, mapping, faceted search |
 | `lessons/22b-cdc-vs-app-sync-vs-debezium.md` | ⏳ Day 22 | 3 cách sync Postgres → ES, trade-off |
 | `lessons/23-mongodb-when-to-use.md` | ⏳ Day 23 | Khi nào dùng Mongo (purposeful, không cargo-cult) |
@@ -275,6 +276,7 @@ graph LR
 | [`issues/17-jpa-n-plus-one.md`](issues/17-jpa-n-plus-one.md) | ✅ | `GET /orders` list 40 đơn → 41 query (EAGER N+1) — 4 approaches (BatchSize / EntityGraph / JOIN FETCH / projection chosen), 41→2 query |
 | [`issues/18-deep-offset-pagination-slow.md`](issues/18-deep-offset-pagination-slow.md) | ✅ | Mobile feed page 49000 timeout — `OFFSET 980000` scan+discard 980K rows. 4 approaches (cap page / keyset chosen / cached approximate count / ES search_after) |
 | [`issues/19-redlock-correctness.md`](issues/19-redlock-correctness.md) | ✅ | GC pause 25s → lock expire → 2 process cùng ghi snapshot. 4 approaches (tăng TTL / Redlock / ZooKeeper / fencing token chosen), DB `ON CONFLICT WHERE last_fencing_token <` guard |
+| [`issues/20-connection-pool-exhaustion-under-vt.md`](issues/20-connection-pool-exhaustion-under-vt.md) | ✅ | Bật VT mà P99 nổ 120ms→2.1s, CPU 35%, Hikari pending 150+ → bottleneck dời sang connection pool. 4 approaches (pool mù / Little's Law chosen / reactive / read replica) |
 | `issues/23-mongodb-no-transaction-trap.md` | ⏳ Day 23 | Mongo cross-document transaction trước v4.0 — pitfall thường gặp |
 
 ### ⚡ 2.6. Performance (`performance/`)
@@ -289,8 +291,8 @@ graph LR
 | [`performance/16-sql-explain-analyze.md`](performance/16-sql-explain-analyze.md) | ✅ | EXPLAIN ANALYZE breakdown (cost/rows/actual/buffers) + before/after Seq Scan→Bitmap Index Scan + covering index Index-Only Scan + 5-step diagnostic |
 | [`performance/18-seek-pagination.md`](performance/18-seek-pagination.md) | ✅ | OFFSET scan+discard cơ chế + keyset row-value `(created_at,id)<(cursor)` + index ordering direction + benchmark offset vs keyset (1M rows, 2.4s→3ms) |
 | `performance/18-seek-pagination.md` | ⏳ Day 18 | Convert offset → keyset pagination |
-| `performance/20-load-test-report-template.md` | ⏳ Day 20 | k6 + Grafana + OTel trace timeline |
-| `performance/20b-vt-vs-platform-thread-bench.md` | ⏳ Day 20 | Virtual thread vs platform thread benchmark report |
+| [`performance/20-load-test-report-template.md`](performance/20-load-test-report-template.md) | ✅ | Template tái dùng (Setup/Results/Bottleneck/Verdict) + open model + Little's Law + cách đọc bottleneck từ Tempo trace timeline |
+| [`performance/20b-vt-vs-platform-thread-bench.md`](performance/20b-vt-vs-platform-thread-bench.md) | ✅ | VT vs platform end-to-end: read VT thắng rõ (1000+ concurrent), write hoà (cùng nghẽn pool); VT tăng concurrency KHÔNG tăng tốc từng request |
 | `performance/22-search-postgres-vs-es.md` | ⏳ Day 22 | LIKE 1M rows vs ES 1M docs — P50/P95/throughput |
 
 ### 🎤 2.7. Interview Q&A (`interview/`)
@@ -320,6 +322,7 @@ graph LR
 | [`interview/day-17-n-plus-one.md`](interview/day-17-n-plus-one.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (N+1 nghịch lý EAGER · JOIN FETCH + Pageable in-memory · MultipleBagFetchException · projection vs EntityGraph · chặn tái phát) + AI Playbook |
 | [`interview/day-18-pagination.md`](interview/day-18-pagination.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (page 50000 fix · tie-break (created_at,id) · total + jump-to-page · opaque cursor + HMAC IDOR · sort động multi-index) + AI Playbook |
 | [`interview/day-19-concurrency.md`](interview/day-19-concurrency.md) | ✅ | Bối cảnh ShopVN + 5 Q&A (3 lock chọn nào · VT pinning detect+fix · structured vs CompletableFuture · Redis lock safe? Redlock · distributed lock vs DB unique) + AI Playbook + Tech Lead Lens |
+| [`interview/day-20-load-test.md`](interview/day-20-load-test.md) | ✅ | Bối cảnh NexaShop/Anh Khải + 5 Q&A (P95/P99 vs average · open vs closed/coordinated omission · VT nhanh hơn không · chỉ bottleneck bằng trace · Little's Law pool size) + AI Playbook |
 | [`interview/week-02-mock.md`](interview/week-02-mock.md) | ✅ | 10 Q Kafka senior (5 fundamentals + 5 production), self-grade 9 strong / 1 borderline (trace outbox path verify) / 0 fail |
 | [`interview/week-02-cv-bullets.md`](interview/week-02-cv-bullets.md) | ✅ | 2 bullet metric-driven (event-driven foundation + dual-write resolution; resilience + 4 ADR/week discipline) + elevator pitch v2 90s |
 | [`review/kafka-week2-findings.md`](review/kafka-week2-findings.md) | ✅ | Day 14 review brutally honest Week 2 — 9 finding (🔴 3 + 🟡 4 + 🟢 2) với severity + file:line + gap list Week 3 |

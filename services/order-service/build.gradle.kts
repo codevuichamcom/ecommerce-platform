@@ -28,6 +28,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+    // Day 20 — expose /actuator/prometheus cho Grafana scrape latency
+    // percentile + Hikari pool + JVM thread metrics under load.
+    implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.postgresql:postgresql")

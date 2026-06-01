@@ -1,0 +1,139 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "title": "Load Test Overview (Day 20)",
+  "uid": "load-test-overview",
+  "tags": ["day-20", "load-test", "nexashop"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(http_server_requests_seconds_count, service)",
+        "current": { "text": "order-service", "value": "order-service" },
+        "includeAll": false
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Throughput (req/s) by status",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "targets": [
+        {
+          "expr": "sum by (status) (rate(http_server_requests_seconds_count{service=\"$service\"}[1m]))",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Latency P50 / P95 / P99 (s)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(http_server_requests_seconds_bucket{service=\"$service\", uri=\"/orders\"}[1m])))",
+          "legendFormat": "p50",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{service=\"$service\", uri=\"/orders\"}[1m])))",
+          "legendFormat": "p95",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{service=\"$service\", uri=\"/orders\"}[1m])))",
+          "legendFormat": "p99",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Error rate (% 4xx+5xx)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "max": 1 } },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{service=\"$service\", status=~\"5..|4..\"}[1m])) / sum(rate(http_server_requests_seconds_count{service=\"$service\"}[1m]))",
+          "legendFormat": "error ratio",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "HikariCP pool — active vs pending (BOTTLENECK)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "description": "Day 20: khi bật VT, pending tăng = request xếp hàng chờ connection. Đây là chỗ bottleneck DỜI từ thread sang connection pool.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "targets": [
+        {
+          "expr": "hikaricp_connections_active{service=\"$service\"}",
+          "legendFormat": "active",
+          "refId": "A"
+        },
+        {
+          "expr": "hikaricp_connections_pending{service=\"$service\"}",
+          "legendFormat": "pending (chờ connection)",
+          "refId": "B"
+        },
+        {
+          "expr": "hikaricp_connections_max{service=\"$service\"}",
+          "legendFormat": "max pool",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "JVM live threads (VT KHÔNG đếm vào đây)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "description": "Platform thread đếm ở jvm_threads_live. Virtual thread KHÔNG hiện ở metric này → platform run sẽ thấy ~200 thread bận, VT run thì thread carrier ít mà throughput vẫn cao.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "targets": [
+        {
+          "expr": "jvm_threads_live_threads{service=\"$service\"}",
+          "legendFormat": "live threads",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "CPU usage (process)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "description": "Throughput phẳng mà CPU < 60% → bottleneck là tài nguyên bị bound (pool/DB/lock), KHÔNG phải CPU. Đây là tín hiệu đọc bottleneck.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "max": 1 } },
+      "targets": [
+        {
+          "expr": "process_cpu_usage{service=\"$service\"}",
+          "legendFormat": "process cpu",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}
