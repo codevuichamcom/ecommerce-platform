@@ -17,6 +17,7 @@ plugins {
 dependencyManagement {
     imports {
         mavenBom("org.springframework.boot:spring-boot-dependencies:${libs.versions.spring.boot.get()}")
+        mavenBom(libs.testcontainers.bom.get().toString())
     }
 }
 
@@ -45,6 +46,10 @@ dependencies {
     // không dùng Kafka (vd: auth-service) sẽ không activate auto-config.
     compileOnly("org.springframework.kafka:spring-kafka")
 
+    // Redis (Day 19) — DistributedLock auto-config @ConditionalOnClass(StringRedisTemplate).
+    // compileOnly: service nào cần distributed lock tự kéo starter-data-redis runtime.
+    compileOnly("org.springframework.boot:spring-boot-starter-data-redis")
+
     // Tracing (Day 9) — Micrometer Tracing + OTel bridge + Zipkin exporter.
     // `api` để consumer service nhận classpath tự động (cross-cutting, mọi
     // service đều cần trace). Spring Boot 3.4 `ZipkinAutoConfiguration` kích
@@ -59,6 +64,9 @@ dependencies {
 
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    // Day 19 distributed lock IT — Redis qua Testcontainers (gated env var).
+    testImplementation("org.springframework.boot:spring-boot-starter-data-redis")
+    testImplementation(libs.testcontainers.junit)
     testCompileOnly(libs.lombok)
     testAnnotationProcessor(libs.lombok)
 }

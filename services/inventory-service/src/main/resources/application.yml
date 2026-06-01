@@ -10,6 +10,10 @@ spring:
     url: jdbc:postgresql://localhost:5432/inventory_db
     username: ecom
     password: ecom
+  data:
+    redis:
+      host: localhost
+      port: 6379
     hikari:
       # Concurrency test reserve cùng SKU sẽ retry burst → cần đủ pool.
       maximum-pool-size: 30
@@ -36,6 +40,9 @@ app:
     bootstrap-servers: "${KAFKA_BOOTSTRAP:localhost:9092}"
     client-id: inventory-service
     consumer-group: inventory-service
+  # Day 19 — distributed lock cho daily snapshot leader-elect.
+  lock:
+    enabled: true
 
 spring.kafka:
   template:

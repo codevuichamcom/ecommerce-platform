@@ -31,6 +31,11 @@ dependencies {
 
     // Day 9 — consume order.created, publish inventory.reserved.
     implementation("org.springframework.kafka:spring-kafka")
+
+    // Day 19 — DistributedLock cho daily snapshot leader-elect (kích hoạt
+    // DistributedLockAutoConfiguration ở common-lib).
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.postgresql:postgresql")

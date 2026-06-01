@@ -42,6 +42,7 @@
 | 16 | [Kính hiển vi](./16-kinh-hien-vi.md) | Day 16 — Slow query tuning (EXPLAIN ANALYZE + GIN trigram) | 🔬 Kính hiển vi soi DB (EXPLAIN = thấy planner đang nghĩ gì) |
 | 17 | [Anh bồi bàn chạy bộ](./17-anh-boi-ban.md) | Day 17 — JPA N+1 (EntityGraph / JOIN FETCH / Projection) | 🍽️ Anh bồi bàn EAGER chạy 41 vòng bếp (projection = ghi phiếu, bếp tự đếm) |
 | 18 | [Người thủ thư và cái kẹp sách](./18-nguoi-thu-thu.md) | Day 18 — Keyset pagination (offset → seek) | 📖 Thủ thư đếm-lại-từ-đầu vs cái kẹp sách (cursor = bookmark, OFFSET = đếm lại) |
+| 19 | [Anh bảo vệ phòng VIP một chìa](./19-anh-bao-ve.md) | Day 19 — Concurrency (locks · Virtual Threads · distributed lock) | 🕺 Anh bảo vệ giữ chìa (lock) + khách mượn ghế carrier (VT) + chìa rơi khi GC pause + vé số tăng dần (fencing token) |
 
 ### [Phần III → VII — Preview Day 16→40](./12-40-preview.md)
 *Tốc độ → Polyglot → Frontend → System Design → Final Mock*
