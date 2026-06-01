@@ -67,6 +67,7 @@ jjwt-jackson  = { module = "io.jsonwebtoken:jjwt-jackson", version.ref = "jjwt" 
 testcontainers-postgres   = { module = "org.testcontainers:postgresql" }
 testcontainers-kafka      = { module = "org.testcontainers:kafka" }
 testcontainers-junit      = { module = "org.testcontainers:junit-jupiter" }
+testcontainers-elasticsearch = { module = "org.testcontainers:elasticsearch" }
 
 # Spring Boot Testcontainers integration (@ServiceConnection — Boot 3.1+)
 spring-boot-testcontainers = { module = "org.springframework.boot:spring-boot-testcontainers" }

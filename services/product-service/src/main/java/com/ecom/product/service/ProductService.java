@@ -1,5 +1,7 @@
 package com.ecom.product.service;
 
+import com.ecom.common.event.ProductDeletedV1;
+import com.ecom.common.event.ProductUpsertedV1;
 import com.ecom.common.exception.BusinessException;
 import com.ecom.common.exception.ErrorCode;
 import com.ecom.common.response.KeysetPage;
@@ -10,6 +12,7 @@ import com.ecom.product.domain.ProductStatus;
 import com.ecom.product.mapper.ProductMapper;
 import com.ecom.product.repository.CategoryRepository;
 import com.ecom.product.repository.ProductRepository;
+import com.ecom.product.search.ProductEventPublisher;
 import com.ecom.product.web.dto.ProductCreateRequest;
 import com.ecom.product.web.dto.ProductCursor;
 import com.ecom.product.web.dto.ProductResponse;
@@ -29,12 +32,16 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import static com.ecom.product.config.cache.CacheConfig.CACHE_PRODUCT_BY_ID;
 import static com.ecom.product.config.cache.CacheConfig.CACHE_PRODUCT_BY_SLUG;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -64,6 +71,10 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
     private final ProductMapper productMapper;
     private final CacheManager cacheManager;
+    // Day 22 — nullable: ES sync chỉ bật khi app.kafka.enabled=true. Khi Kafka
+    // tắt (unit test, dev không cần search) → publisher null → skip publish.
+    // KHÔNG ép Kafka thành hard-dependency của catalog write path.
+    private final org.springframework.beans.factory.ObjectProvider<ProductEventPublisher> eventPublisher;
 
     /**
      * Cached read — qua 2-tier (Caffeine L1 + Redis L2) + XFetch stampede
@@ -219,7 +230,9 @@ public class ProductService {
                 .attributes(req.attributes() == null ? new HashMap<>() : new HashMap<>(req.attributes()))
                 .build();
 
-        return productMapper.toResponse(productRepository.save(product));
+        Product saved = productRepository.save(product);
+        publishUpsertAfterCommit(saved);
+        return productMapper.toResponse(saved);
     }
 
     /**
@@ -272,6 +285,13 @@ public class ProductService {
         product.setStatus(req.status());
         product.setAttributes(req.attributes() == null ? new HashMap<>() : new HashMap<>(req.attributes()));
 
+        // Update có thể đổi status ACTIVE → ARCHIVED. Nếu archived thì publish
+        // DELETED (gỡ khỏi index), ngược lại UPSERTED (re-index nội dung mới).
+        if (product.getStatus() == ProductStatus.ARCHIVED) {
+            publishDeleteAfterCommit(product.getId());
+        } else {
+            publishUpsertAfterCommit(product);
+        }
         return productMapper.toResponse(product);
     }
 
@@ -293,6 +313,67 @@ public class ProductService {
         // là low-frequency operation (≪ read).
         Product product = loadOrThrow(id);
         product.setStatus(ProductStatus.ARCHIVED);
+        // Archived → gỡ khỏi search index (search KHÔNG trả product ngừng bán).
+        // Postgres VẪN giữ row — đây là điểm tách lifecycle vs index membership.
+        publishDeleteAfterCommit(id);
+    }
+
+    // ---- Day 22 ES sync helpers ----------------------------------------
+
+    /**
+     * Publish {@code product.upserted} SAU khi transaction commit. Dùng
+     * {@link TransactionSynchronization} thay vì publish thẳng trong method:
+     * nếu commit ROLLBACK (vd CHECK constraint fail lúc flush) → KHÔNG publish
+     * event phantom. Đây là nửa "best-effort" của dual-write — fail publish
+     * sau commit vẫn drift, nightly reconcile (Day 25) sửa. Xem
+     * {@code issues/22-es-postgres-sync-drift.md}.
+     */
+    private void publishUpsertAfterCommit(Product p) {
+        ProductEventPublisher publisher = eventPublisher.getIfAvailable();
+        if (publisher == null) {
+            return; // Kafka tắt (app.kafka.enabled=false) → skip sync, không lỗi.
+        }
+        Object brand = p.getAttributes() == null ? null : p.getAttributes().get("brand");
+        ProductUpsertedV1 event = new ProductUpsertedV1(
+                UUID.randomUUID(),
+                Instant.now(),
+                p.getId(),
+                p.getSku(),
+                p.getName(),
+                p.getSlug(),
+                p.getDescription(),
+                p.getPrice(),
+                p.getCurrency(),
+                p.getCategory().getId(),
+                p.getCategory().getSlug(),
+                brand == null ? null : brand.toString(),
+                p.getStatus().name(),
+                p.getAttributes() == null ? Map.of() : new HashMap<>(p.getAttributes()),
+                p.getCreatedAt());
+        runAfterCommit(() -> publisher.publishUpserted(event));
+    }
+
+    private void publishDeleteAfterCommit(UUID productId) {
+        ProductEventPublisher publisher = eventPublisher.getIfAvailable();
+        if (publisher == null) {
+            return;
+        }
+        ProductDeletedV1 event = new ProductDeletedV1(UUID.randomUUID(), Instant.now(), productId);
+        runAfterCommit(() -> publisher.publishDeleted(event));
+    }
+
+    private void runAfterCommit(Runnable action) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    action.run();
+                }
+            });
+        } else {
+            // Không có transaction active (vd gọi ngoài @Transactional) → publish ngay.
+            action.run();
+        }
     }
 
     private Product loadOrThrow(UUID id) {
