@@ -10,7 +10,6 @@ import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -81,11 +80,12 @@ public class GlobalExceptionHandler {
     }
 
     // ─── Security ──────────────────────────────────────────────────
-
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex) {
-        return build(ErrorCode.FORBIDDEN, ex.getMessage(), null);
-    }
+    // AccessDeniedException handler tách sang SecurityExceptionHandler
+    // (@ConditionalOnClass) — KHÔNG hard-couple GlobalExceptionHandler vào
+    // spring-security. Service web KHÔNG có security trên classpath (vd
+    // analytics-service Day 23) vẫn dùng được handler chung này. Day 23 trap:
+    // @RestControllerAdvice reference 1 class vắng mặt → NoClassDefFoundError
+    // lúc scan method (xem review/ai-junior-traps.md [08]).
 
     // ─── Fallback ──────────────────────────────────────────────────
 

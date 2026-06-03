@@ -51,6 +51,13 @@ dependencies {
     //   ElasticsearchOperations + NativeQuery DSL.
     implementation("org.springframework.boot:spring-boot-starter-data-elasticsearch")
 
+    // Day 23 — MongoDB cho catalog read-model (flexible attributes theo
+    // category). CÙNG event product.upserted/deleted (Day 22) fan-out: vừa
+    // index ES (search) vừa upsert Mongo (catalog detail). Postgres VẪN là
+    // source of truth — Mongo + ES đều là derived read-model. Mongo trị
+    // flexible attributes tốt hơn cột quan hệ (xem ADR-011 + lesson 23b).
+    implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
+
     // Day 22 — Kafka cho sync Postgres → ES (CDC-lite app-level).
     // common-lib KafkaAutoConfiguration opt-in qua app.kafka.enabled=true.
     // product-service VỪA producer (publish product.upserted/deleted) VỪA
@@ -79,6 +86,8 @@ dependencies {
     testImplementation(libs.bundles.testcontainers.default)
     // Day 22 — ES integration test (gated RUN_PRODUCT_INTEGRATION_TESTS=true).
     testImplementation(libs.testcontainers.elasticsearch)
+    // Day 23 — Mongo catalog read-model integration test (cùng gate).
+    testImplementation(libs.testcontainers.mongodb)
     testCompileOnly(libs.lombok)
     testAnnotationProcessor(libs.lombok)
 }

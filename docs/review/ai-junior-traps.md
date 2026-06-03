@@ -141,6 +141,27 @@
 
 ---
 
+## [08] common-lib `@RestControllerAdvice` hard-reference class của lib optional (Day 23)
+
+- **Ở đâu**: [`common-lib/exception/GlobalExceptionHandler.java`](../../common-lib/src/main/java/com/ecom/common/exception/GlobalExceptionHandler.java) — `@ExceptionHandler(AccessDeniedException.class)` reference `org.springframework.security.access.AccessDeniedException`.
+- **Triệu chứng**: `analytics-service` (web service ĐẦU TIÊN scan `com.ecom.common` mà KHÔNG có spring-security trên classpath) → context load fail:
+  ```
+  NoClassDefFoundError: org/springframework/security/access/AccessDeniedException
+  Caused by: ClassNotFoundException ...
+  ```
+  Trước đó 6 service đều "vô tình" có spring-security nên trap ngủ yên — đây là **latent coupling** chỉ lộ khi thêm service tối giản.
+- **Tại sao sai**: `@RestControllerAdvice` (= `@Component`) bị component-scan của mọi service. Khi Spring đăng ký advice, nó reflect TẤT CẢ `@ExceptionHandler` method để build `ExceptionHandlerMethodResolver` → phải resolve kiểu tham số. Class vắng mặt → `NoClassDefFoundError` lúc scan, KHÔNG phải lúc gọi. Một handler tham chiếu class của dependency *optional* = ép mọi consumer phải có dependency đó.
+- **Đúng phải là**: tách handler của class optional ra advice riêng, guard bằng `@ConditionalOnClass(name = "...")` (Spring đọc qua ASM, KHÔNG load class khi vắng → candidate bị lọc):
+  ```java
+  @RestControllerAdvice
+  @ConditionalOnClass(name = "org.springframework.security.access.AccessDeniedException")
+  public class SecurityExceptionHandler { ... }   // dùng name= string, không class literal
+  ```
+- **Câu hỏi review**: "Class shared (common-lib advice/filter) có hard-reference class của dependency mà KHÔNG phải service nào cũng có không? Nếu có → `@ConditionalOnClass` hoặc tách module." Mở rộng: bug chỉ lộ khi có 1 consumer tối giản — đừng tin "6 service chạy ổn" nghĩa là không coupling.
+- **Tag**: #common-lib #latent-coupling #conditional-on-class #component-scan #shared-library-leak
+
+---
+
 ## Top recurring AI failure modes (cập nhật khi gặp đủ 3+ ví dụ)
 
 > Sau ≥3 entry cùng pattern, lift lên đây thành "rule of thumb".

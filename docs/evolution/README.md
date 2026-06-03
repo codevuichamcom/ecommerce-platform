@@ -52,8 +52,9 @@
 | Chương | Tên | Day | 🎭 Metaphor xuyên suốt |
 |--------|-----|-----|------------------------|
 | 22 | [Ông thầy bói đọc vị](./22-ong-thay-boi.md) | Day 22 — Elasticsearch search (inverted index · BM25 · fuzzy · facet · sync) | 🔮 Ông thầy bói đoán ý (đọc cả khi khách nói nhịu) nhưng chỉ đọc bản phô-tô — Postgres giữ sổ gốc, Kafka làm máy phô-tô, phô-tô lệch = drift |
+| 23 | [Cuốn sổ không dòng kẻ](./23-cuon-so-khong-dong-ke.md) | Day 23 — MongoDB (event store · flexible attributes · aggregation · TTL) | 📓 Bác thư ký tốc ký chép cuốn sổ trắng (schemaless, hình nào cũng nhận) — nhanh nhưng đừng nhờ giữ 2 trang khớp nhau (no multi-doc txn); Postgres vẫn giữ sổ gốc |
 
-### [Phần V → VII — Preview Day 23→40](./22-40-preview.md)
+### [Phần V → VII — Preview Day 24→40](./22-40-preview.md)
 *Polyglot → Frontend → System Design → Final Mock*
 
 ---

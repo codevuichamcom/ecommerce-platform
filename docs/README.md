@@ -202,6 +202,7 @@ graph LR
 | [`decisions/009-outbox-vs-cdc.md`](decisions/009-outbox-vs-cdc.md) | ✅ | Transactional outbox + polling relay vs Debezium CDC, 5 alternatives compared, migration path khi volume > 10k/s |
 | [`decisions/008-two-tier-cache-caffeine-redis.md`](decisions/008-two-tier-cache-caffeine-redis.md) | ✅ | 2-tier cache Caffeine L1 + Redis L2, 4 alternatives, trade-off consistency vs latency |
 | [`decisions/010-postgres-vs-elasticsearch-search.md`](decisions/010-postgres-vs-elasticsearch-search.md) | ✅ | Postgres GIN vs ES cho search, 4 alternatives (GIN giữ / ES app-sync chosen / ES Debezium CDC / Algolia managed), ngưỡng nâng cấp outbox/CDC |
+| [`decisions/011-mongo-for-analytics-and-flexible-attributes.md`](decisions/011-mongo-for-analytics-and-flexible-attributes.md) | ✅ | Mongo cho event store + catalog read-model, 5+4 alternatives (Postgres JSONB/partitioned / **Mongo chosen** / ES / ClickHouse); Postgres GIỮ source of truth attributes (anti-cargo-cult) |
 | `decisions/011-mongo-for-analytics-and-flexible-attributes.md` | ⏳ Day 23 | MongoDB use case có chủ ý: event store + flexible product attributes |
 
 ### 📖 2.4. Lessons (`lessons/`)
@@ -242,6 +243,8 @@ graph LR
 | [`lessons/20-load-testing-methodology.md`](lessons/20-load-testing-methodology.md) | ✅ | Open vs closed model, coordinated omission, percentile≠average, warmup, load-gen bottleneck, 4-tool compare (k6/JMeter/Gatling/wrk) |
 | [`lessons/22-elasticsearch-basics.md`](lessons/22-elasticsearch-basics.md) | ✅ | Inverted index vs B-tree, analyzer, text vs keyword, multi_match/fuzziness/boost, must vs filter, faceted aggregation, 6 cạm bẫy |
 | [`lessons/22b-cdc-vs-app-sync-vs-debezium.md`](lessons/22b-cdc-vs-app-sync-vs-debezium.md) | ✅ | 3 cách sync Postgres → ES (app-level / outbox / Debezium CDC) + decision tree + dual-write từ Day 13 |
+| [`lessons/23-mongodb-when-to-use.md`](lessons/23-mongodb-when-to-use.md) | ✅ | Khi nào dùng/KHÔNG dùng Mongo (schema đa hình/append/TTL/scale vs invariant/join/ACID), 6 cạm bẫy, "nhanh hơn" là sai câu hỏi |
+| [`lessons/23b-document-vs-relational-modeling.md`](lessons/23b-document-vs-relational-modeling.md) | ✅ | Embed vs reference (access pattern, 1-to-few/many/squillions), EAV anti-pattern, JSONB-đủ-vs-Mongo, aggregate=document boundary |
 | `lessons/23-mongodb-when-to-use.md` | ⏳ Day 23 | Khi nào dùng Mongo (purposeful, không cargo-cult) |
 | `lessons/23b-document-vs-relational-modeling.md` | ⏳ Day 23 | Modeling 1-N / N-N trong document vs relational |
 | `lessons/24-sql-vs-nosql-vs-es-decision-matrix.md` | ⏳ Day 24 | 8 use case × 4 storage decision matrix |
@@ -278,6 +281,7 @@ graph LR
 | [`issues/19-redlock-correctness.md`](issues/19-redlock-correctness.md) | ✅ | GC pause 25s → lock expire → 2 process cùng ghi snapshot. 4 approaches (tăng TTL / Redlock / ZooKeeper / fencing token chosen), DB `ON CONFLICT WHERE last_fencing_token <` guard |
 | [`issues/20-connection-pool-exhaustion-under-vt.md`](issues/20-connection-pool-exhaustion-under-vt.md) | ✅ | Bật VT mà P99 nổ 120ms→2.1s, CPU 35%, Hikari pending 150+ → bottleneck dời sang connection pool. 4 approaches (pool mù / Little's Law chosen / reactive / read replica) |
 | [`issues/22-es-postgres-sync-drift.md`](issues/22-es-postgres-sync-drift.md) | ✅ | Search ra sản phẩm đã xóa / giá sai — dual-write drift. 4 approaches (ignore+reindex / outbox / Debezium / sync-direct), app-level+reconcile chosen, key=productId ordering |
+| [`issues/23-mongodb-no-transaction-trap.md`](issues/23-mongodb-no-transaction-trap.md) | ✅ | Order mồ côi item — multi-doc write tưởng atomic. 4 approaches (embed / multi-doc txn replica-set / saga / để-Postgres), align aggregate=document boundary chosen |
 | `issues/23-mongodb-no-transaction-trap.md` | ⏳ Day 23 | Mongo cross-document transaction trước v4.0 — pitfall thường gặp |
 
 ### 🔍 2.5b. Code Review (`review/`)
@@ -340,6 +344,7 @@ graph LR
 | [`interview/week-03-cv-bullets.md`](interview/week-03-cv-bullets.md) | ✅ | 2 bullet metric-driven (4× latency 200ms→50ms P95, 10× throughput 200→2000 req/s; distributed lock partition safety). Elevator pitch v3 90s accumulative Week 1-3. |
 | `interview/week-NN-cv-bullets.md` | ⏳ Day 25/30/37 | CV bullet draft cuối mỗi tuần (Day 7, 14, 21 ✅, Day 25/30/37 pending) |
 | [`interview/day-22-elasticsearch.md`](interview/day-22-elasticsearch.md) | ✅ | Bối cảnh NexaShop/Anh Khải + 5 Q&A (tsvector-vs-ES / text-keyword / dual-write sync / ES-down-fallback / consistency-window) + AI Playbook + Tech Lead Lens |
+| [`interview/day-23-mongodb.md`](interview/day-23-mongodb.md) | ✅ | Bối cảnh NexaShop/Anh Khải + 5 Q&A (when-Mongo / embed-vs-reference / no-txn / TTL / attributes-ở-Postgres) + AI Playbook + Tech Lead Lens |
 | `interview/day-23-mongodb.md` | ⏳ Day 23 | Mongo use case + decision rationale |
 | `interview/day-24-storage-decisions.md` | ⏳ Day 24 | "Khi nào dùng NoSQL?" — câu phỏng vấn classic |
 | `interview/day-25-polyglot-review.md` | ⏳ Day 25 | Polyglot persistence review + anti-pattern |
