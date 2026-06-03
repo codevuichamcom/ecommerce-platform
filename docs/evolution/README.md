@@ -56,7 +56,7 @@
 | 24 | [Bốn món đồ nghề](./24-bon-mon-do-nghe.md) | Day 24 — SQL vs NoSQL vs ES (decision matrix · 5 axis · PACELC) | 🧰 Hộp đồ nghề 4 ngăn vs gã chỉ thích cầm búa (law of instrument) — cờ-lê/dao bấm/băng keo/kính lúp, mỗi món một việc; chọn theo access pattern không theo tính từ |
 | 25 | [Tấm bản đồ chủ quyền](./25-tam-ban-do-chu-quyen.md) | Day 25 — Polyglot persistence (data ownership · sync edge · failure mode) | 🗺️ Vương quốc 4 vùng đất: Postgres là vua giữ ấn tín (source of truth), ES/Mongo/cache là chư hầu chép chiếu chỉ (derived), cart-Redis là lãnh-địa-tự-trị (primary), analytics-Mongo là sử quan (sink) — chống "loạn 12 sứ quân" (poly-mess) bằng 3 kỷ luật |
 
-### [Phần V → VII — Preview Day 26→40](./22-40-preview.md)
+### [Phần V → VII — Preview Day 26→40](./26-40-preview.md)
 *Frontend → System Design → Final Mock*
 
 ---

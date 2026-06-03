@@ -20,8 +20,9 @@ có sạch không. Tôi có thật sự hiểu thứ mình vừa build không. V
 được** cho cả team nghe không.
 
 Hai thứ tôi cần. Một cái **gương** 🪞 — soi vào code sáu ngày qua, chỉ ra thứ tôi
-không muốn nhìn. Một tấm **lưới** 🕸️ — chuỗi câu hỏi của Khải, đan dần quanh tôi
-tới khi không còn chỗ nào để nói "đại khái".
+không muốn nhìn. Tấm gương này không lạ: cuối Week 2 nó đã soi tôi một lần (ch.14).
+Nhưng lần này nó có bạn đồng hành — một tấm **lưới** 🕸️, chuỗi câu hỏi của Khải,
+đan dần quanh tôi tới khi không còn chỗ nào để nói "đại khái".
 
 ---
 

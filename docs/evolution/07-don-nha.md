@@ -117,7 +117,7 @@ Chỗ **run duy nhất** là câu số 9: **Virtual Thread pinning**. Lý thuy�
 
 Dọn nhà xong cũng là lúc viết lại cái "nhãn dán" ngoài cửa — hai dòng để nói cho thế giới biết tuần này làm được gì:
 
-> *"Built microservice ecommerce platform (7 services, Gradle monorepo) with DDD aggregates enforcing zero-oversell invariant via optimistic locking — 100-thread concurrency test, 0% oversell rate."*
+> *"Built microservice ecommerce platform (5 services, Gradle monorepo) with DDD aggregates enforcing zero-oversell invariant via optimistic locking — 100-thread concurrency test, 0% oversell rate."*
 
 > *"Designed sealed-interface state machine for order lifecycle (5 states, exhaustive pattern matching) — compile-time guarantee no unhandled transitions, persistence via dual-column VARCHAR+JSONB."*
 
