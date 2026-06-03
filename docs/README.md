@@ -247,8 +247,8 @@ graph LR
 | [`lessons/23b-document-vs-relational-modeling.md`](lessons/23b-document-vs-relational-modeling.md) | ✅ | Embed vs reference (access pattern, 1-to-few/many/squillions), EAV anti-pattern, JSONB-đủ-vs-Mongo, aggregate=document boundary |
 | `lessons/23-mongodb-when-to-use.md` | ⏳ Day 23 | Khi nào dùng Mongo (purposeful, không cargo-cult) |
 | `lessons/23b-document-vs-relational-modeling.md` | ⏳ Day 23 | Modeling 1-N / N-N trong document vs relational |
-| `lessons/24-sql-vs-nosql-vs-es-decision-matrix.md` | ⏳ Day 24 | 8 use case × 4 storage decision matrix |
-| `lessons/24b-cap-pacelc-in-practice.md` | ⏳ Day 24 | CAP / PACELC áp dụng vào tool thật |
+| [`lessons/24-sql-vs-nosql-vs-es-decision-matrix.md`](lessons/24-sql-vs-nosql-vs-es-decision-matrix.md) | ✅ | Decision matrix 8 use case × 4 storage (verdict ✅/🟡/❌ + ngưỡng đảo chiều) + 5-axis table + 3 anti-pattern + "khi nào NoSQL" |
+| [`lessons/24b-cap-pacelc-in-practice.md`](lessons/24b-cap-pacelc-in-practice.md) | ✅ | CAP "chọn 2/3" sai + PACELC vế ELC (Else→L vs C); Postgres PC/EC · Mongo PC/EL · ES PA/EL · Redis PC/EL; "mọi derived store là EL" |
 | `lessons/25-polyglot-persistence-anti-patterns.md` | ⏳ Day 25 | Dual-write, sync drift, "1 tool 1 service" sai chỗ |
 | `lessons/26-frontend-architecture.md` | ⏳ Day 26 | Vertical slice, TanStack Query, axios envelope unwrap |
 | `lessons/27-optimistic-ui-tanstack.md` | ⏳ Day 27 | Optimistic update, rollback, conflict resolution |
@@ -283,6 +283,7 @@ graph LR
 | [`issues/22-es-postgres-sync-drift.md`](issues/22-es-postgres-sync-drift.md) | ✅ | Search ra sản phẩm đã xóa / giá sai — dual-write drift. 4 approaches (ignore+reindex / outbox / Debezium / sync-direct), app-level+reconcile chosen, key=productId ordering |
 | [`issues/23-mongodb-no-transaction-trap.md`](issues/23-mongodb-no-transaction-trap.md) | ✅ | Order mồ côi item — multi-doc write tưởng atomic. 4 approaches (embed / multi-doc txn replica-set / saga / để-Postgres), align aggregate=document boundary chosen |
 | `issues/23-mongodb-no-transaction-trap.md` | ⏳ Day 23 | Mongo cross-document transaction trước v4.0 — pitfall thường gặp |
+| [`issues/24-cargo-cult-storage-migration.md`](issues/24-cargo-cult-storage-migration.md) | ✅ | "Move order/stock sang Mongo cho scale" — incident-mô-phỏng (law of instrument). 4 approaches, Postgres-core+Mongo-derived chosen, decision-matrix-as-gate |
 
 ### 🔍 2.5b. Code Review (`review/`)
 
@@ -346,7 +347,7 @@ graph LR
 | [`interview/day-22-elasticsearch.md`](interview/day-22-elasticsearch.md) | ✅ | Bối cảnh NexaShop/Anh Khải + 5 Q&A (tsvector-vs-ES / text-keyword / dual-write sync / ES-down-fallback / consistency-window) + AI Playbook + Tech Lead Lens |
 | [`interview/day-23-mongodb.md`](interview/day-23-mongodb.md) | ✅ | Bối cảnh NexaShop/Anh Khải + 5 Q&A (when-Mongo / embed-vs-reference / no-txn / TTL / attributes-ở-Postgres) + AI Playbook + Tech Lead Lens |
 | `interview/day-23-mongodb.md` | ⏳ Day 23 | Mongo use case + decision rationale |
-| `interview/day-24-storage-decisions.md` | ⏳ Day 24 | "Khi nào dùng NoSQL?" — câu phỏng vấn classic |
+| [`interview/day-24-storage-decisions.md`](interview/day-24-storage-decisions.md) | ✅ | Bối cảnh NexaShop/Anh Khải + 5 Q&A (when-NoSQL / defend-4-storage / Mongo-CP-hay-AP / attributes-JSONB / ES-primary) + AI Playbook + Tech Lead Lens |
 | `interview/day-25-polyglot-review.md` | ⏳ Day 25 | Polyglot persistence review + anti-pattern |
 | `interview/portfolio-pitch-script.md` | ⏳ Day 38 | Pitch 90s trung thực cho personal lab project |
 

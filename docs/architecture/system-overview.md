@@ -24,9 +24,11 @@ graph TD
     Order[🧾 order-service]:::ddd
     Payment[💳 payment-service]:::ddd
 
-    PG[(🗄️ PostgreSQL<br/>DB-per-service<br/>auth_db · product_db · ...)]:::infra
-    Redis[(⚡ Redis<br/>cart · cache · rate-limit)]:::infra
-    Kafka{{📨 Kafka KRaft<br/>order.created · payment.completed<br/>inventory.reserved · notification.outgoing}}:::infra
+    PG[(🐘 PostgreSQL<br/>RELATIONAL · source of truth<br/>DB-per-service)]:::relational
+    Redis[(⚡ Redis<br/>KEY-VALUE · ephemeral<br/>cart · cache L2 · session)]:::keyvalue
+    Mongo[(🍃 MongoDB<br/>DOCUMENT · derived<br/>analytics event store · catalog read-model)]:::document
+    ES[(🔎 Elasticsearch<br/>INVERTED INDEX · derived<br/>product search)]:::search
+    Kafka{{📨 Kafka KRaft<br/>order.created · payment.completed<br/>product.upserted · inventory.reserved}}:::bus
 
     Web --> GW
     Admin --> GW
@@ -47,22 +49,36 @@ graph TD
     Cart --> Redis
     Product -.cache.-> Redis
 
+    Product --> ES
+    Product --> Mongo
+    Analytics --> Mongo
+
     Order -.publish.-> Kafka
     Payment -.publish.-> Kafka
     Inventory -.publish.-> Kafka
+    Product -.publish.-> Kafka
     Kafka -.consume.-> Notif
     Kafka -.consume.-> Analytics
     Kafka -.consume.-> Inventory
     Kafka -.consume.-> Order
+    Kafka -.sync derived.-> ES
+    Kafka -.sync derived.-> Mongo
 
-    classDef client   fill:#bfdbfe,stroke:#2563eb,color:#000
-    classDef layered  fill:#e0e7ff,stroke:#6366f1,color:#000
-    classDef ddd      fill:#e9d5ff,stroke:#9333ea,color:#000
-    classDef infra    fill:#fef3c7,stroke:#d97706,color:#000
+    classDef client     fill:#bfdbfe,stroke:#2563eb,color:#000
+    classDef layered    fill:#e0e7ff,stroke:#6366f1,color:#000
+    classDef ddd        fill:#e9d5ff,stroke:#9333ea,color:#000
+    classDef relational fill:#86efac,stroke:#16a34a,color:#000
+    classDef keyvalue   fill:#fecaca,stroke:#dc2626,color:#000
+    classDef document   fill:#bbf7d0,stroke:#15803d,color:#000
+    classDef search     fill:#fde68a,stroke:#d97706,color:#000
+    classDef bus        fill:#fef3c7,stroke:#d97706,color:#000
 ```
 
-> 🔵 client · 🟦 Layered service · 🟣 DDD service · 🟡 infrastructure
-> Solid arrow = sync (HTTP/Feign) · Dashed arrow = async (Kafka)
+> 🔵 client · 🟦 Layered service · 🟣 DDD service
+> **Storage paradigm** (Day 24 decision matrix): 🟢 Postgres = relational *source of truth* ·
+> 🔴 Redis = key-value *ephemeral* · 🟩 Mongo = document *derived* · 🟡 ES = inverted-index *derived*
+> Solid arrow = sync (HTTP/Feign/direct) · Dashed arrow = async (Kafka). Mọi derived store
+> sync từ Postgres qua Kafka — xem [lesson 24](../lessons/24-sql-vs-nosql-vs-es-decision-matrix.md).
 
 ---
 
@@ -211,6 +227,7 @@ application layer (composition) hoặc qua read model.
 ## Related
 
 - ADR: [`decisions/001-why-hybrid-architecture.md`](../decisions/001-why-hybrid-architecture.md)
+- Storage choice: [`lessons/24-sql-vs-nosql-vs-es-decision-matrix.md`](../lessons/24-sql-vs-nosql-vs-es-decision-matrix.md) (vì sao 4 storage, cái nào source of truth) · [`lessons/24b-cap-pacelc-in-practice.md`](../lessons/24b-cap-pacelc-in-practice.md)
 - Domain detail (sẽ build dần):
   - `architecture/order-domain.md` (Day 6)
   - `architecture/event-driven-flow.md` (Day 8)
