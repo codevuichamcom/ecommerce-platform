@@ -30,6 +30,10 @@ Nhưng trước khi mổ con quái đó, phải hiểu mấy cái chìa khoá tr
 Trong JVM có ba anh bảo vệ phòng VIP. Cùng một việc — cho **một người vào mỗi
 lần** — nhưng tính cách khác nhau một trời một vực.
 
+Cả ba đều cho **một người ghi mỗi lần** y như nhau. Khác biệt thật nằm ở chỗ ít
+ai để ý: **chúng đối xử với người chỉ ghé *đọc* ra sao**. Và đó là nơi khoảng
+cách bung ra thành con số khó tin — lát nữa benchmark sẽ chứng minh.
+
 **Anh `synchronized`** — bảo vệ già, hiền, đáng tin. Ai vào anh khoá cửa, ai ra
 anh tự mở (kể cả người đó té xỉu — exception — anh vẫn mở cửa dọn ra). Gọn gàng.
 Nhưng anh có một tật chết người ở thời đại virtual thread: anh **ôm khư khư** cái
@@ -44,8 +48,9 @@ quên một lần là phòng khoá vĩnh viễn.
 cần gì khoá cửa? Anh phát cho họ một con tem (`stamp`), cho nhìn thoải mái, lúc ra
 mới hỏi "lúc nãy có ai sửa đồ trong phòng không?" (`validate`). Không ai sửa →
 xong, khỏi khoá. Người xem không cản người xem. Nhanh khủng khiếp. Cái giá: anh
-**không nhớ mặt** (không reentrant — bạn vào hai lần là anh khoá luôn chính bạn),
-và nếu bạn quên hỏi `validate`, bạn đọc trúng món đồ ai đó đang thay dở. 🧦
+**không nhớ mặt** — không reentrant. Bạn vào một lần, rồi gọi lại vào lần nữa, anh
+nhìn bạn như người lạ và **khoá luôn chính bạn ở ngoài** (self-deadlock). Và nếu
+bạn quên hỏi `validate`, bạn đọc trúng món đồ ai đó đang thay dở. 🧦
 
 Tôi không tin lời quảng cáo. Tôi đo. JMH, 8 thread, đa số chỉ ghé nhìn:
 
@@ -58,11 +63,12 @@ LockThroughputBenchmark.stampedOptimisticRead  thrpt    5  5623426.644 ± 654988
 
 Tôi dụi mắt nhìn lại. Không phải gấp đôi. Không phải gấp mười. Anh thiên tài lập dị
 thắng **gấp bảy trăm bảy mươi lần** anh già. 🤯 Vì sao kinh khủng vậy? Vì người ghé
-nhìn của anh `StampedLock` **không lấy chìa, không chạm cửa** — chỉ liếc con tem.
-Tám anh bảo vệ kia, mỗi lần phát/thu chìa là một lần tám cái não CPU phải hét vào
-tai nhau "*tao vừa sửa chìa nhé!*" (cache-line bouncing) — cái tiếng hét đó mới là
-thứ giết throughput, không phải bản thân việc khoá. Người xem không hét, nên người
-xem bay. Logic optimistic read, viết đúng kiểu:
+nhìn của anh `StampedLock` **không đụng cửa, không chạm khoá** — chỉ liếc con tem.
+Còn hai anh kia: tám người khách tranh nhau cùng một cánh cửa, mỗi lần một người
+khoá/mở là một lần tám cái não CPU phải hét vào tai nhau "*tao vừa đụng khoá
+nhé!*" (cache-line bouncing). Cái tiếng hét đó mới là thứ giết throughput, không
+phải bản thân việc khoá. Người xem không hét, nên người xem bay. Logic optimistic
+read, viết đúng kiểu:
 
 ```java
 long stamp = stamped.tryOptimisticRead();
