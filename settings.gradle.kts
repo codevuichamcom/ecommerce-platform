@@ -44,6 +44,8 @@ include("services:order-service")
 include("services:notification-service")
 include("services:payment-service")
 
+// Day 23 — analytics-service: MongoDB event store + aggregation report.
+include("services:analytics-service")
+
 // Services sẽ uncomment khi bắt đầu build:
 // include("services:gateway-service")
-// include("services:analytics-service")

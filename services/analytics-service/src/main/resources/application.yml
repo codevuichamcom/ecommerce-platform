@@ -1,0 +1,57 @@
+spring:
+  application:
+    name: analytics-service
+
+  threads:
+    virtual:
+      enabled: true
+
+  main:
+    web-application-type: servlet
+
+  # Day 23 — MongoDB connection. authSource=admin vì root user tạo ở DB admin
+  # (MONGO_INITDB_ROOT_USERNAME). uuid-representation=standard để UUID lưu
+  # đúng binary subtype 4 (không phải legacy 3) — match driver các ngôn ngữ khác.
+  data:
+    mongodb:
+      uri: "${MONGO_URI:mongodb://ecom:ecom@localhost:27017/analytics_db?authSource=admin}"
+      uuid-representation: standard
+      auto-index-creation: false   # tự tạo index qua MongoIndexConfig (kiểm soát rõ TTL/compound)
+
+# Opt-in Kafka (xem common-lib KafkaAutoConfiguration).
+app:
+  kafka:
+    enabled: true
+    bootstrap-servers: "${KAFKA_BOOTSTRAP:localhost:9092}"
+    client-id: analytics-service
+    consumer-group: analytics-service
+
+  analytics:
+    event-ttl-days: 90   # TTL index — event tự xoá sau 90 ngày (xem MongoIndexConfig)
+
+spring.kafka:
+  template:
+    observation-enabled: true
+  listener:
+    observation-enabled: true
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: "${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}"
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+server:
+  port: 8088
+
+logging:
+  level:
+    com.ecom.analytics: DEBUG
+    org.springframework.kafka: INFO
+    org.mongodb.driver: WARN

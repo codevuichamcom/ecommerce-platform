@@ -34,6 +34,14 @@ spring:
       lettuce:
         client-name: product-service-l2
 
+    # Day 23 — MongoDB cho catalog read-model (flexible attributes). DB riêng
+    # product_catalog_db (Mongo tạo lazy lần ghi đầu — không cần init script).
+    # Connect LAZY: Mongo down KHÔNG fail startup, chỉ fail khi /products/{id}/catalog.
+    mongodb:
+      uri: ${PRODUCT_MONGO_URI:mongodb://ecom:ecom@localhost:27017/product_catalog_db?authSource=admin}
+      uuid-representation: standard
+      auto-index-creation: true
+
   # Day 22 — Elasticsearch 8 cho full-text search. Spring Data ES auto-config
   # bind ElasticsearchOperations + repository tới URI này. Dev: plaintext http,
   # no auth (xpack.security.enabled=false ở docker-compose). PROD: https +

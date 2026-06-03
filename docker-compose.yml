@@ -134,6 +134,39 @@ services:
       timeout: 5s
       retries: 12
 
+  # ── Day 23: MongoDB 7 ─────────────────────────────────────
+  # Dùng CÓ CHỦ Ý cho 2 chỗ schema không relational tốt:
+  #   1. analytics-service event store — event đa hình (ProductViewed /
+  #      CartUpdated / OrderPlaced), mỗi type payload khác nhau + write-heavy
+  #      + TTL auto-expire → document model + TTL index là tự nhiên.
+  #   2. product-service catalog read-model — flexible attributes theo
+  #      category (TV: screen_size/resolution; áo: size/color/material) → ép
+  #      vào cột quan hệ = EAV anti-pattern. Postgres GIỮ source of truth;
+  #      Mongo là derived read-model (sync qua product.upserted, như ES Day 22).
+  #
+  # Single-node KHÔNG bật replica set → multi-document transaction KHÔNG
+  # dùng được (xem issues/23-mongodb-no-transaction-trap.md). Dev chấp nhận:
+  # cả 2 use case đều single-document-write nên không cần txn.
+  mongodb:
+    image: mongo:7.0
+    container_name: ecom-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ecom
+      MONGO_INITDB_ROOT_PASSWORD: ecom
+      MONGO_INITDB_DATABASE: analytics_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      # mongosh ping — chờ tới khi accept connection (Spring connect lazy
+      # nhưng healthcheck cho compose-up-then-app order đúng).
+      test: ["CMD", "mongosh", "--quiet", "-u", "ecom", "-p", "ecom", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: ecom-kafka-ui
@@ -153,3 +186,4 @@ volumes:
   redis-data:
   kafka-data:
   es-data:
+  mongo-data:
