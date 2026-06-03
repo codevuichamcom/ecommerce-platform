@@ -20,7 +20,7 @@
 Cuối chương trước, cái hộp đồ nghề bốn ngăn đã mở, cái bảng quyết định đã treo lên tường. Hùng-búa
 thôi đòi đóng đinh con ốc bằng búa. Đẹp.
 
-Nhưng anh Khải — Principal Architect, người chưa bao giờ gật khi chưa nghe đủ — gọi bạn vào phòng họp
+Nhưng anh Khải — EM ex-Tiki, người chưa bao giờ gật khi chưa nghe đủ — gọi bạn vào phòng họp
 lần nữa. Lần này không cầm slide. Anh cầm một tờ giấy trắng.
 
 > 🗣️ *"Em chọn đúng kho rồi, anh tin. Giờ câu khác. Bốn cái kho cùng giữ data của một sản phẩm: Postgres
@@ -223,4 +223,3 @@ bản đồ chủ quyền. Hậu trường đã dựng xong — chắc, sâu, đ
 một cái giỏ hàng hiện ra trên màn hình. Sân khấu lộng lẫy, đèn đã bật — mà rèm chưa kéo. Chương 26: lần
 đầu tiên hệ thống **có một khuôn mặt** — React dựng lên, và backend bốn tuần cuối cùng cũng được ai đó
 chạm vào bằng con trỏ chuột.* 💻
-</content>

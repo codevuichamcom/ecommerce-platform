@@ -225,4 +225,3 @@ khó hơn: bốn cái kho cùng giữ data, vậy **ai làm chủ cái gì**? Kh
 ai có nghĩa vụ cập nhật theo, theo chiều nào, trễ bao lâu? Và nếu một kho **chết** giữa đêm —
 hệ thống còn đứng được không? Chương 25: tấm bản đồ chủ quyền dữ liệu, và nghệ thuật để
 "polyglot" không biến thành "poly-mess".* 🗺️
-</content>
