@@ -54,9 +54,10 @@
 | 22 | [Ông thầy bói đọc vị](./22-ong-thay-boi.md) | Day 22 — Elasticsearch search (inverted index · BM25 · fuzzy · facet · sync) | 🔮 Ông thầy bói đoán ý (đọc cả khi khách nói nhịu) nhưng chỉ đọc bản phô-tô — Postgres giữ sổ gốc, Kafka làm máy phô-tô, phô-tô lệch = drift |
 | 23 | [Cuốn sổ không dòng kẻ](./23-cuon-so-khong-dong-ke.md) | Day 23 — MongoDB (event store · flexible attributes · aggregation · TTL) | 📓 Bác thư ký tốc ký chép cuốn sổ trắng (schemaless, hình nào cũng nhận) — nhanh nhưng đừng nhờ giữ 2 trang khớp nhau (no multi-doc txn); Postgres vẫn giữ sổ gốc |
 | 24 | [Bốn món đồ nghề](./24-bon-mon-do-nghe.md) | Day 24 — SQL vs NoSQL vs ES (decision matrix · 5 axis · PACELC) | 🧰 Hộp đồ nghề 4 ngăn vs gã chỉ thích cầm búa (law of instrument) — cờ-lê/dao bấm/băng keo/kính lúp, mỗi món một việc; chọn theo access pattern không theo tính từ |
+| 25 | [Tấm bản đồ chủ quyền](./25-tam-ban-do-chu-quyen.md) | Day 25 — Polyglot persistence (data ownership · sync edge · failure mode) | 🗺️ Vương quốc 4 vùng đất: Postgres là vua giữ ấn tín (source of truth), ES/Mongo/cache là chư hầu chép chiếu chỉ (derived), cart-Redis là lãnh-địa-tự-trị (primary), analytics-Mongo là sử quan (sink) — chống "loạn 12 sứ quân" (poly-mess) bằng 3 kỷ luật |
 
-### [Phần V → VII — Preview Day 25→40](./22-40-preview.md)
-*Polyglot → Frontend → System Design → Final Mock*
+### [Phần V → VII — Preview Day 26→40](./22-40-preview.md)
+*Frontend → System Design → Final Mock*
 
 ---
 
@@ -107,8 +108,8 @@ graph LR
     classDef current fill:#fde68a,stroke:#d97706,color:#000
     classDef future fill:#e5e7eb,stroke:#6b7280,color:#000
 
-    class D1,D2,D3,D4,D5,D6,D7,D8,D9,D10,D11,D12,D13,D15,D16,D17,D18,D19,D20 done
-    class D22,D23,D25,D26,D31,D40 future
+    class D1,D2,D3,D4,D5,D6,D7,D8,D9,D10,D11,D12,D13,D15,D16,D17,D18,D19,D20,D22,D23,D25 done
+    class D26,D31,D40 future
 ```
 
 ---

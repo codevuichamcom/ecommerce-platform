@@ -183,7 +183,7 @@ graph LR
 | [`architecture/system-overview.md`](architecture/system-overview.md) | ✅ | Sơ đồ 9 microservice, communication topology, infra stack |
 | [`architecture/order-domain.md`](architecture/order-domain.md) | ✅ | Aggregate Order + sealed `OrderStatus` state machine + sync orchestration sequence |
 | [`architecture/event-driven-flow.md`](architecture/event-driven-flow.md) | ✅ | Kafka topic topology (5 topic) + sync vs async sequence diagram + JSON schema versioning rule |
-| `architecture/data-ownership-map.md` | ⏳ Day 25 | Polyglot persistence: ai owns Postgres / Redis / Mongo / ES, sync direction |
+| [`architecture/data-ownership-map.md`](architecture/data-ownership-map.md) | ✅ | Polyglot 3 hạng owner (truth Postgres / derived ES+Mongo+cache / đặc-biệt Redis-cart-primary + Mongo-analytics-sink); bảng sync edge + window; Mermaid failure-mode matrix; 6 quy tắc |
 
 ### 📐 2.3. Decisions / ADRs (`decisions/`)
 
@@ -249,7 +249,7 @@ graph LR
 | `lessons/23b-document-vs-relational-modeling.md` | ⏳ Day 23 | Modeling 1-N / N-N trong document vs relational |
 | [`lessons/24-sql-vs-nosql-vs-es-decision-matrix.md`](lessons/24-sql-vs-nosql-vs-es-decision-matrix.md) | ✅ | Decision matrix 8 use case × 4 storage (verdict ✅/🟡/❌ + ngưỡng đảo chiều) + 5-axis table + 3 anti-pattern + "khi nào NoSQL" |
 | [`lessons/24b-cap-pacelc-in-practice.md`](lessons/24b-cap-pacelc-in-practice.md) | ✅ | CAP "chọn 2/3" sai + PACELC vế ELC (Else→L vs C); Postgres PC/EC · Mongo PC/EL · ES PA/EL · Redis PC/EL; "mọi derived store là EL" |
-| `lessons/25-polyglot-persistence-anti-patterns.md` | ⏳ Day 25 | Dual-write, sync drift, "1 tool 1 service" sai chỗ |
+| [`lessons/25-polyglot-persistence-anti-patterns.md`](lessons/25-polyglot-persistence-anti-patterns.md) | ✅ | 6 anti-pattern (dual-write / no-source-of-truth / derived-as-primary / drift-im-lặng / "1-service-1-DB"-giáo-điều / ops-sprawl) + 3-approach single/disciplined/chaos |
 | `lessons/26-frontend-architecture.md` | ⏳ Day 26 | Vertical slice, TanStack Query, axios envelope unwrap |
 | `lessons/27-optimistic-ui-tanstack.md` | ⏳ Day 27 | Optimistic update, rollback, conflict resolution |
 | `lessons/28-cursor-pagination-ui.md` | ⏳ Day 28 | Infinite scroll dùng cursor, không offset |
@@ -343,12 +343,13 @@ graph LR
 | [`interview/week-02-cv-bullets.md`](interview/week-02-cv-bullets.md) | ✅ | 2 bullet metric-driven (event-driven foundation + dual-write resolution; resilience + 4 ADR/week discipline) + elevator pitch v2 90s |
 | [`interview/week-03-mock.md`](interview/week-03-mock.md) | ✅ | 10 Q performance senior (5 system design: offset/keyset, cache 2-tier, optimistic lock, load test, storage matrix + 5 production: flash sale, cache hit but slow, keyset edge case, network partition lock, VT constrained prod). Self-grade 9 strong / 1 borderline / 0 fail. Confidence 8.5/10. Story: "3 pattern 10× throughput: cache XFetch + keyset seek + distributed lock fencing." |
 | [`interview/week-03-cv-bullets.md`](interview/week-03-cv-bullets.md) | ✅ | 2 bullet metric-driven (4× latency 200ms→50ms P95, 10× throughput 200→2000 req/s; distributed lock partition safety). Elevator pitch v3 90s accumulative Week 1-3. |
-| `interview/week-NN-cv-bullets.md` | ⏳ Day 25/30/37 | CV bullet draft cuối mỗi tuần (Day 7, 14, 21 ✅, Day 25/30/37 pending) |
+| [`interview/week-04-cv-bullets.md`](interview/week-04-cv-bullets.md) | ✅ | 2 bullet (polyglot-disciplined no-dual-write sub-2s window + decision-matrix/PACELC reject migrate-orders-to-Mongo) + 90s pitch cumulative Week 1-4 |
+| `interview/week-NN-cv-bullets.md` | ⏳ Day 30/37 | CV bullet draft cuối mỗi tuần (Day 7, 14, 21, 25 ✅, Day 30/37 pending) |
 | [`interview/day-22-elasticsearch.md`](interview/day-22-elasticsearch.md) | ✅ | Bối cảnh NexaShop/Anh Khải + 5 Q&A (tsvector-vs-ES / text-keyword / dual-write sync / ES-down-fallback / consistency-window) + AI Playbook + Tech Lead Lens |
 | [`interview/day-23-mongodb.md`](interview/day-23-mongodb.md) | ✅ | Bối cảnh NexaShop/Anh Khải + 5 Q&A (when-Mongo / embed-vs-reference / no-txn / TTL / attributes-ở-Postgres) + AI Playbook + Tech Lead Lens |
 | `interview/day-23-mongodb.md` | ⏳ Day 23 | Mongo use case + decision rationale |
 | [`interview/day-24-storage-decisions.md`](interview/day-24-storage-decisions.md) | ✅ | Bối cảnh NexaShop/Anh Khải + 5 Q&A (when-NoSQL / defend-4-storage / Mongo-CP-hay-AP / attributes-JSONB / ES-primary) + AI Playbook + Tech Lead Lens |
-| `interview/day-25-polyglot-review.md` | ⏳ Day 25 | Polyglot persistence review + anti-pattern |
+| [`interview/day-25-polyglot-review.md`](interview/day-25-polyglot-review.md) | ✅ | Bối cảnh NexaShop/Anh Khải + 5 Q&A (ownership / dual-write-outbox / window-đo-bằng-gì / failure-mode / ops-cost) + AI Playbook |
 | `interview/portfolio-pitch-script.md` | ⏳ Day 38 | Pitch 90s trung thực cho personal lab project |
 
 ### 🏛️ 2.8. System Design (`system-design/`)
