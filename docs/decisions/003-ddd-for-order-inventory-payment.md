@@ -4,6 +4,7 @@
 - **Date**: 2026-05-09
 - **Deciders**: Tonny (Tech Lead)
 - **Supersedes**: làm rõ ADR-001 §"Hybrid: Layered + Selective DDD"
+- **Revised-by**: [ADR-007](007-payment-service-layered-not-ddd.md) — phần `payment-service` được **revise sang Layered** (Day 10, sau khi rà lại 3-điểm criteria chỉ đạt 1/3). Phần `inventory`/`order` của ADR này vẫn nguyên hiệu lực.
 
 ## 🏗️ Decision
 
@@ -40,7 +41,7 @@ Constraint:
 | ------- | ------------- | ---------------- | ------------- | --------- |
 | `inventory` | reserved≤quantity, qty≥0, reserved≥0, reserve>0 | 100 user grab 1 SKU | `StockReserved`/`Released` ra Kafka | **DDD** |
 | `order` | state machine 5 trạng thái, total=Σitem, không cancel-paid | 1 user nhiều click "place" | `OrderCreated`/`Paid`/`Shipped` | **DDD** |
-| `payment` | idempotent theo txId, status FSM, amount=order.amount | callback duplicate from gateway | `PaymentCompleted`/`Failed` | **DDD** |
+| `payment` | idempotent theo txId, status FSM, amount=order.amount | callback duplicate from gateway | `PaymentCompleted`/`Failed` | ~~DDD~~ → **Layered** (revise: [ADR-007](007-payment-service-layered-not-ddd.md)) |
 | `auth` | password hash, refresh rotation | login race | KHÔNG public domain event | Layered (refresh rotation đã giải quyết bằng atomic UPDATE Day 2, không cần Aggregate) |
 | `product` | sku unique, slug unique | rare write contention | KHÔNG | Layered |
 | `cart` | TTL 7d | merge anonymous→user (1 user) | KHÔNG | Layered |

@@ -21,7 +21,7 @@ lật-ngược (Elasticsearch 🔎), cuốn sổ trắng (MongoDB 🍃). Bốn k
 Nhưng anh Khải đã cảnh báo ngay từ cliffhanger: **đẹp cũng là lúc nguy hiểm nhất.** Bốn
 cái búa trên bàn, và con người ta có thói quen cầm cái búa quen tay đập mọi cái đinh.
 
-Sáng thứ Hai, sprint planning. Một bạn dev trẻ — gọi là **Hùng-búa** 🔨 — đứng lên,
+Sáng thứ Hai, sprint planning. Một bạn dev trẻ — gọi là **Tuấn-búa** 🔨 — đứng lên,
 slide đẹp, giọng tự tin: *"Em đề xuất move `orders` với `stock` sang MongoDB. Mongo nhanh
 hơn, linh hoạt hơn, scale ngang dễ. Bỏ Postgres cho gọn."*
 
@@ -31,15 +31,15 @@ một câu mà bạn sẽ nghe đi nghe lại suốt sự nghiệp:
 > 🗣️ *"Trước khi anh duyệt — em nói cho anh nghe, dựa vào **cái gì** để chọn kho. Đừng nói 'nhanh'. Đừng nói 'linh hoạt'. Nói anh nghe **access pattern**."*
 
 Hôm nay không build gì. Hôm nay bạn phải **treo một cái bảng lên tường** — bảng quyết định —
-để lần sau Hùng-búa (và chính bạn) không cầm nhầm đồ nghề.
+để lần sau Tuấn-búa (và chính bạn) không cầm nhầm đồ nghề.
 
 ---
 
 ## 🔨 Luật của cái búa: vì sao "Mongo cho nhanh" là cái bẫy
 
 Có một định luật tâm lý cũ rích tên là *law of the instrument* — **luật của cái búa**:
-*"Nếu thứ duy nhất bạn có là cái búa, mọi thứ trông như cái đinh."* Hùng-búa không ngu.
-Hùng-búa chỉ vừa học Mongo tuần trước, thấy nó bóng loáng, và giờ nhìn đâu cũng thấy
+*"Nếu thứ duy nhất bạn có là cái búa, mọi thứ trông như cái đinh."* Tuấn-búa không ngu.
+Tuấn-búa chỉ vừa học Mongo tuần trước, thấy nó bóng loáng, và giờ nhìn đâu cũng thấy
 "chỗ này nhét Mongo được".
 
 Vấn đề của câu *"Mongo nhanh hơn"* không phải nó sai. Là nó **thiếu vế**. Nhanh hơn — ở
@@ -67,7 +67,7 @@ trên replica-set. Tức là... 🥁
 > Một vòng tròn vô nghĩa. Đây là dấu hiệu kinh điển của cầm-nhầm-đồ-nghề: bạn phải *chống lại*
 > bản chất của công cụ để ép nó làm việc của công cụ khác.
 
-Bạn nói với Hùng-búa, nhẹ thôi: *"Stock mà chạy concurrency test 100 thread no-oversell
+Bạn nói với Tuấn-búa, nhẹ thôi: *"Stock mà chạy concurrency test 100 thread no-oversell
 trên Mongo single-doc là **rớt ngay**. Cái test đó là red line. Chưa pass thì chưa bàn migrate."*
 
 Chi tiết "incident suýt xảy ra" này: [issue 24](../issues/24-cargo-cult-storage-migration.md).
@@ -116,7 +116,7 @@ Bản đầy đủ kèm reasoning từng ô: [lesson 24](../lessons/24-sql-vs-no
 Anh Khải chỉ vào ô vàng. *"Đây này. Em để flexible product attributes ở **Postgres JSONB**
 (Day 3), trong khi Mongo nằm ngay đó, sinh ra để làm đúng cái đó. Mâu thuẫn không? Defend đi."*
 
-Phòng họp im phắc. Hùng-búa hơi nhếch mép — tưởng bắt được lỗi.
+Phòng họp im phắc. Tuấn-búa hơi nhếch mép — tưởng bắt được lỗi.
 
 Bạn thở ra, và đếm **ba** ngón tay 🖐️ (senior luôn đếm, nhớ chứ?):
 

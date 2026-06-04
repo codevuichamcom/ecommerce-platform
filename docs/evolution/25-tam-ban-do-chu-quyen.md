@@ -8,7 +8,7 @@
 
 ---
 
-> 🎬 **Chương này có gì:** một tấm bản đồ vẽ ấn tín ai giữ, một câu hỏi của anh Khải làm Hùng-búa
+> 🎬 **Chương này có gì:** một tấm bản đồ vẽ ấn tín ai giữ, một câu hỏi của anh Khải làm Tuấn-búa
 > chột dạ lần hai, ba kỷ luật để bốn vùng đất không đánh nhau, một đêm giả định Elasticsearch tắt
 > thở lúc 9h sáng, và một sự thật phũ: *cùng một Redis, hai vai, hai số phận khi chết.* Vẫn không
 > một dòng service code mới — nhưng có một tấm bản đồ mà thiếu nó thì 6 tháng nữa cả team lạc đường. 🧭
@@ -17,7 +17,7 @@
 
 ## Bối cảnh
 
-Cuối chương trước, cái hộp đồ nghề bốn ngăn đã mở, cái bảng quyết định đã treo lên tường. Hùng-búa
+Cuối chương trước, cái hộp đồ nghề bốn ngăn đã mở, cái bảng quyết định đã treo lên tường. Tuấn-búa
 thôi đòi đóng đinh con ốc bằng búa. Đẹp.
 
 Nhưng anh Khải — EM ex-Tiki, người chưa bao giờ gật khi chưa nghe đủ — gọi bạn vào phòng họp
@@ -173,7 +173,7 @@ giỏ vốn dĩ 7 ngày, nó ephemeral từ đầu. Khách thêm lại giỏ. Ch
 
 ## 🏴 "Một service một database" — câu bị hiểu sai nhiều nhất
 
-Trước khi đóng họp, Hùng-búa vớt vát: *"Nhưng microservice phải 'một service một database' mà anh. Sao
+Trước khi đóng họp, Tuấn-búa vớt vát: *"Nhưng microservice phải 'một service một database' mà anh. Sao
 nhiều service em xài chung Postgres?"*
 
 Bạn cười: *"Câu đó nói về **chủ quyền**, không nói về **công nghệ**. Rule thật là: **không service nào
