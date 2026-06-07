@@ -15,12 +15,12 @@ gọn gàng. Nhưng tất cả mới chỉ chạy trên **máy một người** 
 `curl`, gật gù "ổn áp". Ổn áp là cảm giác. Cảm giác không lên được slide trước
 campaign 6/6.
 
-Anh Khải — EM, ex-Tiki — quăng cho tôi một câu lạnh tanh: *"Tao không cần mày nói
+Anh Khải — EM, ex-Tiki — quăng cho Tonny một câu lạnh tanh: *"Tao không cần mày nói
 'chắc ổn'. Tao cần con số. Chịu bao nhiêu RPS thì P99 vỡ? Và lúc nó vỡ, cái gì
 gãy trước?"*
 
-Thế là tôi thuê một ông huấn luyện viên. Tên ổng là **k6**. Ổng không quan tâm hệ
-thống của tôi đẹp cỡ nào trên giấy. Ổng chỉ làm một việc: **chất tạ lên, tăng dần,
+Thế là Tonny thuê một ông huấn luyện viên. Tên ổng là **k6**. Ổng không quan tâm hệ
+thống của Tonny đẹp cỡ nào trên giấy. Ổng chỉ làm một việc: **chất tạ lên, tăng dần,
 cho tới khi có thứ gì đó gãy** — rồi chỉ tay vào đúng cái cơ yếu nhất và cười khẩy.
 
 ## 🏋️ Cú lừa của closed model: bài tập mày tự chọn nhịp
@@ -34,7 +34,7 @@ Trong tải thật, không ai đợi mày. User bấm "Đặt hàng" lúc 20h00 
 hỏi** request của người bên cạnh đã xong chưa. Tạ cứ rơi xuống đúng nhịp — mày đỡ
 không kịp thì nó **chồng đống** lên người.
 
-Đó là **open model** — `ramping-arrival-rate`. Và đây là chỗ tôi bắt ông HLV ký
+Đó là **open model** — `ramping-arrival-rate`. Và đây là chỗ Tonny bắt ông HLV ký
 hợp đồng:
 
 ```javascript
@@ -71,8 +71,8 @@ Average là trung bình. Một thằng nâng 999 cái mượt, 1 cái suýt gãy
 vẫn "đẹp". Nhưng cái rep thứ 1000 ấy mới là thứ gửi mày vào bệnh viện.
 
 **P99 = cái rep tệ nhất trong 100 cái.** Ở 1 triệu request/ngày, P99 = 500ms nghĩa
-là **10.000 user mỗi ngày** ngồi nhìn spinner ≥ nửa giây. Nên ngưỡng của tôi —
-viết thẳng vào hợp đồng với ông HLV, để ổng **đá tôi ra khỏi phòng tập** (exit
+là **10.000 user mỗi ngày** ngồi nhìn spinner ≥ nửa giây. Nên ngưỡng của Tonny —
+viết thẳng vào hợp đồng với ông HLV, để ổng **đá Tonny ra khỏi phòng tập** (exit
 code ≠ 0) nếu vi phạm:
 
 ```javascript
@@ -89,12 +89,12 @@ export const orderThresholds = {
 
 ## 💥 Và rồi có thứ gãy: không phải cơ ngực, mà là cổ tay
 
-Tôi bật virtual thread (ngày 19 đã chứng minh nó rẻ), nghĩ bụng: *nghìn thread ảo,
+Tonny bật virtual thread (ngày 19 đã chứng minh nó rẻ), nghĩ bụng: *nghìn thread ảo,
 nuốt hết, P99 mượt như nhung.* Ông HLV chất tạ lên 200 req/s.
 
 P99 từ **120ms vọt lên 2.1 giây.** Throughput **không nhúc nhích.**
 
-Ủa? VT đâu? Tôi mở Grafana lên — và đây là lúc cái dashboard tôi dựng đêm qua trả
+Ủa? VT đâu? Tonny mở Grafana lên — và đây là lúc cái dashboard Tonny dựng đêm qua trả
 công. Panel CPU: **35%.** CPU đang *rảnh rỗi* mà hệ thống *lết*. Panel HikariCP:
 
 ```
@@ -107,7 +107,7 @@ Cơ ngực (CPU, thread) khoẻ phây phây. Nhưng **cổ tay gãy.** Connectio
 tới bước ghi DB, **20 đứa** chộp được connection, **180 đứa** đứng xếp hàng trước
 cánh cửa Hikari.
 
-Để chắc, tôi mở Tempo — sợi chỉ Ariadne của ngày 9 giờ thành **máy quay chậm** soi
+Để chắc, Tonny mở Tempo — sợi chỉ Ariadne của ngày 9 giờ thành **máy quay chậm** soi
 từng động tác:
 
 ```
@@ -159,7 +159,7 @@ spring:
 ## 🥊 VT vs Platform: lên đài đo bằng số
 
 Anh Khải hỏi câu kinh điển: *"Vậy bật VT có nhanh hơn không?"* — Câu hỏi sai đề.
-Tôi cho hai đứa lên đài, cùng một bài tập, đổi mỗi cái profile:
+Tonny cho hai đứa lên đài, cùng một bài tập, đổi mỗi cái profile:
 
 ```yaml
 # application-platform.yml — tắt VT, về Tomcat pool 200 cổ điển

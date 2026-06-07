@@ -22,7 +22,7 @@ Và một câu hỏi nguy hiểm treo lơ lửng:
 
 Đây là ngày của **người kiến trúc sư**, không phải người thợ hồ. Người thợ hồ thấy đất trống là muốn trộn xi măng ngay. Người kiến trúc sư thì ngồi xuống, mở bản vẽ, và biết một sự thật phũ phàng: **những nét bút hôm nay vô hình, nhưng 39 ngày nữa cả toà nhà sẽ tựa vào chúng.**
 
-Ngày đầu tiên không có một dòng business logic. Không endpoint. Không database table. Không có gì để demo, không có gì để khoe sếp. Chỉ có **những quyết định** — loại quyết định mà 6 tháng sau, khi hệ thống có 9 service và 50 Kafka consumer, bạn sẽ hoặc thầm cảm ơn, hoặc nguyền rủa chính mình lúc 2h sáng.
+Ngày đầu tiên không có một dòng business logic. Không endpoint. Không database table. Không có gì để demo, không có gì để khoe sếp. Chỉ có **những quyết định** — loại quyết định mà 6 tháng sau, khi hệ thống có 9 service và 50 Kafka consumer, Tonny sẽ hoặc thầm cảm ơn, hoặc nguyền rủa chính mình lúc 2h sáng.
 
 Kiến trúc sư của chúng ta cầm bút lên. Bốn nét.
 
@@ -43,9 +43,9 @@ postgres    = "16"
 spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring-boot" }
 ```
 
-Nghe có vẻ là chi tiết nhỏ nhặt của một mọt build script. Cho đến cái đêm nó cứu mạng bạn.
+Nghe có vẻ là chi tiết nhỏ nhặt của một mọt build script. Cho đến cái đêm nó cứu mạng Tonny.
 
-> 🎬 **Cảnh phim — 6 tháng sau, 2h07 sáng.** Slack nổ đỏ lòm. Một CVE critical vừa được công bố cho Spring Boot. Cả team trên dưới 9 service đang dùng. Bạn dụi mắt, mở laptop. Nếu mỗi service tự khai version trong `build.gradle` riêng — bạn phải mở 9 file, sửa 9 chỗ, nơm nớp sợ sót một thằng. Nhưng vì kiến trúc sư đã đặt nét bút này từ Day 1, bạn mở **đúng một file** `libs.versions.toml`, sửa **đúng một dòng** `spring-boot = "3.4.5"` → `"3.4.6"`, chạy build, đi ngủ tiếp lúc 2h11. 😴
+> 🎬 **Cảnh phim — 6 tháng sau, 2h07 sáng.** Slack nổ đỏ lòm. Một CVE critical vừa được công bố cho Spring Boot. Cả team trên dưới 9 service đang dùng. Tonny dụi mắt, mở laptop. Nếu mỗi service tự khai version trong `build.gradle` riêng — Tonny phải mở 9 file, sửa 9 chỗ, nơm nớp sợ sót một thằng. Nhưng vì kiến trúc sư đã đặt nét bút này từ Day 1, Tonny mở **đúng một file** `libs.versions.toml`, sửa **đúng một dòng** `spring-boot = "3.4.5"` → `"3.4.6"`, chạy build, đi ngủ tiếp lúc 2h11. 😴
 
 Và khi junior hỏi *"service X dùng Spring version mấy anh?"*, câu trả lời mãi mãi là một câu: **"Mở `libs.versions.toml`."**
 

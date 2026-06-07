@@ -8,7 +8,7 @@
 
 ---
 
-> 🎬 **Chương này có gì:** một tấm bản đồ vẽ ấn tín ai giữ, một câu hỏi của anh Khải làm Hùng-búa
+> 🎬 **Chương này có gì:** một tấm bản đồ vẽ ấn tín ai giữ, một câu hỏi của anh Khải làm Tuấn-búa
 > chột dạ lần hai, ba kỷ luật để bốn vùng đất không đánh nhau, một đêm giả định Elasticsearch tắt
 > thở lúc 9h sáng, và một sự thật phũ: *cùng một Redis, hai vai, hai số phận khi chết.* Vẫn không
 > một dòng service code mới — nhưng có một tấm bản đồ mà thiếu nó thì 6 tháng nữa cả team lạc đường. 🧭
@@ -17,10 +17,10 @@
 
 ## Bối cảnh
 
-Cuối chương trước, cái hộp đồ nghề bốn ngăn đã mở, cái bảng quyết định đã treo lên tường. Hùng-búa
+Cuối chương trước, cái hộp đồ nghề bốn ngăn đã mở, cái bảng quyết định đã treo lên tường. Tuấn-búa
 thôi đòi đóng đinh con ốc bằng búa. Đẹp.
 
-Nhưng anh Khải — Principal Architect, người chưa bao giờ gật khi chưa nghe đủ — gọi bạn vào phòng họp
+Nhưng anh Khải — EM ex-Tiki, người chưa bao giờ gật khi chưa nghe đủ — gọi Tonny vào phòng họp
 lần nữa. Lần này không cầm slide. Anh cầm một tờ giấy trắng.
 
 > 🗣️ *"Em chọn đúng kho rồi, anh tin. Giờ câu khác. Bốn cái kho cùng giữ data của một sản phẩm: Postgres
@@ -29,7 +29,7 @@ lần nữa. Lần này không cầm slide. Anh cầm một tờ giấy trắng.
 > một kho chết, hệ thống của em còn đứng được không, hay đổ rạp như domino?"*
 
 Đây không phải câu hỏi code. Đây là câu hỏi **chủ quyền**. Bốn vùng đất, ai làm vua, ai làm chư hầu,
-ai nộp cống cho ai. Hôm nay bạn không build. Hôm nay bạn vẽ **bản đồ chủ quyền** — để bốn vùng đất
+ai nộp cống cho ai. Hôm nay Tonny không build. Hôm nay Tonny vẽ **bản đồ chủ quyền** — để bốn vùng đất
 không biến thành loạn sứ quân.
 
 ---
@@ -39,7 +39,7 @@ không biến thành loạn sứ quân.
 Phản xạ đầu tiên của junior: *"Cả bốn đều giữ data của product, nên cả bốn đều... ngang nhau?"* Sai.
 Trong một vương quốc lành mạnh, **chỉ một người giữ ấn tín**. Số còn lại chép chiếu chỉ.
 
-Bạn vẽ lên giấy, chia ba hạng — và đây là chỗ tinh tế nhất cả chương:
+Tonny vẽ lên giấy, chia ba hạng — và đây là chỗ tinh tế nhất cả chương:
 
 ```
 👑 VUA (source of truth)        → Postgres: order · payment · stock · product-core · user
@@ -64,7 +64,7 @@ Hai cái cuối là bẫy. Ai cũng tưởng "ngoài Postgres = cache = chép l�
 > Một công nghệ, hai vai, hai số phận. Senior tách được; junior trả lời chung chung rồi rớt.
 
 Bản đầy đủ — owner, derived?, sync edge, window — nằm ở [data-ownership-map](../architecture/data-ownership-map.md).
-Đó là tấm bản đồ bạn dán lên tường, để 6 tháng nữa người mới vào không phải đoán.
+Đó là tấm bản đồ Tonny dán lên tường, để 6 tháng nữa người mới vào không phải đoán.
 
 ---
 
@@ -72,7 +72,7 @@ Bản đầy đủ — owner, derived?, sync edge, window — nằm ở [data-ow
 
 Anh Khải hỏi tiếp, mắt nhíu: *"Postgres sửa giá. Làm sao ES với Mongo biết? Em ghi thẳng cả ba nơi à?"*
 
-Đây là cái bẫy tên **dual-write** — và bạn đã bị nó cắn một lần ở ch.13, đau tới giờ.
+Đây là cái bẫy tên **dual-write** — và Tonny đã bị nó cắn một lần ở ch.13, đau tới giờ.
 
 ```
 ❌ Hai sứ giả cùng phi ngựa (dual-write):
@@ -82,7 +82,7 @@ Anh Khải hỏi tiếp, mắt nhíu: *"Postgres sửa giá. Làm sao ES với M
    //  → Postgres nói giá 100, ES nói giá 90, MÃI MÃI. Không ai biết.
 ```
 
-Không có phép thuật nào ghi atomic vào hai vương quốc khác nhau. Nên bạn làm thế này — **một** sứ giả,
+Không có phép thuật nào ghi atomic vào hai vương quốc khác nhau. Nên Tonny làm thế này — **một** sứ giả,
 một con đường, có sổ ghi:
 
 ```
@@ -96,7 +96,7 @@ một con đường, có sổ ghi:
 
 Một event `product.upserted` phi ra, **hai** chư hầu cùng nghe — mỗi ông một consumer group, ông này
 fail/replay không ảnh hưởng ông kia. Product dùng `afterCommit publish` (write rate thấp, có reindex bù);
-order dùng outbox thật (không được phép mất). Khác nhau ở mức độ nghiêm — và bạn nói được *vì sao* mỗi cái.
+order dùng outbox thật (không được phép mất). Khác nhau ở mức độ nghiêm — và Tonny nói được *vì sao* mỗi cái.
 
 > 💡 **Một bài học, ba lần học:** cái đau dual-write ở ch.13 (outbox), drift ES ở ch.22 (ông thầy bói đọc
 > bản phô-tô lệch), drift catalog ở ch.23 — **cùng một bài**. Không ghi atomic được hai hệ. Chọn một vua,
@@ -106,7 +106,7 @@ order dùng outbox thật (không được phép mất). Khác nhau ở mức đ
 
 ## ⏳ Chép trễ bao lâu: "chắc là nhanh" không phải câu trả lời
 
-*"Chép trễ bao lâu?"* — anh Khải gõ bút. Bạn biết tỏng cái bẫy: ai trả lời *"chắc là nhanh thôi anh"*
+*"Chép trễ bao lâu?"* — anh Khải gõ bút. Tonny biết tỏng cái bẫy: ai trả lời *"chắc là nhanh thôi anh"*
 là rớt. Eventual consistency không phải lời hứa *"rồi sẽ khớp"*. Nó là *"lệch trong một **window** —
 và em **đo** được cái window đó."*
 
@@ -119,7 +119,7 @@ và em **đo** được cái window đó."*
 Và — đây là câu chốt — *window acceptable tùy việc*. Search lệch 1-2s: **OK**, không ai chết vì sản phẩm
 mới xuất hiện chậm hai giây. Nhưng order/stock thì **KHÔNG eventual** — đó chính là lý do chúng ở Postgres
 ACID, làm vua, không làm chư hầu. Mọi chư hầu là **EL** (PACELC — ch.24): chép async = hy sinh consistency
-lấy latency. Bạn sống với điều đó, miễn là **đo** nó.
+lấy latency. Tonny sống với điều đó, miễn là **đo** nó.
 
 > 💡 **Senior vs junior, một câu:** junior nói *"hệ em đồng bộ"*. Senior nói *"hệ em eventual với window
 > ~1-2s, đo bằng consumer lag, reconcile bằng reindex từ source of truth, và đây là use case nào chịu được
@@ -151,7 +151,7 @@ graph TD
     classDef ok fill:#86efac,stroke:#16a34a,color:#000
 ```
 
-Bạn trả lời gọn: *"Chỉ **một** kho chết làm sập hệ — Postgres, vì nó là vua. Đó là lý do **duy nhất** kho
+Tonny trả lời gọn: *"Chỉ **một** kho chết làm sập hệ — Postgres, vì nó là vua. Đó là lý do **duy nhất** kho
 phải có HA thật (Multi-AZ). Còn lại đều degrade: ES chết → search rớt về Postgres GIN (ch.22 đã làm sẵn,
 có header `X-Search-Source` để biết đang ăn bản dự phòng). Mongo-catalog chết → đọc product-core thẳng từ
 Postgres. Mongo-analytics chết → event đọng ở Kafka, lên thì replay, khách mua hàng không hề biết. Redis-cache
@@ -159,7 +159,7 @@ chết → cache miss, chậm hơn, vẫn đúng."*
 
 Anh Khải: *"Còn Redis-cart?"* — câu bẫy.
 
-Bạn không cắn: *"Cart mất, anh ạ. Nó là **primary**, không có Postgres backing để fallback. Nhưng — TTL
+Tonny không cắn: *"Cart mất, anh ạ. Nó là **primary**, không có Postgres backing để fallback. Nhưng — TTL
 giỏ vốn dĩ 7 ngày, nó ephemeral từ đầu. Khách thêm lại giỏ. Checkout path không phụ thuộc Redis-cart. Hệ
 **đứng**, chỉ giỏ trống."*
 
@@ -173,10 +173,10 @@ giỏ vốn dĩ 7 ngày, nó ephemeral từ đầu. Khách thêm lại giỏ. Ch
 
 ## 🏴 "Một service một database" — câu bị hiểu sai nhiều nhất
 
-Trước khi đóng họp, Hùng-búa vớt vát: *"Nhưng microservice phải 'một service một database' mà anh. Sao
+Trước khi đóng họp, Tuấn-búa vớt vát: *"Nhưng microservice phải 'một service một database' mà anh. Sao
 nhiều service em xài chung Postgres?"*
 
-Bạn cười: *"Câu đó nói về **chủ quyền**, không nói về **công nghệ**. Rule thật là: **không service nào
+Tonny cười: *"Câu đó nói về **chủ quyền**, không nói về **công nghệ**. Rule thật là: **không service nào
 được query thẳng DB của service khác** — muốn data thì gọi Feign hoặc nghe Kafka. Nó KHÔNG bắt mỗi service
 phải có một *loại* DB riêng cho 'trông hiện đại'. Nhiều service chung engine Postgres, mỗi service một schema/ownership
 — hoàn toàn đúng chuẩn. Em thêm Mongo, ES là vì **đo được access pattern khác**, không phải vì mỗi đứa cần
@@ -223,4 +223,3 @@ bản đồ chủ quyền. Hậu trường đã dựng xong — chắc, sâu, đ
 một cái giỏ hàng hiện ra trên màn hình. Sân khấu lộng lẫy, đèn đã bật — mà rèm chưa kéo. Chương 26: lần
 đầu tiên hệ thống **có một khuôn mặt** — React dựng lên, và backend bốn tuần cuối cùng cũng được ai đó
 chạm vào bằng con trỏ chuột.* 💻
-</content>

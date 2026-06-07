@@ -61,10 +61,10 @@ Mỗi feature được build phải đi kèm:
 
 | Style    | Services                                                                |
 | -------- | ----------------------------------------------------------------------- |
-| DDD      | `order-service`, `inventory-service`, `payment-service`                 |
-| Layered  | `auth`, `product`, `cart`, `notification`, `analytics`, `gateway`       |
+| DDD      | `order-service`, `inventory-service`                                    |
+| Layered  | `auth`, `product`, `cart`, `payment`, `notification`, `analytics`, `gateway` |
 
-Tiêu chí 3-điểm để chọn DDD: ≥3 invariants + concurrency thật + có domain events ra ngoài. Không đủ 3 → Layered.
+Tiêu chí 3-điểm để chọn DDD: ≥3 invariants + concurrency thật + có domain events ra ngoài. Không đủ 3 → Layered. (`payment-service`: ADR-003 ban đầu xếp DDD, nhưng [ADR-007](docs/decisions/007-payment-service-layered-not-ddd.md) revise sang Layered sau khi rà lại — chỉ đạt 1/3.)
 
 **DB-per-service**: KHÔNG service nào truy vấn DB của service khác. Cross-service: Feign (sync) hoặc Kafka (async).
 

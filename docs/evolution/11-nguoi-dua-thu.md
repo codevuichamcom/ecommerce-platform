@@ -326,7 +326,7 @@ graph TD
         T3[payment.completed]
     end
     subgraph Storage
-        PG[(PostgreSQL x 6 DB)]
+        PG[(PostgreSQL x 5 DB)]
         Redis[(Redis)]
     end
 

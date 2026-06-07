@@ -44,7 +44,7 @@ public Product getProduct(@PathVariable Long id) {
 Vì sao trả thẳng entity là sai? Ba lý do, không cái nào lành:
 
 1. 🩸 **Hibernate proxy leak** — `category` là lazy proxy, Jackson serialize nó → `hibernateLazyInitializer` lọt vào JSON → client parse fail (chính cái màn hình trắng trên).
-2. 🔓 **Lộ trường nội bộ** — `createdBy`, `version`, `deletedAt` phơi ra ngoài. Attacker đọc được schema, biết bạn xài soft-delete, optimistic lock... miễn phí.
+2. 🔓 **Lộ trường nội bộ** — `createdBy`, `version`, `deletedAt` phơi ra ngoài. Attacker đọc được schema, biết hệ thống xài soft-delete, optimistic lock... miễn phí.
 3. 🔗 **Coupling** — đổi entity = đổi luôn API contract. Một lần refactor cột DB là một lần mọi client gãy.
 
 **Cách bịt:** dựng một **tường lửa** giữa tầng persistence và tầng API. Entity ở **trong**, DTO ra **ngoài**. Dùng MapStruct map compile-time (không reflection runtime), DTO là record immutable:

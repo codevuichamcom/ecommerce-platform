@@ -20,7 +20,7 @@ Nên Day 2, ta tuyển nhân vật mới: **người gác cổng thành** 💂. 
 
 > 🗣️ *"Ngươi là ai? Và ngươi được phép vào không?"*
 
-Nghe đơn giản. Cho đến khi bạn nhận ra: vương quốc này không có **một** cổng. Nó sắp có **9 cổng** (9 microservice), mỗi cổng một người lính gác. Và đây là câu hỏi định mệnh: mỗi khi có người chìa thẻ, người lính có phải **chạy về hỏi vua** không?
+Nghe đơn giản. Cho đến khi Tonny nhận ra: vương quốc này không có **một** cổng. Nó sắp có **9 cổng** (9 microservice), mỗi cổng một người lính gác. Và đây là câu hỏi định mệnh: mỗi khi có người chìa thẻ, người lính có phải **chạy về hỏi vua** không?
 
 ---
 

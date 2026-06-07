@@ -46,15 +46,15 @@ Trước khi giao việc, phải làm rõ chuyện gây tranh cãi muôn thuở:
 
 | 🎯 Tiêu chí | Payment có? | Kết |
 | --- | --- | --- |
-| ≥3 business invariant phức tạp | 2 (status transition + amount immutable) | ❌ |
-| Concurrency thật (race condition) | Có — duplicate callback đầy ra | ✅ |
-| Domain events publish ra ngoài | Có — `payment.completed` bay khắp nơi | ✅ |
+| ≥3 business invariant phức tạp | 1 chính (`amount ≥ 0` + state machine) — cần ≥3 | ❌ |
+| Concurrency thật *cần aggregate* | Race chỉ ở callback duplicate → UNIQUE constraint xử đủ, không cần aggregate | ❌ |
+| Domain events publish ra ngoài | 1 (`payment.completed`) — DDD service thật có 2+ | 🟡 |
 
-**Tỉ số: 2/3.** Chưa đủ ngưỡng lên DDD → **Layered**. 🟢
+**Tỉ số: 1/3 tiêu chí mạnh.** Chưa đủ ngưỡng lên DDD → **Layered**. 🟢 (chốt ở [ADR-007](../decisions/007-payment-service-layered-not-ddd.md))
 
 Nhưng — và đây là cái hay của một senior chứ không phải kẻ cuồng framework — bác thủ quỹ vẫn được giữ *một* món đồ chơi của DDD: **sealed interface cho trạng thái**. Lý do? State machine của payment rõ ràng như luật giao thông, và sealed interface biến nó thành luật mà *compiler* tự ép tuân. DDD không phải combo "ăn cả hoặc nhịn đói" — lấy món sắc bén, bỏ phần nghi lễ rườm rà.
 
-> 💡 **Ăn điểm phỏng vấn:** đừng nói *"em chọn DDD vì nó xịn"*. Hãy nói *"em đếm invariant, được 2/3, nên đi Layered — nhưng vẫn mượn sealed types vì state machine đáng được compiler bảo kê."* Đó là tư duy **chọn pattern theo tiêu chí**, không phải theo trend.
+> 💡 **Ăn điểm phỏng vấn:** đừng nói *"em chọn DDD vì nó xịn"*. Hãy nói *"em đếm invariant, được 1/3 tiêu chí mạnh, nên đi Layered — nhưng vẫn mượn sealed types vì state machine đáng được compiler bảo kê."* Đó là tư duy **chọn pattern theo tiêu chí**, không phải theo trend.
 
 ---
 

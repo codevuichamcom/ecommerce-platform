@@ -4,182 +4,239 @@
 
 ---
 
-> *"Bạn không sợ gương. Bạn sợ cái gương chỉ ra rằng cái mặt bạn nhìn thấy hôm qua đã có nếp nhăn ở góc mắt. Đó là nơi phát hiện sự thật. Và phỏng vấn là ngày người khác cầm gương đó lên mặt bạn."*
+> *"Bạn không sợ gương. Bạn sợ cái gương chỉ ra nếp nhăn ở khoé mắt mà hôm qua bạn chưa thấy. Gương không tạo ra sự thật — nó chỉ không cho bạn trốn. Và phỏng vấn là ngày người khác cầm cái gương đó, giơ thẳng vào mặt bạn."*
 
 ---
 
 ## 📍 Nơi ở trong câu chuyện
 
-Tuần trước (Chương 20), hệ thống học được cách để *trỗi dậy* dưới áp lực. Load test k6 là buổi tập dượt: 200 → 2000 req/s, thấy cổ bị bóp — **connection pool bottleneck**. Bác thủ huấn luyện viên tàn nhẫn (Ông Khải từ NexaShop) đứng bên cạnh, gật đầu: *"Lần sau tránh nhé."*
+Tuần trước, ông huấn luyện viên k6 chất tạ lên cho tới khi có thứ gãy — và thứ
+gãy không phải cơ bắp (CPU, thread) mà là cái gân yếu nhất: connection pool
+(ch.20). Anh Khải — EM, ex-Tiki — đứng bên xem số nhảy, gật gù: *"Được. Lần sau
+đừng để tao phải chỉ."*
 
-Hôm nay — Day 21 — không phải tập nữa. Hôm nay là **kiểm tra**. Kiểm tra code có sạch không. Kiểm tra hiểu gì. Kiểm tra có thể giải thích cho cả team nghe được không.
+Hôm nay — Day 21, khép lại Week 3 — không tập nữa. Hôm nay là **kiểm tra**. Code
+có sạch không. Tonny có thật sự hiểu thứ mình vừa build không. Và Tonny có **nói ra
+được** cho cả team nghe không.
 
-Và đó là lý do chúng ta cần **gương** 🪞 — cái gương chỉ ra điều ta không muốn nhìn thấy, và **lưới đan** 🕸️ — chuỗi câu hỏi để bó quanh con người ta tới khi không còn nơi trốn.
-
----
-
-## 🪞 Gương (Code review: facing truth)
-
-Năm phút, bạn lục lại **6 ngày** của tuần (cache, SQL, pagination, lock, load test). Chạy bắn **23 findings** vào từng file, từng dòng code. Không tìm để "soi mói," tìm để **hiểu**: cách nào làm đúng, cái nào là debt, những gì sẽ cắn lại.
-
-### 🔴 Sáu mẫu đỏ (Red findings)
-
-Đây là loại phát hiện khiến bạn muốn lẩu quất trong nhà:
-
-1. **Metadata unbounded** (Day 15): ConcurrentHashMap `fetchMetadata` lớn lên mãi không cắt. Khi cache churn cao (key rotation liên tục), map có thể chứa vài ngàn ghost entries → memory leak slow.
-   - *Cảm xúc*: "Code tao vẫn chạy tốt mà?" — đúng, nhưng cách hoạt động sai.
-
-2. **CONCURRENTLY missing** (Day 16): Flyway không thể dùng `CREATE INDEX CONCURRENTLY` (cần tx riêng). 1M+ product table, index GIN mất 30s → table lock. Prod sáng mai sẽ thấy "write timeout."
-   - *Cảm xúc*: "Còn 20 người chờ checkout, tao lock table, CTO gọi..."
-
-3. **Unused N+1 path** (Day 17): DebugController chứng minh 4-layer fix, nhưng `OrderController.listMyOrders()` vẫn dùng cái EAGER cu lỳ cũ. Real traffic vẫn N+1.
-   - *Cảm xúc*: "Demo green, prod vẫn chậm. Code review sao nhìn không thấy?"
-
-4. **Cursor no checksum** (Day 18): Opaque token không ký. Client craft random base64 → `decode()` nhận, giả mạo cursor, bị lọt lưới validation.
-   - *Cảm xúc*: "Là lỗ hổng amà không critical — tệ hơn: khó debug."
-
-5. **Lock fencing token race** (Day 19): `SET NX` rồi `INCR` hai lệnh riêng. INCR fail → token=0 invalid. Caller không biết, dùng token=0 → fence_version check bypass.
-   - *Cảm xúc*: "Thường không bị, nhưng khi bị (Redis OOM giờ cao điểm) là data toang."
-
-6. **k6 VU marginal** (Day 20): 100 VU cho 200 req/s. Nếu latency thực tế 500ms (không 200ms như ước), k6 bị bottleneck → test kết quả fake.
-   - *Cảm xúc*: "Chính mình thổi kèn chiến thắng trong trận thua."
-
-**Cảm xúc khi đó**: không phải *"tớ lỗi,"* mà *"tớ làm tốt 80%, nhưng 20% lỗi ơi, xin nhẹ tay."*
-
-### 🟡 Tám cái vàng (Yellow findings)
-
-Đây là loại **design debt** — code chạy, nhưng giả định yếu. Kiểu như bạn đi bộ qua chiếc cầu, an toàn, nhưng notice dây cáp nó hơi mục rữa:
-
-- **XFetch reset metadata** (Day 15): `put()` reset `fetchDurationMs=1` → mất tín hiệu cost fetch. Double-refresh gần expiry.
-- **Partial index bias** (Day 16): `WHERE status='ACTIVE'` → admin query all status bỏ sót index → full scan.
-- **Page COUNT wasteful** (Day 17): Projection trả `Page` → Spring auto generate COUNT query (query #2) dù không cần total.
-- **Keyset sort hardcoded** (Day 18): SQL sort cố định, index V6 phải match — đổi sort mà quên update index → biet đầu tìm bug ở đâu.
-- **Metadata per-instance** (Day 19): Fetch metadata die theo pod → restart pod = metadata reset = XFetch ineffective sau restart.
-- **k6 no read path** (Day 20): Load test chỉ place-order (write), không "user views order" → missing P95 read-after-write.
-
-**Cảm xúc lúc đó**: *"Không critical, nhưng giống như uống cà phê lúc 10 tối — vẫn được, nhưng chắc sẽ hối hận lúc 1h sáng."*
-
-### 🟢 Chín dấu xanh (Green findings)
-
-Code có chỗ **làm đúng**, xứng đáng đưa lên bàn sáng suốt chiều lạnh lẽo:
-
-- **Polymorphic deserialize security** (Day 15): Jackson whitelist chặt chẽ.
-- **L2 evict-before-L1 strategy** (Day 15): Explain tại sao, không phải "cứ làm thế."
-- **ANALYZE after index** (Day 16): Nhỏ nhưng cứu mạng (planner mới cập nhật stats).
-- **Projection DTO** (Day 17): Không load full entity → đúng abstraction.
-- **Base64 URL-safe** (Day 18): Opaque token format chọn đúng.
-- **Lua release script** (Day 19): Prevent stale-token-release race.
-- **Fencing token monotonic** (Day 19): Kleppmann correctness model.
-- **Open-model load test** (Day 20): Tránh coordinated omission trap.
-- **Profile tagging** (Day 20): VT vs platform thread tách riêng.
-
-**Cảm xúc lúc đó**: *"Ít nhất có mấy cái tớ làm đúng. Gương không toàn đen."*
+Hai thứ Tonny cần. Một cái **gương** 🪞 — soi vào code sáu ngày qua, chỉ ra thứ Tonny
+không muốn nhìn. Tấm gương này không lạ: cuối Week 2 nó đã soi Tonny một lần (ch.14).
+Nhưng lần này nó có bạn đồng hành — một tấm **lưới** 🕸️, chuỗi câu hỏi của Khải,
+đan dần quanh Tonny tới khi không còn chỗ nào để nói "đại khái".
 
 ---
 
-## 🕸️ Lưới đan (Mock interview: bị vây hỏi)
+## 🪞 Gương: nhìn thẳng vào code mình viết
 
-Ngồi xuống, 10 câu hỏi từ Anh Khải (CTO NexaShop). 5 câu lý thuyết (design), 5 câu thực chiến (production scenario). Mỗi câu là một sợi dây — nó **buộc bạn phải nói rõ**, không được "hơi hơi, chắc chắn, đại khái."
+Năm phút. Tonny lật lại sáu ngày của tuần — cache 2-tier (15), GIN index (16), N+1
+(17), keyset (18), distributed lock (19), load test (20) — và bắn **23 finding**
+vào từng dòng. Không soi để dằn vặt. Soi để **hiểu**: chỗ nào đúng, chỗ nào là
+nợ, chỗ nào sẽ quay lại cắn.
 
-### 5 câu lý thuyết (design depth)
+Gương chia ba màu.
 
-1. **Offset vs keyset** — khi nào dùng cái nào? Khi phải jump-to-page (offset) vs infinite scroll (keyset). Correctness guarantee (tie-break với id). Hybrid cho NexaShop.
-   - **Trap**: "Keyset luôn tốt hơn" — sai, nếu cần jump-to-page thì offset đơn giản hơn. Keyset sort phải cố định.
+### 🔴 Sáu vết đỏ — bug logic / rủi ro production
 
-2. **2-tier cache** — tại sao complexity? 20× latency win (50ns vs 1ms). L1 hit 80% traffic → tiết kiệm RTT. Khi nào KHÔNG dùng (order status, inventory = strict consistency).
-   - **Trap**: "Single Redis cũng đủ nhanh" — 1ms vs 50ns là 20×, không phải tùy. SLA 99.99% thì có khác.
+Đây là loại làm Tonny muốn đóng laptop đi pha cà phê:
 
-3. **Optimistic vs pessimistic lock** — contention cao, pick cái nào? Optimistic good ở contention low, pessimistic (serialize) good ở contention high. 100 concurrent reserve từ stock=50 → optimistic + retry tốt hơn.
-   - **Trap**: "Optimistic luôn tốt vì reader không block" — sai nếu retry cost cao.
+- **[RED-15] Metadata phình không cắt** (Day 15) — `fetchMetadata` là một
+  `ConcurrentHashMap` lớn lên mãi. Cache churn cao (key xoay liên tục) → vài
+  nghìn ghost entry → memory leak chậm. *Code vẫn chạy* — nhưng "chạy" không có
+  nghĩa là "đúng".
+- **[RED-16] Thiếu `CONCURRENTLY`** (Day 16) — Flyway không chạy được
+  `CREATE INDEX CONCURRENTLY` (cần tx riêng). Bảng 1M+ product, GIN index mất
+  ~30s → **khoá bảng**. Sáng mai giờ cao điểm: "write timeout", người đang
+  checkout treo cứng. Đây là cái duy nhất ở mức *sẽ gây incident*.
+- **[RED-17] Đường EAGER còn sót** (Day 17) — `DebugController` chứng minh fix
+  N+1 bốn tầng rất đẹp, nhưng `OrderController.listMyOrders()` vẫn xài entity
+  EAGER cũ. Demo xanh, **prod vẫn N+1**. Loại bug review dễ trượt nhất: chỗ đã
+  sửa thì nhìn, chỗ đang chảy traffic thật thì quên.
+- **[RED-18] Cursor không ký** (Day 18) — opaque token không có checksum. Client
+  tự chế base64, `decode()` vẫn nuốt → con trỏ giả, rows bị nhảy/lặp phi xác
+  định. Không phải lỗ hổng đánh cắp dữ liệu — tệ hơn theo nghĩa khác: **không thể
+  debug**.
+- **[RED-19] Fence token race** (Day 19) — `SET NX` rồi `INCR` là hai lệnh rời.
+  Nếu `INCR` fail → token = 0, caller không biết, cầm token rỗng đi ghi → fence
+  check ở DB bị bypass → snapshot nhân đôi. Đúng con quái của ch.19, nhưng ở tầng
+  code khởi tạo lock.
+- **[RED-20] k6 thiếu VU** (Day 20) — 100 VU cho 200 req/s. Nếu latency thật là
+  500ms (không phải 200ms như ước), chính k6 nghẽn trước → con số đo được là **đồ
+  giả**. Thổi kèn chiến thắng trong một trận mình chưa thật sự đánh.
 
-4. **Open vs closed load test model** — cách nào reveal P99 thật? Open = pump request cố định rate = latency bloom = real pain. Closed = VU loop slow down when app slow = hide tail latency (coordinated omission).
-   - **Trap**: "Đã chạy load test là đủ" — sai nếu chạy closed model (false sense of security).
+Cảm giác sau khi soi xong sáu vết này không phải *"mình kém"*. Mà là *"mình làm
+đúng 80%, còn 20% kia — biết rồi, ghi vào sổ, sửa tuần sau."*
 
-5. **Storage choice matrix** — B-tree, GIN trigram, tsvector, ES — khi nào pick cái nào? Trade-off latency / operability / cost / consistency. GIN cho v1 (0 infra), ES cho v2 (batch sync = eventual consistency).
-   - **Trap**: "ES luôn faster" — đúng (15ms vs 45ms) nhưng async sync = lag, operational cost $$, overkill cho product catalog v1.
+### 🟡 Tám nếp vàng — design debt, giả định yếu
 
-### 5 câu thực chiến (production incident)
+Loại này code vẫn chạy, cây cầu vẫn đi qua được — chỉ là sợi cáp đã chớm gỉ:
 
-6. **Flash sale P99 spike** — 10× traffic, P99 jump 50ms → 800ms. Triage 5 bước. Root cause (pool bottleneck). Fix (Little's Law resize).
-   - **Giải**: (1) CPU/mem satur? (2) DB slow? Hikari pending? (3) GC pause? (4) OTel trace breakdown? (5) k6 baseline? Hypothesis: pool 30 + 20ms latency = 0.6 capacity, 2000 req/s need 40. Double to 60, retest.
+- **XFetch reset metadata** (Day 15) — `put()` reset `fetchDurationMs` → mất tín
+  hiệu cost fetch → đôi khi double-refresh gần TTL.
+- **Partial index lệch** (Day 16) — `WHERE status='ACTIVE'`; admin query mọi
+  status không khớp index → full scan dashboard.
+- **COUNT thừa** (Day 17) — projection trả `Page` → Spring tự sinh query COUNT
+  thứ hai dù không cần total.
+- **Keyset sort hardcode** (Day 18) — SQL sort cố định, index phải khớp y hệt; ai
+  đổi sort mà quên reindex → latency tăng bí ẩn, mò chết.
+- **Cursor mất micro-precision** (Day 18) — encode có thể rụng phần dưới
+  microsecond → hai row tạo cùng micro-giây, tie-break keyset có thể lệch. Hiếm,
+  nhưng là edge case có thật.
+- **Metadata theo pod** (Day 19) — fetch metadata chết theo pod; restart pod =
+  reset = XFetch lạnh máy một lúc (cluster vẫn ấm nhờ pod khác).
+- **k6 không đo read** (Day 20) — load test chỉ place-order (write), thiếu hẳn
+  "user xem lại đơn" → không có P95 read-after-write.
+- **k6 buildTokenPool không concurrent** (Day 20) — pool setup tuần tự → méo
+  latency vòng lặp đầu.
 
-7. **Cache hit 50% but P95 still 30ms** — metrics không match. Hiểu tail latency phân布: L1 hit = 50ns, L2 hit = 1ms, L2 miss + load = 50ms. P50 = 50ns, P95 = 50ms (2.5% hit DB). Hit rate 50% chỉ là average.
-   - **Giải**: Hỏi "*lại* P95 hay P50?" Metrics cần phân tách percentile, không chỉ "average."
+Cảm giác? Như uống cà phê lúc 10 giờ tối: lúc này thấy ổn, nhưng biết thừa 1 giờ
+sáng sẽ hối.
 
-8. **Keyset edge case** — mấy users chèn between page 1-2 → rows interspersed. Bug không? Accept không? Consistent snapshot = version_id bound, trade-off consistency vs cost. NexaShop append-mostly → accept.
-   - **Giải**: Not a bug, expected behavior. Fencing = snapshot đầu. New inserts behind cursor = interspersed. Acceptable risk cho use case.
+### 🟢 Chín dấu xanh — chỗ làm đúng
 
-9. **Network partition lock** — lock expire, 2nd acquirer lock → dual execution. Fencing token correct? Verify check trong code. Assume DB fence_version check in place.
-   - **Giải**: Fencing token = monotonic INCR. 2nd acquirer higher token. DB fence_version reject old token. Kleppmann correctness model.
+Gương không toàn vết. Có chín chỗ xứng đáng để yên:
 
-10. **VT vs platform production** — VT win ở load test, nhưng prod = platform legacy. Can benefit? Audit `synchronized` usage. If lib pins VT = no benefit. Upgrade lib or isolate pool.
-    - **Giải**: VT benefit lost nếu pinning. Check JFR `jdk.VirtualThreadPinned`. Upgrade deps hoặc isolate thread pool.
+- Polymorphic deserialize whitelist chặt (Day 15)
+- L2-evict-trước-L1 có giải thích, không "cứ thế mà làm" (Day 15)
+- `ANALYZE` ngay sau tạo index — nhỏ mà cứu planner (Day 16)
+- Projection DTO bằng constructor expression, không load full entity (Day 17)
+- Cursor base64 URL-safe đúng chuẩn (Day 18)
+- Xử lý lỗi tử tế khi `decode()` base64 hỏng (Day 18)
+- Lua release script chặn race nhả nhầm token (Day 19)
+- Fence token monotonic — đúng mô hình correctness của Kleppmann (Day 19)
+- Open-model load test, né coordinated omission (Day 20)
 
-### Cách bác CTO hỏi
+Nhìn chín cái này Tonny mới thở ra: ừ, tuần này không chỉ toàn nợ.
 
-Anh Khải không hỏi để bạn nói "đó là pattern A" và mình bỏ qua. Anh hỏi để **bạn phải think outloud**:
+---
 
-- "Nếu pool 10 thay vì 100 thì sao?"
-- "Giả sử user logout giữa chừng keyset scroll, cursor cũ tính được không?"
+## 🕸️ Lưới đan: bị Khải vây hỏi
+
+Gương xong, tới lưới. Khải ngồi xuống, mười câu — năm câu design, năm câu tình
+huống production. Mỗi câu là một sợi: nó không cho Tonny nói "hơi hơi", "chắc là",
+"đại khái". Trả lời xong, anh kéo sợi tiếp theo siết lại bằng một câu follow-up.
+
+### Năm sợi design
+
+1. **Offset vs keyset — khi nào cái nào?** Jump-to-page thì offset; infinite
+   scroll thì keyset (tie-break bằng id để đảm bảo thứ tự). Hệ này hybrid.
+   - *Sợi siết*: "Keyset luôn tốt hơn?" — Sai. Cần nhảy trang số thì offset đơn
+     giản hơn; và keyset bắt buộc sort cố định.
+2. **Cache 2-tier — sao phải phức tạp?** L1 50ns vs L2 1ms = 20×; L1 ăn ~80%
+   traffic, tiết kiệm RTT. KHÔNG dùng cho thứ cần strict consistency (order
+   status, inventory).
+   - *Sợi siết*: "Một Redis là đủ nhanh rồi?" — 1ms vs 50ns vẫn là 20×; ở SLA
+     99.99% nó khác nhau thật.
+3. **Optimistic vs pessimistic lock — contention cao chọn gì?** Contention thấp
+   → optimistic; contention cao → pessimistic (serialize). 100 luồng cùng giành
+   stock=50 thì optimistic + retry vẫn nhỉnh hơn nếu retry rẻ.
+   - *Sợi siết*: "Optimistic luôn tốt vì reader không block?" — Sai nếu chi phí
+     retry cao.
+4. **Open vs closed load model — cái nào lộ P99 thật?** Open: bơm request theo
+   rate cố định → latency phình → đau thật. Closed: app chậm thì VU tự chậm theo
+   → giấu tail (coordinated omission).
+   - *Sợi siết*: "Chạy load test là đủ?" — Sai nếu chạy closed: cảm giác an toàn
+     giả.
+5. **Ma trận chọn storage** — B-tree / GIN trigram / tsvector / ES, khi nào cái
+   nào? Cân latency / vận hành / chi phí / consistency. GIN cho v1 (0 hạ tầng),
+   ES cho v2 (sync batch = eventual consistency).
+   - *Sợi siết*: "ES luôn nhanh hơn?" — Đúng về số (15ms vs 45ms) nhưng sync
+     async = lag + tốn vận hành, overkill cho catalog v1.
+
+### Năm sợi tình huống
+
+6. **Flash sale P99 vọt** — traffic ×10, P99 nhảy 50ms → 800ms. Triage 5 bước:
+   (1) CPU/mem bão hoà? (2) DB chậm / Hikari pending? (3) GC pause? (4) bổ trace
+   OTel xem span nào ăn giờ? (5) k6 baseline còn đúng? Giả thuyết: pool 30 +
+   latency 20ms ≈ 0.6 connection/đơn vị; 2000 req/s cần ~40 → nâng pool 60,
+   retest.
+7. **Hit cache 50% mà P95 vẫn 30ms** — số không khớp vì phải nhìn phân bố tail:
+   L1 hit 50ns, L2 hit 1ms, L2 miss + load 50ms. P50 = 50ns, P95 = 50ms (2.5%
+   chạm DB). "Hit rate 50%" chỉ là trung bình.
+   - *Sợi siết*: hỏi ngược "là P95 hay P50?" — Metric phải tách percentile, đừng
+     nói "trung bình".
+8. **Keyset edge case** — vài user chèn dữ liệu giữa lúc Tonny đang ở trang 1→2,
+   rows xen kẽ. Bug không? Không — đúng kỳ vọng. Muốn snapshot nhất quán thì bound
+   theo version_id, đánh đổi consistency lấy chi phí. Hệ này append-mostly → chấp
+   nhận.
+9. **Network partition + lock** — lock hết hạn, kẻ thứ hai giành được → chạy đôi.
+   Fencing token cứu: kẻ sau token cao hơn, DB từ chối token cũ (Kleppmann). Phải
+   verify chỗ check `fence_version` thật sự nằm trong code, không phải "giả định
+   có".
+10. **VT vs platform ở prod** — VT thắng ở load test, nhưng prod là platform
+    legacy. Có lợi không? Audit `synchronized`: lib nào pin VT thì lợi ích bay
+    sạch. Đo bằng JFR `jdk.VirtualThreadPinned`, rồi upgrade lib hoặc cô lập pool.
+
+Cách Khải hỏi không phải để Tonny đáp "đây là pattern A" rồi cho qua. Anh hỏi để ép
+Tonny **nghĩ thành tiếng**:
+
+- "Pool 10 thay vì 100 thì sao?"
+- "User logout giữa lúc scroll keyset, cursor cũ còn tính được không?"
 - "Index V6 bị drop, keyset query chạy thế nào?"
-- "XFetch reset metadata = gì hệ quả?"
+- "XFetch reset metadata — hệ quả là gì?"
 
-Mỗi câu = một **cơ hội để làm lộ chỗ nối chưa cẩn thận**.
+Mỗi câu là một chỗ Tonny buộc phải lộ ra: mối nối nào mình nối ẩu.
 
 ---
 
 ## 📊 Scorecard Day 21
 
-Sau gương + lưới đan:
-
 ```
 ┌─────────────────────────────────────────────────┐
-│ 🎯 WEEK 3 SUMMARY                               │
+│ 🎯 WEEK 3 — TỔNG KẾT                            │
 ├─────────────────────────────────────────────────┤
-│ ✅ Cache 2-tier: 20× latency                    │
-│ ✅ SQL index GIN: 57× faster search             │
-│ ✅ Keyset pagination: O(1) vs O(n)              │
-│ ✅ Distributed lock + fence: partition safe     │
-│ ✅ Load test open-model: P99 reveal             │
+│ ✅ Cache 2-tier ........... 20× latency         │
+│ ✅ GIN index .............. 57× faster search   │
+│ ✅ Keyset pagination ...... O(1) vs O(n) offset │
+│ ✅ Distributed lock + fence  partition-safe     │
+│ ✅ Load test open-model ... lộ P99 thật         │
 ├─────────────────────────────────────────────────┤
-│ 🔴 6 red findings (debt immediate)              │
-│ 🟡 8 yellow findings (refactor soon)            │
-│ 🟢 9 green findings (patterns solid)            │
+│ 🔴 6 đỏ ..... bug/rủi ro — sửa ngay tuần sau    │
+│ 🟡 8 vàng ... design debt — refactor sớm        │
+│ 🟢 9 xanh ... pattern chắc — giữ nguyên         │
 ├─────────────────────────────────────────────────┤
-│ Interview result: 9 strong / 1 borderline / 0 f │
-│ Confidence: 8.5/10                              │
+│ Phỏng vấn: 9 strong · 1 borderline · 0 fail     │
+│ Confidence: 8.5 / 10                            │
 ├─────────────────────────────────────────────────┤
-│ Vibe: "Tuần này tao hiểu gì, tao biết nói rõ"   │
+│ Vibe: "Tuần này hiểu gì, Tonny nói rõ được nấy" │
 └─────────────────────────────────────────────────┘
 ```
 
-**Bác thủ quỹ cơm bữa nay** (nếu bác này là "bác code review"):
-- ✅ Thấy tao hiểu lý thuyết (offset/keyset trade-off, fencing token)
-- ✅ Thấy tao biết đọc trace (pool pending, GC pause, span latency)
-- ✅ Thấy tao dám thừa nhận weakness ([RED-16] CONCURRENTLY, [RED-17] unused N+1)
-- ✅ Thấy tao có plan fix (ghi vào README ngày đầu tuần sau)
+Cái gương cho Tonny thấy gì sau cùng:
+- ✅ Tonny hiểu lý thuyết — offset/keyset trade-off, fencing token, Kleppmann.
+- ✅ Tonny đọc được trace — Hikari pending, GC pause, span latency.
+- ✅ Tonny **dám nhận nợ** — [RED-16] CONCURRENTLY, [RED-17] N+1 còn sót.
+- ✅ Tonny có kế hoạch sửa — ghi thẳng vào README đầu tuần sau.
 
-**Cái bác không thấy rõ lắm**: VT pinning edge case (cần JFR để verify thực sự). Borderline Q10.
+Chỗ gương soi chưa rõ: VT pinning edge case — cần JFR verify thật mới chắc. Đúng
+câu borderline Q10.
 
 ---
 
-## 🎬 Kết thúc ngày
+## 🎬 Kết thúc ngày 21
 
-Tối chiều, bạn ghi 1 dòng vào ROADMAP:
+Tối, Tonny ghi một dòng vào ROADMAP:
 
 ```
 Day 21 ✅ Done · 2026-06-01
-  - Review: 23 findings (6 red, 8 yellow, 9 green)
-  - Interview: 10 Q/A, 9 strong, 1 borderline
+  - Review: 23 finding (6 đỏ, 8 vàng, 9 xanh)
+  - Interview: 10 Q&A — 9 strong, 1 borderline
   - CV bullet: 4× latency, 10× throughput
-  - Confidence: 8.5/10 — ready for Week 4 (data layer)
+  - Confidence: 8.5/10 — sẵn sàng Week 4 (data layer)
 ```
 
-Anh Khải ghi note:
-> *"Tuần này tao thấy con (bạn) không chỉ **biết chạy code**, mà **biết lý do tại sao**. Đó là khác biệt senior vs junior. Week 4 em tiếp tục, Elasticsearch + MongoDB decision matrix. Đừng panic, em đã hiểu cách đo — đo cái đó rồi quyết định."*
+Khải đóng buổi bằng một câu, không khen suông:
 
-Gương + lưới đan đã hoàn tất công việc. Hôm nay em nhìn thấy truth. Ngày mai em phải nói chuyện với người khác về truth đó. **Đó là job của leader.**
+> *"Tuần này tao thấy mày không chỉ **chạy được code**, mà **biết tại sao nó
+> chạy**. Đó mới là khác biệt senior với junior. Week 4: Elasticsearch, rồi
+> MongoDB, rồi cái decision matrix. Đừng cuống — mày biết cách đo rồi. Đo, rồi
+> mới quyết."*
+
+Gương soi xong, lưới gỡ ra. Hôm nay Tonny nhìn thấy sự thật về code của mình. Ngày
+mai, Tonny phải ngồi với người khác và **nói về** sự thật đó — bình tĩnh, có số,
+không trốn. Đó mới là việc của một người dẫn team.
 
 ---
 
-*→ Tuần tới: Elasticsearch, MongoDB, cái nào khi nào. Không phỏng vấn nữa — lúc này là **xây dựng quyết định framework** để tấn công data layer theo chiều sâu.*
+*→ Tuần tới đổi vai: hết phỏng vấn, sang dựng **khung quyết định** cho tầng dữ
+liệu. Elasticsearch trước — khi khách gõ "iphon" thiếu chữ "e" mà vẫn phải ra
+iPhone, ông kế toán Postgres chịu thua chỗ này. Cần một người mới: ông thầy bói.*
