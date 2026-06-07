@@ -16,19 +16,19 @@ gãy không phải cơ bắp (CPU, thread) mà là cái gân yếu nhất: conne
 đừng để tao phải chỉ."*
 
 Hôm nay — Day 21, khép lại Week 3 — không tập nữa. Hôm nay là **kiểm tra**. Code
-có sạch không. Tôi có thật sự hiểu thứ mình vừa build không. Và tôi có **nói ra
+có sạch không. Tonny có thật sự hiểu thứ mình vừa build không. Và Tonny có **nói ra
 được** cho cả team nghe không.
 
-Hai thứ tôi cần. Một cái **gương** 🪞 — soi vào code sáu ngày qua, chỉ ra thứ tôi
-không muốn nhìn. Tấm gương này không lạ: cuối Week 2 nó đã soi tôi một lần (ch.14).
+Hai thứ Tonny cần. Một cái **gương** 🪞 — soi vào code sáu ngày qua, chỉ ra thứ Tonny
+không muốn nhìn. Tấm gương này không lạ: cuối Week 2 nó đã soi Tonny một lần (ch.14).
 Nhưng lần này nó có bạn đồng hành — một tấm **lưới** 🕸️, chuỗi câu hỏi của Khải,
-đan dần quanh tôi tới khi không còn chỗ nào để nói "đại khái".
+đan dần quanh Tonny tới khi không còn chỗ nào để nói "đại khái".
 
 ---
 
 ## 🪞 Gương: nhìn thẳng vào code mình viết
 
-Năm phút. Tôi lật lại sáu ngày của tuần — cache 2-tier (15), GIN index (16), N+1
+Năm phút. Tonny lật lại sáu ngày của tuần — cache 2-tier (15), GIN index (16), N+1
 (17), keyset (18), distributed lock (19), load test (20) — và bắn **23 finding**
 vào từng dòng. Không soi để dằn vặt. Soi để **hiểu**: chỗ nào đúng, chỗ nào là
 nợ, chỗ nào sẽ quay lại cắn.
@@ -37,7 +37,7 @@ Gương chia ba màu.
 
 ### 🔴 Sáu vết đỏ — bug logic / rủi ro production
 
-Đây là loại làm tôi muốn đóng laptop đi pha cà phê:
+Đây là loại làm Tonny muốn đóng laptop đi pha cà phê:
 
 - **[RED-15] Metadata phình không cắt** (Day 15) — `fetchMetadata` là một
   `ConcurrentHashMap` lớn lên mãi. Cache churn cao (key xoay liên tục) → vài
@@ -105,14 +105,14 @@ Gương không toàn vết. Có chín chỗ xứng đáng để yên:
 - Fence token monotonic — đúng mô hình correctness của Kleppmann (Day 19)
 - Open-model load test, né coordinated omission (Day 20)
 
-Nhìn chín cái này tôi mới thở ra: ừ, tuần này không chỉ toàn nợ.
+Nhìn chín cái này Tonny mới thở ra: ừ, tuần này không chỉ toàn nợ.
 
 ---
 
 ## 🕸️ Lưới đan: bị Khải vây hỏi
 
 Gương xong, tới lưới. Khải ngồi xuống, mười câu — năm câu design, năm câu tình
-huống production. Mỗi câu là một sợi: nó không cho tôi nói "hơi hơi", "chắc là",
+huống production. Mỗi câu là một sợi: nó không cho Tonny nói "hơi hơi", "chắc là",
 "đại khái". Trả lời xong, anh kéo sợi tiếp theo siết lại bằng một câu follow-up.
 
 ### Năm sợi design
@@ -154,7 +154,7 @@ huống production. Mỗi câu là một sợi: nó không cho tôi nói "hơi h
    chạm DB). "Hit rate 50%" chỉ là trung bình.
    - *Sợi siết*: hỏi ngược "là P95 hay P50?" — Metric phải tách percentile, đừng
      nói "trung bình".
-8. **Keyset edge case** — vài user chèn dữ liệu giữa lúc tôi đang ở trang 1→2,
+8. **Keyset edge case** — vài user chèn dữ liệu giữa lúc Tonny đang ở trang 1→2,
    rows xen kẽ. Bug không? Không — đúng kỳ vọng. Muốn snapshot nhất quán thì bound
    theo version_id, đánh đổi consistency lấy chi phí. Hệ này append-mostly → chấp
    nhận.
@@ -166,15 +166,15 @@ huống production. Mỗi câu là một sợi: nó không cho tôi nói "hơi h
     legacy. Có lợi không? Audit `synchronized`: lib nào pin VT thì lợi ích bay
     sạch. Đo bằng JFR `jdk.VirtualThreadPinned`, rồi upgrade lib hoặc cô lập pool.
 
-Cách Khải hỏi không phải để tôi đáp "đây là pattern A" rồi cho qua. Anh hỏi để ép
-tôi **nghĩ thành tiếng**:
+Cách Khải hỏi không phải để Tonny đáp "đây là pattern A" rồi cho qua. Anh hỏi để ép
+Tonny **nghĩ thành tiếng**:
 
 - "Pool 10 thay vì 100 thì sao?"
 - "User logout giữa lúc scroll keyset, cursor cũ còn tính được không?"
 - "Index V6 bị drop, keyset query chạy thế nào?"
 - "XFetch reset metadata — hệ quả là gì?"
 
-Mỗi câu là một chỗ tôi buộc phải lộ ra: mối nối nào mình nối ẩu.
+Mỗi câu là một chỗ Tonny buộc phải lộ ra: mối nối nào mình nối ẩu.
 
 ---
 
@@ -197,15 +197,15 @@ Mỗi câu là một chỗ tôi buộc phải lộ ra: mối nối nào mình n�
 │ Phỏng vấn: 9 strong · 1 borderline · 0 fail     │
 │ Confidence: 8.5 / 10                            │
 ├─────────────────────────────────────────────────┤
-│ Vibe: "Tuần này hiểu gì, tôi nói rõ được nấy"   │
+│ Vibe: "Tuần này hiểu gì, Tonny nói rõ được nấy" │
 └─────────────────────────────────────────────────┘
 ```
 
-Cái gương cho tôi thấy gì sau cùng:
-- ✅ Tôi hiểu lý thuyết — offset/keyset trade-off, fencing token, Kleppmann.
-- ✅ Tôi đọc được trace — Hikari pending, GC pause, span latency.
-- ✅ Tôi **dám nhận nợ** — [RED-16] CONCURRENTLY, [RED-17] N+1 còn sót.
-- ✅ Tôi có kế hoạch sửa — ghi thẳng vào README đầu tuần sau.
+Cái gương cho Tonny thấy gì sau cùng:
+- ✅ Tonny hiểu lý thuyết — offset/keyset trade-off, fencing token, Kleppmann.
+- ✅ Tonny đọc được trace — Hikari pending, GC pause, span latency.
+- ✅ Tonny **dám nhận nợ** — [RED-16] CONCURRENTLY, [RED-17] N+1 còn sót.
+- ✅ Tonny có kế hoạch sửa — ghi thẳng vào README đầu tuần sau.
 
 Chỗ gương soi chưa rõ: VT pinning edge case — cần JFR verify thật mới chắc. Đúng
 câu borderline Q10.
@@ -214,7 +214,7 @@ câu borderline Q10.
 
 ## 🎬 Kết thúc ngày 21
 
-Tối, tôi ghi một dòng vào ROADMAP:
+Tối, Tonny ghi một dòng vào ROADMAP:
 
 ```
 Day 21 ✅ Done · 2026-06-01
@@ -231,8 +231,8 @@ Khải đóng buổi bằng một câu, không khen suông:
 > MongoDB, rồi cái decision matrix. Đừng cuống — mày biết cách đo rồi. Đo, rồi
 > mới quyết."*
 
-Gương soi xong, lưới gỡ ra. Hôm nay tôi nhìn thấy sự thật về code của mình. Ngày
-mai, tôi phải ngồi với người khác và **nói về** sự thật đó — bình tĩnh, có số,
+Gương soi xong, lưới gỡ ra. Hôm nay Tonny nhìn thấy sự thật về code của mình. Ngày
+mai, Tonny phải ngồi với người khác và **nói về** sự thật đó — bình tĩnh, có số,
 không trốn. Đó mới là việc của một người dẫn team.
 
 ---

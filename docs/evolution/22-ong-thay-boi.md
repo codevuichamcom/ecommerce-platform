@@ -17,7 +17,7 @@ Tuần này gương cất đi. Trên bàn là một lời than từ marketing: *
 ra **không có gì**. Gõ đúng 'iPhone' thì ra, nhưng cái áo thun in hình iPhone xếp
 TRÊN cái iPhone thật. Search nhà mình bị gì vậy?"*
 
-Bạn mở lại Day 16. GIN trigram. p95 **45ms**. Nhanh lắm. Nhưng nó là **ông kế toán**:
+Tonny mở lại Day 16. GIN trigram. p95 **45ms**. Nhanh lắm. Nhưng nó là **ông kế toán**:
 tra đúng từng ký tự thì giỏi, mà khách viết sai 1 chữ là ổng lắc đầu "không có trong
 sổ". Và ổng không biết "cái nào liên quan hơn" — với ổng, mọi dòng có chứa "iphone"
 đều ngang nhau.
@@ -84,7 +84,7 @@ private String brand;
 
 ## 🎯 Câu thần chú: must, filter, và phép thuật `^3`
 
-Khách hỏi, bạn dịch sang câu thần chú thầy bói hiểu ([`ProductSearchService`](../../services/product-service/src/main/java/com/ecom/product/search/ProductSearchService.java)):
+Khách hỏi, Tonny dịch sang câu thần chú thầy bói hiểu ([`ProductSearchService`](../../services/product-service/src/main/java/com/ecom/product/search/ProductSearchService.java)):
 
 ```java
 Query.of(qb -> qb.bool(b -> {
@@ -152,7 +152,7 @@ public void onUpserted(ProductUpsertedV1 e) { searchRepository.save(toDocument(e
 
 ## 🩹 Khi bản phô-tô lệch sổ gốc: drift
 
-Nhưng đời không đẹp. Kafka đang restart lúc bạn bấm "phô-tô". Trang không tới tay thầy
+Nhưng đời không đẹp. Kafka đang restart lúc Tonny bấm "phô-tô". Trang không tới tay thầy
 bói. Sổ gốc có sản phẩm mới, thầy bói không biết → **drift**.
 
 Đây **chính** là dual-write problem mà Day 13 (ch.13 — sợi chỉ đỏ) đã đánh nhau cho

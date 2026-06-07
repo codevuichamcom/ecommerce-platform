@@ -16,7 +16,7 @@
 
 Sáu ngày sprint vừa qua giống như sáu ngày đi làm về mệt: đồ cởi ra vắt đại lên ghế, chìa khoá quăng vào ngăn kéo nào gần nhất, hoá đơn nhét tạm sau cánh tủ. Mỗi ngày một ít. Code chạy, test pass, ai cũng vui. 🎉
 
-Rồi chủ nhật tới. Bạn mở cái tủ lớn ra để tìm một cái áo — và cả đống đồ nhét vội suốt tuần đổ ụp xuống đầu. 🫠
+Rồi chủ nhật tới. Tonny mở cái tủ lớn ra để tìm một cái áo — và cả đống đồ nhét vội suốt tuần đổ ụp xuống đầu. 🫠
 
 Đó chính xác là cảm giác của hệ thống vào Day 7. Năm service đang chạy ngon lành. Nhưng dọn nhà một vòng thì lộ ra một đống đồ trùng đến phát hoảng:
 

@@ -25,13 +25,13 @@ Sáng thứ Hai, sprint planning. Một bạn dev trẻ — gọi là **Tuấn-b
 slide đẹp, giọng tự tin: *"Em đề xuất move `orders` với `stock` sang MongoDB. Mongo nhanh
 hơn, linh hoạt hơn, scale ngang dễ. Bỏ Postgres cho gọn."*
 
-Cả phòng gật gù. Slide đẹp mà. Anh Khải không gật. Anh quay sang bạn — Tech Lead — và nói
+Cả phòng gật gù. Slide đẹp mà. Anh Khải không gật. Anh quay sang Tonny — Tech Lead — và nói
 một câu mà bạn sẽ nghe đi nghe lại suốt sự nghiệp:
 
 > 🗣️ *"Trước khi anh duyệt — em nói cho anh nghe, dựa vào **cái gì** để chọn kho. Đừng nói 'nhanh'. Đừng nói 'linh hoạt'. Nói anh nghe **access pattern**."*
 
-Hôm nay không build gì. Hôm nay bạn phải **treo một cái bảng lên tường** — bảng quyết định —
-để lần sau Tuấn-búa (và chính bạn) không cầm nhầm đồ nghề.
+Hôm nay không build gì. Hôm nay Tonny phải **treo một cái bảng lên tường** — bảng quyết định —
+để lần sau Tuấn-búa (và chính Tonny) không cầm nhầm đồ nghề.
 
 ---
 
@@ -50,7 +50,7 @@ Vấn đề của câu *"Mongo nhanh hơn"* không phải nó sai. Là nó **thi
 "nên dùng cho order"       → order cần ACID + invariant cross-document. ❌ SAI VẾ.
 ```
 
-Order với stock là loại data gì? Bạn lật lại hồ sơ Day 4 — cái pháo đài invariant:
+Order với stock là loại data gì? Tonny lật lại hồ sơ Day 4 — cái pháo đài invariant:
 
 - Status transition phải đúng luật (`PENDING → PAID`, không nhảy cóc).
 - `amount ≥ 0`. `reserved ≤ quantity`. **Ba invariant.**
@@ -67,7 +67,7 @@ trên replica-set. Tức là... 🥁
 > Một vòng tròn vô nghĩa. Đây là dấu hiệu kinh điển của cầm-nhầm-đồ-nghề: bạn phải *chống lại*
 > bản chất của công cụ để ép nó làm việc của công cụ khác.
 
-Bạn nói với Tuấn-búa, nhẹ thôi: *"Stock mà chạy concurrency test 100 thread no-oversell
+Tonny nói với Tuấn-búa, nhẹ thôi: *"Stock mà chạy concurrency test 100 thread no-oversell
 trên Mongo single-doc là **rớt ngay**. Cái test đó là red line. Chưa pass thì chưa bàn migrate."*
 
 Chi tiết "incident suýt xảy ra" này: [issue 24](../issues/24-cargo-cult-storage-migration.md).
@@ -76,7 +76,7 @@ Chi tiết "incident suýt xảy ra" này: [issue 24](../issues/24-cargo-cult-st
 
 ## 🧰 Mở hộp đồ nghề: bốn ngăn, bốn việc
 
-Thay vì cãi tay đôi, bạn mở hộp đồ nghề ra cho cả phòng nhìn. Bốn ngăn, mỗi ngăn một món,
+Thay vì cãi tay đôi, Tonny mở hộp đồ nghề ra cho cả phòng nhìn. Bốn ngăn, mỗi ngăn một món,
 mỗi món sinh ra cho một loại đinh:
 
 | 🧰 Món | Là gì | Đóng loại đinh nào | Trong repo |
@@ -89,7 +89,7 @@ mỗi món sinh ra cho một loại đinh:
 Cờ-lê không dán được hình. Băng keo không vặn được lực. Kính lúp không giữ được tiền. Mỗi
 món **giỏi đúng một việc và dở mọi việc khác** — đó không phải khuyết điểm, đó là *thiết kế*.
 
-Và đây là cái bảng bạn treo lên tường — **decision matrix**, 8 cái đinh × 4 món đồ nghề.
+Và đây là cái bảng Tonny treo lên tường — **decision matrix**, 8 cái đinh × 4 món đồ nghề.
 ✅ = món chính, 🟡 = tạm được (có giá), ❌ = đừng-có-dại:
 
 | Cái đinh (access pattern) | 🐘 | ⚡ | 🍃 | 🔎 |
@@ -118,7 +118,7 @@ Anh Khải chỉ vào ô vàng. *"Đây này. Em để flexible product attribut
 
 Phòng họp im phắc. Tuấn-búa hơi nhếch mép — tưởng bắt được lỗi.
 
-Bạn thở ra, và đếm **ba** ngón tay 🖐️ (senior luôn đếm, nhớ chứ?):
+Tonny thở ra, và đếm **ba** ngón tay 🖐️ (senior luôn đếm, nhớ chứ?):
 
 > **Một** — query attribute hiện tại *đơn giản*. `attributes->>'screen_size'` + một cái
 > GIN index là xong. Chưa cần aggregation pipeline nặng. Cờ-lê Postgres vặn được con ốc này,
@@ -132,7 +132,7 @@ Bạn thở ra, và đếm **ba** ngón tay 🖐️ (senior luôn đếm, nhớ 
 > phải nơi ghi gốc. Postgres giữ truth, Mongo chép lại để đọc. Em không vứt băng keo đi — em
 > để nó đúng ngăn.
 
-Rồi bạn thêm câu chốt — cái làm senior khác junior:
+Rồi Tonny thêm câu chốt — cái làm senior khác junior:
 
 > *"Và đây là **ngưỡng đảo chiều**: nếu mai mốt attribute bùng nổ shape, cần aggregate phức
 > tạp trên chính các field đó — lúc ấy Mongo làm primary cho catalog mới đáng. Em sẽ đo, thấy
@@ -151,13 +151,13 @@ nói được cái ngưỡng — anh tin em hiểu, không phải học vẹt."*
 
 Anh Khải chưa tha. Đòn cuối: *"CAP theorem. Mongo là CP hay AP?"*
 
-Đây là câu mọi người trả lời *"AP, vì NoSQL mà"* — và sai. Bạn không cắn câu.
+Đây là câu mọi người trả lời *"AP, vì NoSQL mà"* — và sai. Tonny không cắn câu.
 
 > *"Mặc định **CP** ở vế partition — write phải tới primary. Nhưng anh ơi, câu hỏi này
 > **thiếu vế**. CAP chỉ nói chuyện lúc mạng đứt — mà mạng đứt hiếm lắm. Em trả lời bằng
 > **PACELC**."*
 
-Bạn vẽ lên bảng:
+Tonny vẽ lên bảng:
 
 ```
 P (Partition)?  → A hay C    ← chuyện ngày bão, hiếm

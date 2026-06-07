@@ -17,9 +17,9 @@ vô nghĩa. Chỉ **trật tự** cứu được ta.
 
 Trật tự, trong thế giới Java, có tên là **lock**. 🔒
 
-Anh Hùng quăng cho tôi một sự cố thật: báo cáo tồn kho cuối tháng **nhân đôi**.
+Anh Hùng quăng cho Tonny một sự cố thật: báo cáo tồn kho cuối tháng **nhân đôi**.
 "Job snapshot chạy hai lần cùng lúc," anh nói. "Tụi nó dùng Redis lock rồi mà.
-Sao vẫn đôi?" Tôi nhìn log. Một dòng lạnh người: `[GC pause] 24532ms` — ngay
+Sao vẫn đôi?" Tonny nhìn log. Một dòng lạnh người: `[GC pause] 24532ms` — ngay
 trước dòng "writing snapshot". Cái chìa khoá đã rơi khỏi tay người cầm nó. Mà
 người đó không hề biết.
 
@@ -52,7 +52,7 @@ xong, khỏi khoá. Người xem không cản người xem. Nhanh khủng khiế
 nhìn bạn như người lạ và **khoá luôn chính bạn ở ngoài** (self-deadlock). Và nếu
 bạn quên hỏi `validate`, bạn đọc trúng món đồ ai đó đang thay dở. 🧦
 
-Tôi không tin lời quảng cáo. Tôi đo. JMH, 8 thread, đa số chỉ ghé nhìn:
+Tonny không tin lời quảng cáo. Tonny đo. JMH, 8 thread, đa số chỉ ghé nhìn:
 
 ```
 Benchmark                                       Mode  Cnt        Score        Error   Units
@@ -61,7 +61,7 @@ LockThroughputBenchmark.reentrantLockRead      thrpt    5    20827.085 ±   5793
 LockThroughputBenchmark.stampedOptimisticRead  thrpt    5  5623426.644 ± 654988.331  ops/ms
 ```
 
-Tôi dụi mắt nhìn lại. Không phải gấp đôi. Không phải gấp mười. Anh thiên tài lập dị
+Tonny dụi mắt nhìn lại. Không phải gấp đôi. Không phải gấp mười. Anh thiên tài lập dị
 thắng **gấp bảy trăm bảy mươi lần** anh già. 🤯 Vì sao kinh khủng vậy? Vì người ghé
 nhìn của anh `StampedLock` **không đụng cửa, không chạm khoá** — chỉ liếc con tem.
 Còn hai anh kia: tám người khách tranh nhau cùng một cánh cửa, mỗi lần một người
@@ -116,7 +116,7 @@ khách phải chờ, anh **không cho đứng dậy**. "Ngồi yên đó, giữ 
 đó → bốn cái ghế cạn sạch → phép màu Loom tan thành mây khói. App của bạn "đã bật
 virtual thread" mà chậm như chưa bật.
 
-Tôi không kể suông. Tôi **bắt tận tay** bằng JFR — 200 khách, mỗi người chờ 50ms:
+Tonny không kể suông. Tonny **bắt tận tay** bằng JFR — 200 khách, mỗi người chờ 50ms:
 
 ```java
 synchronized (MONITOR) { sleep(50); }   // → ~200 event jdk.VirtualThreadPinned
@@ -154,11 +154,11 @@ try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
 }
 ```
 
-Một subtask ném exception → scope **tự tay hủy** sibling. Test của tôi chứng minh:
+Một subtask ném exception → scope **tự tay hủy** sibling. Test của Tonny chứng minh:
 thằng inventory ném lỗi, thằng product chậm 1 giây *không bao giờ chạy xong* — bị
 cắt ngang. Fail-fast, không leak. Vào đâu, ra đó.
 
-> ⚠️ Đây là **preview** — cần `--enable-preview`. Tôi nhốt nó trong module
+> ⚠️ Đây là **preview** — cần `--enable-preview`. Tonny nhốt nó trong module
 > `concurrency-lab` riêng, KHÔNG cho cờ này lan ra service production (preview bit
 > đóng dấu lên class → ép cả runtime phải bật cờ → rủi ro ops). Production hôm nay
 > xài `CompletableFuture` fan-out; chờ API final (Java 25, JEP 505) rồi migrate.

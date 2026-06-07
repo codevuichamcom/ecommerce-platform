@@ -116,7 +116,7 @@ org.hibernate.loader.MultipleBagFetchException: cannot simultaneously fetch mult
 - Đổi `List` → `Set` (Set không phải bag → hợp lệ). **Nhưng** vẫn coi chừng: 2 collection N và M phần tử JOIN ra **N×M** dòng — blow up băng thông.
 - Hoặc tách nhiều query, mỗi collection một phát.
 
-Order của ta chỉ 1 collection nên chưa nổ. Nhưng tôi ghi cảnh báo này vào [lesson 17](../lessons/17-jpa-fetch-strategies.md) — để hôm nào ai thêm collection thứ hai thì biết con bag đang ngủ ở đâu.
+Order của ta chỉ 1 collection nên chưa nổ. Nhưng Tonny ghi cảnh báo này vào [lesson 17](../lessons/17-jpa-fetch-strategies.md) — để hôm nào ai thêm collection thứ hai thì biết con bag đang ngủ ở đâu.
 
 ## Nấc 3 — Đừng bê món nữa, chỉ ghi phiếu: Projection 🧾
 
@@ -147,11 +147,11 @@ public record OrderSummaryView(
 
 Không entity. Không vào persistence context. Không dirty-checking. Không snapshot. Và quan trọng nhất: `LIMIT/OFFSET` chạy ở **DB thật** — phân trang về đúng chỗ của nó. Count query Spring tự suy ra được (`select count(o)...`) vì select clause là constructor expression đơn, không GROUP BY.
 
-Một câu hỏi treo lơ lửng: *làm sao tôi biết chắc nó nhanh, không chỉ "cảm giác nhanh"?* Đo. Bằng số.
+Một câu hỏi treo lơ lửng: *làm sao Tonny biết chắc nó nhanh, không chỉ "cảm giác nhanh"?* Đo. Bằng số.
 
 ## Đo bằng số, không bằng niềm tin 📏
 
-Hibernate có sẵn cái cân: `Statistics.getPrepareStatementCount()` — đếm số JDBC statement thật sự bắn xuống DB. Tôi dựng [OrderNPlusOneIntegrationTest](../../services/order-service/src/test/java/com/ecommerce/order/OrderNPlusOneIntegrationTest.java), seed 5 đơn × 3 món, rồi cân từng nấc:
+Hibernate có sẵn cái cân: `Statistics.getPrepareStatementCount()` — đếm số JDBC statement thật sự bắn xuống DB. Tonny dựng [OrderNPlusOneIntegrationTest](../../services/order-service/src/test/java/com/ecommerce/order/OrderNPlusOneIntegrationTest.java), seed 5 đơn × 3 món, rồi cân từng nấc:
 
 ```java
 private long countQueries(Statistics stats, Runnable block) {
@@ -179,7 +179,7 @@ graph TD
     class N3 done
 ```
 
-Test assert thẳng tay: nấc projection `getPrepareStatementCount() ≤ 2`. Và — đây là phần tôi thích — test nấc 0 assert **`≥ 1+N`**, tức là **bắt buộc N+1 phải tồn tại**. Vì sao lock cả chiều xấu? Để 6 tháng sau ai đọc lại test này thấy ngay "à, nấc 0 đúng là N+1 thật", không phải lý thuyết suông. Test vừa là lưới chặn regression, vừa là tài liệu sống.
+Test assert thẳng tay: nấc projection `getPrepareStatementCount() ≤ 2`. Và — đây là phần Tonny thích — test nấc 0 assert **`≥ 1+N`**, tức là **bắt buộc N+1 phải tồn tại**. Vì sao lock cả chiều xấu? Để 6 tháng sau ai đọc lại test này thấy ngay "à, nấc 0 đúng là N+1 thật", không phải lý thuyết suông. Test vừa là lưới chặn regression, vừa là tài liệu sống.
 
 41 query → **2 query**. 3.2s → ~30ms. Anh Hùng thả tim. 💚
 
