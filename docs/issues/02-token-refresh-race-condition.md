@@ -30,6 +30,45 @@ if (token.isActive(now)) {                          // T2: tab B đọc, valid
 
 Race window: từ `findByTokenHash` đến `save` có thể vài ms. 2 thread cùng pass check `isActive`, cùng issue token mới. Đây là **lost update** (theo Postgres terms) — read-then-write KHÔNG atomic ở isolation level mặc định READ COMMITTED.
 
+> Diagram dưới show cách fix dập lost-update: Tab A + Tab B cùng F5, cùng đọc
+> refresh token (cả 2 thấy `active`) → cả 2 chạy atomic UPDATE
+> `revokeIfActive ... WHERE revoked_at IS NULL` → ở row level Postgres MVCC chỉ
+> đúng 1 thread thấy `rowsAffected=1` (winner issue token mới), thread kia thấy
+> `rowsAffected=0` → reject `AUTH_TOKEN_INVALID`. Khối đỏ = nhánh loser.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as Tab A
+    participant B as Tab B
+    participant S as RefreshTokenService
+    participant DB as Postgres (refresh_tokens)
+
+    par 2 tab cùng F5 với CÙNG refresh token cũ
+        A->>S: POST /auth/refresh (hash=ab12)
+        S->>DB: findByTokenHash(ab12)
+        DB-->>S: token active
+    and
+        B->>S: POST /auth/refresh (hash=ab12)
+        S->>DB: findByTokenHash(ab12)
+        DB-->>S: token active
+    end
+
+    Note over DB: UPDATE ... SET revoked_at=now<br/>WHERE token_hash=ab12 AND revoked_at IS NULL<br/>atomic ở row level (MVCC)
+
+    A->>DB: revokeIfActive(ab12)
+    DB-->>A: rowsAffected = 1 (winner)
+    A->>S: issue cặp token mới
+    A-->>A: 200 OK
+
+    rect rgb(254,202,202)
+        B->>DB: revokeIfActive(ab12)
+        DB-->>B: rowsAffected = 0 (đã bị revoke)
+        Note over B: throw BusinessException(AUTH_TOKEN_INVALID)<br/>→ tab thua silent re-login (Day 27)
+        B-->>B: 401 AUTH_TOKEN_INVALID
+    end
+```
+
 ## 4. Approaches compared
 
 | Approach | Pros | Cons |

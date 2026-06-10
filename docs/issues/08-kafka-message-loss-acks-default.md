@@ -36,6 +36,36 @@ Sequence lỗi cụ thể (04:11:55 → 04:12:03):
 5. Producer callback success → app log "published". Reality: message gone.
 6. Consumer subscribe leader mới (broker-1) → KHÔNG bao giờ thấy 39 record.
 
+> Diagram dưới show vì sao ACK "thành công" nhưng message vẫn mất: leader
+> broker-0 ghi page cache rồi trả ACK với `acks=1` (KHÔNG chờ follower
+> replicate), chết trước khi broker-1 fetch → controller bầu leader mới thiếu
+> record → consumer đọc leader mới không thấy message. Khối đỏ = window mất data.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant P as Producer (order-service)
+    participant L as Broker-0 (leader, partition 2)
+    participant F as Broker-1 (follower)
+    participant C as Controller
+    participant Cons as Consumer (notification-service)
+
+    P->>L: send(order.created) — 39 record
+    L->>L: ghi memory + page cache (chưa fsync)
+
+    rect rgb(254,202,202)
+        L-->>P: ACK (acks=1: chỉ chờ leader, KHÔNG chờ follower)
+        Note over P: callback success → log "published"
+        Note over F: broker-1 CHƯA kịp fetch 39 record này
+        L->>L: OOM-killer → broker-0 chết
+        Note over L: 39 record bốc hơi cùng page cache
+        C->>F: bầu broker-1 thành leader mới
+        Note over F: leader mới THIẾU 39 record
+        Cons->>F: poll(order.created-2)
+        F-->>Cons: không có 39 record đó — message gone
+    end
+```
+
 **Underlying cause**: `KafkaAutoConfiguration` initial draft KHÔNG override producer config → Spring Kafka mặc định `acks=1` (legacy default, Kafka 2.x), KHÔNG bật `enable.idempotence`.
 
 ## 4. Approaches compared

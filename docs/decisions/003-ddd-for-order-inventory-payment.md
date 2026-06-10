@@ -49,6 +49,33 @@ Constraint:
 | `analytics` | read-only aggregation | KHÔNG | consume only | Layered |
 | `gateway` | routing | KHÔNG | KHÔNG | Layered |
 
+3-điểm criteria chạy tuần tự như gate — thiếu **bất kỳ** gate nào là rớt thẳng về Layered, không cộng dồn "2/3 cũng được":
+
+```mermaid
+graph TD
+    Start([Service mới cần phân loại]) --> G1{≥3 invariants thật?}
+    G1 -->|Không| L[Layered<br/>Controller → Service → Repository]
+    G1 -->|Có| G2{Concurrency thật?<br/>multi-user tranh chấp,<br/>race condition khi sai}
+    G2 -->|Không| L
+    G2 -->|Có| G3{Phát domain event<br/>ra ngoài bounded context?}
+    G3 -->|Không| L
+    G3 -->|Có cả 3| D[DDD strict<br/>Aggregate + invariant<br/>+ domain events + optimistic lock]
+
+    D -.->|rơi nhánh| DDDsvc[order · inventory · payment]
+    L -.->|rơi nhánh| Lsvc[auth · product · cart<br/>notification · analytics · gateway]
+
+    class G1,G2,G3 decision
+    class D,DDDsvc done
+    class L,Lsvc planned
+
+    classDef done       fill:#86efac,stroke:#16a34a,color:#000
+    classDef sync       fill:#bfdbfe,stroke:#2563eb,color:#000
+    classDef async      fill:#fde68a,stroke:#d97706,color:#000
+    classDef failure    fill:#fecaca,stroke:#dc2626,color:#000
+    classDef decision   fill:#e9d5ff,stroke:#9333ea,color:#000
+    classDef planned    fill:#e5e7eb,stroke:#6b7280,color:#000
+```
+
 Lý do KHÔNG chọn:
 - **(A)** Đồng bộ DDD: ép `notification` (consume Kafka → render Thymeleaf → SMTP) phải có Aggregate là cargo-cult. Junior + AI generate code sẽ tạo `NotificationAggregate` rỗng → code rác.
 - **(B)** Đồng bộ Layered: ép `inventory.reserve` không có Aggregate → invariant rớt vào `InventoryService.reserve()` (procedural). Concurrent update cùng SKU sẽ vi phạm — đã chứng minh ở [issue 04](../issues/04-overselling-stock.md).

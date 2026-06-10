@@ -21,6 +21,45 @@ partition = hash(key) % numPartitions
 - Khác key → có thể khác partition → consumer khác → KHÔNG ordered cross-partition.
 - `null` key → round-robin (cũ) hoặc sticky-batching (Kafka 2.4+) — KHÔNG ordering guarantee.
 
+`orderId` (high cardinality) hash đều across partition → mỗi order ordered trong
+partition của nó. Đổi sang `userId` → hot VIP user (Apple flash-sale) dồn 1
+partition → skew, consumer của partition đó cháy:
+
+```mermaid
+graph LR
+    subgraph keys["partition key"]
+        K1["orderId=o1"]
+        K2["orderId=o2"]
+        K3["userId=apple (hot)"]
+        K4["userId=apple (hot)"]
+        K5["userId=apple (hot)"]
+    end
+    subgraph parts["topic order.created (3 partition)"]
+        P0["P0"]
+        P1["P1"]
+        P2["P2 🔥 skew"]
+    end
+    subgraph cons["consumer group"]
+        C0["instance A"]
+        C1["instance B"]
+        C2["instance C 🔥 overload"]
+    end
+
+    K1 -- "hash%3" --> P0
+    K2 -- "hash%3" --> P1
+    K3 -- "hash%3" --> P2
+    K4 -- "hash%3" --> P2
+    K5 -- "hash%3" --> P2
+    P0 --> C0
+    P1 --> C1
+    P2 --> C2
+
+    classDef done fill:#86efac,stroke:#16a34a,color:#000
+    classDef failure fill:#fecaca,stroke:#dc2626,color:#000
+    class P0,P1,C0,C1 done
+    class P2,C2 failure
+```
+
 ### Trong project
 
 | Event topic           | Key chosen   | Reasoning                                                  |

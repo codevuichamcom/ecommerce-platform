@@ -1,6 +1,6 @@
 # Performance 15 — ⚡ Cache-aside cho product-service
 
-> **Day 15** · [Lesson 15 — Cache strategies](../lessons/15-cache-strategies.md) · [Performance 15b — Two-tier](15b-two-tier-cache.md) · [ADR 008](../decisions/008-two-tier-cache-caffeine-redis.md)
+> **Day 15** · [Lesson 15 — Cache strategies](../lessons/15-cache-strategies.md) · [Performance 15b — Two-tier](15b-two-tier-cache.md) · [ADR 012](../decisions/012-two-tier-cache-caffeine-redis.md)
 
 ---
 

@@ -34,6 +34,35 @@ Comment trong code Day 9 đã thừa nhận debt:
 
 → Debt thành incident thật khi broker restart 90s. Predictable.
 
+> Diagram dưới show dual-write non-atomic của `PlaceOrderUseCase` (Day 9 version):
+> `orderRepository.save()` COMMIT OK → `kafkaTemplate.send()` FAIL (broker restart)
+> → chỉ `log.error` chứ KHÔNG rollback (DB đã commit) → inventory không bao giờ
+> nhận `order.created` để reserve → order kẹt `reservation_status=PENDING`. Khối
+> đỏ = điểm divergent state. Outbox (fix) gộp 2 write vào 1 tx.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant O as PlaceOrderUseCase
+    participant DB as Postgres (orders)
+    participant K as Kafka (order.created)
+    participant Inv as inventory-service
+
+    O->>DB: orderRepository.save(order, reservation_status=PENDING)
+    DB-->>O: COMMIT OK (user thấy "Order placed")
+
+    rect rgb(254,202,202)
+        O->>K: kafkaTemplate.send(order.created)
+        Note over K: kafka-1 restart (OOM) 90s
+        K-->>O: send FAIL
+        Note over O: log.error "Failed to publish..."<br/>KHÔNG rollback (DB đã commit)
+        Note over Inv: không nhận order.created<br/>→ không reserve
+        Note over DB: order kẹt reservation_status=PENDING vĩnh viễn<br/>→ customer paid nhưng "không có hàng"
+    end
+
+    Note over O,DB: Fix: OutboxRecorder.record() ghi outbox_event<br/>TRONG cùng tx với save() → atomic;<br/>OutboxRelay poll + publish riêng (at-least-once)
+```
+
 ## 4. Approaches compared
 
 | Approach                                       | Pros                                              | Cons                                                                          |

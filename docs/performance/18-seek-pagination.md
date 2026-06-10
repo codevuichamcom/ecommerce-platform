@@ -91,6 +91,18 @@ side-by-side. Số minh hoạ (máy dev, dao động theo cache):
 Offset: time + Buffers leo tuyến tính theo độ sâu. Keyset: phẳng. Đây là toàn
 bộ câu chuyện Day 18 trong 1 bảng.
 
+Cùng số đó vẽ thành bar — OFFSET leo tuyến tính, keyset nằm phẳng bất kể page sâu:
+
+```text
+Page depth                  OFFSET pagination            Keyset pagination
+page 0                      ▏ ~3ms                       ▏ ~3ms
+~100k rows (offset 100k)    ████████ ~280ms              ▏ ~3ms
+~980k rows (offset 980k)    ████████████████████ ~2.4s   ▏ ~3ms
+```
+
+(Bar scale theo exec time; ~2.4s ≈ 800x ~3ms, nén lại để đọc được — đường keyset
+là một vạch hằng số dọc theo mọi độ sâu.)
+
 > 💡 **Cách đọc plan**: offset deep page có `Limit` node ôm một `Index Scan`
 > trả về cả trăm K rows (`actual rows=980020`) rồi mới cắt. Keyset có
 > `Index Scan using idx_products_keyset` với `actual rows≈20` — đọc đúng cái

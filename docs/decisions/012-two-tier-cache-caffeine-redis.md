@@ -1,4 +1,4 @@
-# ADR 008 — 🏗️ 2-tier Cache: Caffeine L1 + Redis L2
+# ADR 012 — 🏗️ 2-tier Cache: Caffeine L1 + Redis L2
 
 - **Status**: ✅ Accepted
 - **Date**: 2026-05-28
@@ -36,6 +36,32 @@ Day 15 mục tiêu giảm P99 `GET /products/{id}` từ 250ms → 80ms khi catal
 2. **Bandwidth save**: Redis Cluster đang share cho cart-service. Product traffic ước 10× cart → giảm 80% load Redis bằng L1 là deal vital.
 3. **Resilience**: Redis blip 1-2s → L1 tiếp tục serve hot key. Single-Redis setup = blip nguyên fleet.
 4. **Cost effective**: Caffeine heap 5-10 MB/pod ≪ cost của 1 Redis instance dedicated.
+
+### Latency ladder — read fall-through + backfill
+
+Diagram dưới cho thấy vì sao thứ tự tier match hardware reality: mỗi nấc chậm hơn nấc trên ~20000× (L1 ~50ns → L2 ~1ms → DB ~30ms). Read đi xuống tới tier gần nhất còn data, miss thì fall-through; data đọc được backfill ngược lên L1/L2. Write đi **ngược chiều backfill** — `put L2` trước, `put L1` sau (chống restore-from-stale, xem Trade-off "2 nguồn truth").
+
+```mermaid
+graph LR
+    C(["Client<br/>GET /products/{id}"])
+    L1["L1 · Caffeine<br/>in-process<br/>~50ns · TTL 60s"]
+    L2["L2 · Redis<br/>distributed<br/>~1ms · TTL 5min"]
+    DB[("Postgres<br/>~30ms")]
+
+    C -->|read| L1
+    L1 -->|miss| L2
+    L2 -->|miss| DB
+    DB -.backfill.-> L2
+    L2 -.backfill.-> L1
+    L1 ==>|"hit ≥80% → effective latency ≈ L1"| C
+
+    classDef fast fill:#86efac,stroke:#16a34a,color:#000
+    classDef sync fill:#bfdbfe,stroke:#2563eb,color:#000
+    classDef failure fill:#fecaca,stroke:#dc2626,color:#000
+    class L1 fast
+    class L2 sync
+    class DB failure
+```
 
 ## Trade-offs
 

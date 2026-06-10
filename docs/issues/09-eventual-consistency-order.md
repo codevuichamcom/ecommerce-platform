@@ -27,6 +27,37 @@ Day 9 async: order-service save Order với `reservation_status=PENDING` rồi p
 
 **Window**: 50-500ms ở idle hệ thống, **2-5s** khi consumer lag burst. Nhưng UI Day 6 vẫn show "Order placed" như cũ → user không biết "đang giữ hàng".
 
+> Diagram dưới show eventual-consistency window: `POST /orders` save Order
+> `PENDING` + publish `order.created` rồi trả HTTP 200 NGAY ("window mở") →
+> consumer lag (burst 200 event) → inventory consume `order.created` muộn 2.8s →
+> reserve FAIL (hết hàng) → `markFailed` → user refresh thấy status đổi. Khối đỏ
+> = window giữa lúc trả 200 và lúc reserve thật xảy ra — chỗ UX confusing.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant O as order-service
+    participant K as Kafka (order.created)
+    participant I as inventory-service
+
+    U->>O: POST /orders
+    O->>O: save Order (reservation_status=PENDING)
+    O->>K: publish order.created
+    O-->>U: HTTP 200 (status=PendingPayment)
+
+    rect rgb(254,202,202)
+        Note over U,I: WINDOW mở — user thấy "Order placed"<br/>nhưng stock CHƯA trừ
+        Note over K: consumer lag 2.8s (burst 200 event)
+        K-->>I: consume order.created (muộn)
+        I->>I: reserve → InsufficientStock
+        I->>K: publish (reserve failed) → markFailed
+        K-->>O: order markFailed (reservation_status=FAILED)
+        U->>O: refresh order page (sau 5s)
+        O-->>U: status=FAILED — "sao giờ báo hết hàng?"
+    end
+```
+
 ## 4. Approaches compared
 
 | # | Approach | Pros | Cons |

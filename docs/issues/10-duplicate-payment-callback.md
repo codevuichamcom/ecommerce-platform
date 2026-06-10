@@ -32,6 +32,50 @@ Khi 2 callback đến gần như đồng thời (lần 1 chưa kịp commit DB +
 
 **Tại sao test không catch?** Unit test chạy sequential. IT chạy 1 thread mock callback. **Không có concurrency test ở payment**.
 
+> Diagram dưới show race window của code cũ (sau khi đã fix bằng UNIQUE
+> constraint): callback#1 timeout 504 → VNPay retry → 2 thread đến gần đồng thời,
+> cả 2 pass `findByTxnId` (chưa ai commit) → cả 2 `saveAndFlush` INSERT → nhánh
+> `alt`: winner commit + publish event, loser dính UNIQUE
+> `DataIntegrityViolationException` → trả idempotent KHÔNG publish. Khối đỏ =
+> race window.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant V as VNPay
+    participant T1 as Thread 1 (callback#1)
+    participant T2 as Thread 2 (callback#2 retry)
+    participant DB as Postgres (payment_intent)
+    participant K as Kafka (payment.completed)
+
+    V->>T1: callback (providerTxnId=X)
+    Note over T1: P99 spike ~6s (DB pool exhaust)
+    T1-->>V: 504 Gateway Timeout
+    Note over V: retry callback 30s sau
+    V->>T2: callback (providerTxnId=X)
+
+    rect rgb(254,202,202)
+        par 2 thread chạy gần đồng thời
+            T1->>DB: findByTxnId(X)
+            DB-->>T1: empty (chưa ai commit)
+        and
+            T2->>DB: findByTxnId(X)
+            DB-->>T2: empty (chưa ai commit)
+        end
+        T1->>DB: saveAndFlush(intent CAPTURED)
+        T2->>DB: saveAndFlush(intent CAPTURED)
+        alt Thread 1 = winner
+            DB-->>T1: INSERT OK (commit)
+            T1->>K: publish payment.completed
+            T1-->>V: 200 OK
+        else Thread 2 = loser
+            DB-->>T2: UNIQUE(provider, provider_txn_id) vi phạm<br/>→ DataIntegrityViolationException
+            Note over T2: catch → findByProviderAndProviderTxnId<br/>trả idempotent, KHÔNG publish
+            T2-->>V: 200 OK (duplicate)
+        end
+    end
+```
+
 ## 4. Approaches compared
 
 | Approach | Pros | Cons |

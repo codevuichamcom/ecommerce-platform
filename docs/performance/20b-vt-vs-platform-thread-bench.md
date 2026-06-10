@@ -73,6 +73,37 @@ Nhưng VT **không** đụng tới:
 > ở Day 19; với Java 21 cần đổi `synchronized` → `ReentrantLock` ở hot path block.
 > (Java 24+ gỡ giới hạn này.)
 
+## 🌳 Decision tree — "Virtual Thread có giúp không?"
+
+Trước khi bật VT để "cho nhanh", chạy qua cây quyết định này — kết luận khớp đúng benchmark Day 19 (JMH) + Day 20 (k6) ở trên.
+
+```mermaid
+graph TD
+    Q1{"Workload IO-bound<br/>+ concurrency cao?<br/>(browse-products)"}
+    Q2{"CPU-bound?"}
+    Q3{"Bottleneck ở bounded resource?<br/>(connection pool / lock / rate-limit)"}
+
+    WIN["✅ VT THẮNG<br/>bỏ trần pool 200 → nuốt 1000+ concurrent<br/>P99 không tăng vọt khi quá tải"]
+    CPU["⚪ HÒA — 8 core vẫn 8 core<br/>VT không thêm core, không giảm latency/request<br/>(Day 19 JMH: CPU-bound VT ≈ platform)"]
+    RES["🔴 HÒA — phải fix resource TRƯỚC<br/>VT cho nhiều thread cùng chờ, không cho nhiều tài nguyên<br/>gỡ pool (issue 20) xong VT mới nhỉnh lại"]
+
+    Q1 -->|Có| WIN
+    Q1 -->|Không| Q2
+    Q2 -->|Có| CPU
+    Q2 -->|Không| Q3
+    Q3 -->|Có| RES
+
+    classDef done       fill:#86efac,stroke:#16a34a,color:#000
+    classDef decision   fill:#e9d5ff,stroke:#9333ea,color:#000
+    classDef failure    fill:#fecaca,stroke:#dc2626,color:#000
+    classDef planned    fill:#e5e7eb,stroke:#6b7280,color:#000
+
+    class Q1,Q2,Q3 decision
+    class WIN done
+    class CPU planned
+    class RES failure
+```
+
 ## ✅ Kết luận hành động
 
 1. Giữ VT làm default — chi phí ~0, lợi cho read path.

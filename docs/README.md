@@ -200,10 +200,10 @@ graph LR
 | [`decisions/007-payment-service-layered-not-ddd.md`](decisions/007-payment-service-layered-not-ddd.md) | ✅ | payment-service dùng Layered + sealed status, revise scope ADR-003 — 1/3 DDD criteria không đạt, 4 alternatives compared |
 | [`decisions/008-api-versioning-strategy.md`](decisions/008-api-versioning-strategy.md) | ✅ | URI versioning + N-1 deprecation policy (90-day sunset), 5 alternatives compared |
 | [`decisions/009-outbox-vs-cdc.md`](decisions/009-outbox-vs-cdc.md) | ✅ | Transactional outbox + polling relay vs Debezium CDC, 5 alternatives compared, migration path khi volume > 10k/s |
-| [`decisions/008-two-tier-cache-caffeine-redis.md`](decisions/008-two-tier-cache-caffeine-redis.md) | ✅ | 2-tier cache Caffeine L1 + Redis L2, 4 alternatives, trade-off consistency vs latency |
 | [`decisions/010-postgres-vs-elasticsearch-search.md`](decisions/010-postgres-vs-elasticsearch-search.md) | ✅ | Postgres GIN vs ES cho search, 4 alternatives (GIN giữ / ES app-sync chosen / ES Debezium CDC / Algolia managed), ngưỡng nâng cấp outbox/CDC |
 | [`decisions/011-mongo-for-analytics-and-flexible-attributes.md`](decisions/011-mongo-for-analytics-and-flexible-attributes.md) | ✅ | Mongo cho event store + catalog read-model, 5+4 alternatives (Postgres JSONB/partitioned / **Mongo chosen** / ES / ClickHouse); Postgres GIỮ source of truth attributes (anti-cargo-cult) |
 | `decisions/011-mongo-for-analytics-and-flexible-attributes.md` | ⏳ Day 23 | MongoDB use case có chủ ý: event store + flexible product attributes |
+| [`decisions/012-two-tier-cache-caffeine-redis.md`](decisions/012-two-tier-cache-caffeine-redis.md) | ✅ | 2-tier cache Caffeine L1 + Redis L2 (Day 15), 4 alternatives, latency ladder + trade-off consistency vs latency |
 
 ### 📖 2.4. Lessons (`lessons/`)
 
