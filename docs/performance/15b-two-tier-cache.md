@@ -1,6 +1,6 @@
 # Performance 15b — ⚡ Two-tier Cache (Caffeine L1 + Redis L2)
 
-> **Day 15** · [Performance 15 — Cache aside](15-cache-aside.md) · [ADR 008](../decisions/008-two-tier-cache-caffeine-redis.md)
+> **Day 15** · [Performance 15 — Cache aside](15-cache-aside.md) · [ADR 012](../decisions/012-two-tier-cache-caffeine-redis.md)
 
 ---
 
@@ -138,4 +138,4 @@ Workload Zipf α=1 trên 50k product:
 - [Performance 15 — Cache aside basic](15-cache-aside.md)
 - [Issue 15 — Stampede protection](../issues/15-cache-stampede.md)
 - [Issue 15b — Hot key sharding](../issues/15b-hot-key.md)
-- [ADR 008 — Decision rationale](../decisions/008-two-tier-cache-caffeine-redis.md)
+- [ADR 012 — Decision rationale](../decisions/012-two-tier-cache-caffeine-redis.md)

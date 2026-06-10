@@ -29,6 +29,50 @@
 2. **Consumer Spring Kafka default error handler retry VÔ HẠN** (kế thừa pre-2.8 behavior `FixedBackOff(0, 9223372036854775807L)` = retry every 0ms, max=Long.MAX_VALUE). Mỗi NPE → retry ngay → re-fail → loop tight.
 3. **Không có DLT** — không có lối thoát cho poison message, partition bị block.
 
+> Diagram dưới show flow retry-then-DLT (sau khi fix): consumer nhận poison
+> message → render fail → `DefaultErrorHandler` backoff exponential 1s → 4s → 16s
+> (max 3 attempts, ~21s) → hết attempt thì `DeadLetterPublishingRecoverer` publish
+> sang `<topic>.DLT` + commit offset gốc → partition unblock. Nhánh `alt`:
+> exception non-retryable (`IllegalArgumentException` / `JsonProcessingException` /
+> `DeserializationException`) → DLT NGAY, không retry. Khối đỏ = window block
+> partition trong lúc retry.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Br as Kafka (order.created, partition 3)
+    participant Cons as OrderCreatedConsumer
+    participant EH as DefaultErrorHandler
+    participant DLT as order.created.DLT
+    participant Dlt as DltConsumer
+
+    Br->>Cons: poll(poison: totalAmount=null)
+    Cons->>Cons: render(order-created.html) → NPE
+
+    alt exception RETRYABLE (vd NPE transient)
+        rect rgb(254,202,202)
+            Cons-->>EH: throw → handler nhận
+            Note over EH: partition 3 BLOCK trong retry window
+            EH->>Cons: retry #1 (sau 1s)
+            Cons-->>EH: fail
+            EH->>Cons: retry #2 (sau 4s)
+            Cons-->>EH: fail
+            EH->>Cons: retry #3 (sau 16s) — maxElapsed 21s
+            Cons-->>EH: fail (hết attempt)
+        end
+        EH->>DLT: DeadLetterPublishingRecoverer.publish()
+        EH->>Br: commit offset gốc (setCommitRecovered=true)
+        Note over Br: partition 3 UNBLOCK
+    else exception NON-RETRYABLE (IllegalArgument / Json / Deserialization)
+        Cons-->>EH: throw
+        EH->>DLT: publish DLT NGAY (không retry)
+        EH->>Br: commit offset gốc
+    end
+
+    DLT->>Dlt: consume .*\.DLT
+    Note over Dlt: log + counter, KHÔNG throw<br/>(chống .DLT.DLT cascade)
+```
+
 ## 4. Approaches compared
 
 | Approach                          | Pros                                         | Cons                                                              |

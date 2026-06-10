@@ -88,6 +88,26 @@ boolean allowed = switch (status) {
 → Thêm `Refunded` permit? Compiler báo: `'switch' expression does not
 cover all possible input values`. Bug-by-omission tự fail-fast.
 
+State machine với transition hợp lệ dưới đây (mirror canonical ở
+[`order-domain.md`](../architecture/order-domain.md)) — ở đây minh họa sealed
+type enforce **exhaustive transition**: mọi mũi tên là 1 case của switch, thiếu
+1 nhánh là compile error.
+
+```mermaid
+stateDiagram-v2
+    [*] --> PendingPayment
+    PendingPayment --> Paid: payment captured
+    PendingPayment --> Cancelled: timeout / user cancel
+    Paid --> Shipped: warehouse dispatch
+    Paid --> Cancelled: refund pre-ship
+    Shipped --> Delivered: courier confirm
+    Delivered --> [*]
+    Cancelled --> [*]
+
+    note right of Delivered: terminal — isTerminal() == true
+    note right of Cancelled: terminal — isTerminal() == true
+```
+
 ## 🎤 Trả lời phỏng vấn
 
 **Q**: *"Sealed interface vs enum — khi nào chọn?"*

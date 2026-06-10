@@ -1,6 +1,6 @@
 # Lesson 15 — 🏗️ Cache Strategies (4 patterns + khi nào chọn)
 
-> **Day 15** · Liên quan: [ADR 008 — Two-tier cache](../decisions/008-two-tier-cache-caffeine-redis.md) · [Performance 15 — Cache aside](../performance/15-cache-aside.md) · [Performance 15b — Two-tier](../performance/15b-two-tier-cache.md) · [Issue 15 — Cache stampede](../issues/15-cache-stampede.md)
+> **Day 15** · Liên quan: [ADR 012 — Two-tier cache](../decisions/012-two-tier-cache-caffeine-redis.md) · [Performance 15 — Cache aside](../performance/15-cache-aside.md) · [Performance 15b — Two-tier](../performance/15b-two-tier-cache.md) · [Issue 15 — Cache stampede](../issues/15-cache-stampede.md)
 
 ---
 
@@ -67,6 +67,56 @@ Instance A evict L1, instance B vẫn cache cũ. Fix: pub/sub invalidation, ho�
 | Write-through  | Cache layer   | Same as read-through               | App ghi CACHE → cache ghi DB (sync) | Strong      | Cache là source-of-truth. Session, leaderboard. |
 | Write-behind   | Cache layer   | Same as read-through               | App ghi CACHE → cache flush DB ASYNC | Weak (data loss window) | Write-heavy, tolerate loss. Counters, metrics. |
 
+Sequence dưới đây show điểm khác cốt lõi của **write path**: cache-aside ghi DB
+trước rồi invalidate cache (App drive), write-through ghi cache rồi cache **sync**
+ghi DB, write-behind ghi cache rồi flush DB **async** (return ngay, data loss
+window nếu cache crash trước flush).
+
+### Cache-aside — read miss + write (App quản lifecycle)
+
+```mermaid
+sequenceDiagram
+    participant App
+    participant Cache
+    participant DB
+    Note over App,DB: Read miss path
+    App->>Cache: get(key)
+    Cache-->>App: miss
+    App->>DB: load(key)
+    DB-->>App: row
+    App->>Cache: put(key, value)
+    Note over App,DB: Write path
+    App->>DB: update(key)
+    App->>Cache: evict(key)
+```
+
+### Write-through — write đồng bộ qua cache layer
+
+```mermaid
+sequenceDiagram
+    participant App
+    participant Cache
+    participant DB
+    App->>Cache: write(key, value)
+    Cache->>DB: write(key, value) [SYNC]
+    DB-->>Cache: ack
+    Cache-->>App: ack (cache luôn fresh)
+```
+
+### Write-behind — write vào cache, flush DB async
+
+```mermaid
+sequenceDiagram
+    participant App
+    participant Cache
+    participant DB
+    App->>Cache: write(key, value)
+    Cache-->>App: ack ngay (latency thấp)
+    Note over Cache,DB: flush async / batch sau
+    Cache-)DB: flush(batch) [ASYNC]
+    Note over Cache,DB: cache crash trước flush → data loss window
+```
+
 ## Trả lời phỏng vấn
 
 **Q**: "So sánh 4 cache strategy — khi nào chọn cái nào?"
@@ -97,6 +147,6 @@ Instance A evict L1, instance B vẫn cache cũ. Fix: pub/sub invalidation, ho�
 - Code: [`services/product-service/src/main/java/com/ecom/product/config/cache/`](../../services/product-service/src/main/java/com/ecom/product/config/cache/)
 - [Performance 15 — Cache aside implementation](../performance/15-cache-aside.md)
 - [Performance 15b — Two-tier hierarchy](../performance/15b-two-tier-cache.md)
-- [ADR 008 — Vì sao 2-tier](../decisions/008-two-tier-cache-caffeine-redis.md)
+- [ADR 012 — Vì sao 2-tier](../decisions/012-two-tier-cache-caffeine-redis.md)
 - [Issue 15 — Cache stampede full](../issues/15-cache-stampede.md)
 - [Issue 15b — Hot key](../issues/15b-hot-key.md)

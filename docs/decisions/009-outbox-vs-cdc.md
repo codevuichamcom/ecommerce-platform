@@ -92,6 +92,37 @@ Lag 1-2s acceptable vì:
 - Frontend Day 9 đã show banner "Đang giữ hàng..." trong window eventual consistency.
 - Inventory reserve không phải sync với order placement (Day 6 đã refactor sang event-driven).
 
+Happy path: business write + `outbox_event` insert nằm **trong cùng 1 transaction Postgres** (atomic — commit cả hai hoặc không gì cả); relay poll **sau** khi tx đã COMMIT, publish Kafka ngoài tx. `rect` dưới đây là ranh giới atomic phải nắm:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant UC as PlaceOrderUseCase
+    participant PG as Postgres
+    participant Relay as OutboxRelay<br/>(@Scheduled 1s)
+    participant K as Kafka
+
+    rect rgb(191, 219, 254)
+        Note over UC,PG: 1 transaction Postgres — ATOMIC
+        UC->>PG: BEGIN
+        UC->>PG: INSERT/UPDATE order (business write)
+        UC->>PG: INSERT outbox_event (status=PENDING)
+        UC->>PG: COMMIT
+    end
+
+    Note over UC,PG: business write + outbox insert<br/>cùng sống hoặc cùng chết → hết dual-write
+
+    loop mỗi 1s
+        Relay->>PG: SELECT * FROM outbox_event<br/>WHERE status='PENDING'<br/>FOR UPDATE SKIP LOCKED
+        PG-->>Relay: PENDING rows (lock riêng từng row)
+        Relay->>K: publish (order.created, ...)
+        K-->>Relay: ack
+        Relay->>PG: UPDATE status='SENT', sent_at=now()
+    end
+```
+
+`FOR UPDATE SKIP LOCKED` cho phép chạy nhiều relay instance song song mà không double-publish: row đã bị instance khác lock thì instance này skip qua. Publish Kafka nằm **ngoài** tx business — đó là điểm khác biệt cốt lõi so với sync ack (alt A) nơi Kafka send bị kéo vào trong tx.
+
 ---
 
 ## Trade-offs

@@ -35,6 +35,26 @@ lái bởi **access pattern** chứ không phải bởi "quan hệ thực thể"
 > ⚠️ **Cạm bẫy embed**: nhồi mảng unbounded vào 1 document → document phình tới
 > giới hạn **16MB** + mỗi update ghi lại cả document. Embed chỉ cho bounded.
 
+Decision tree embed vs reference — lái bởi access pattern, không bởi ERD:
+
+```mermaid
+graph TD
+    Q1{"1-to-few + đọc cùng nhau<br/>+ bounded (vài chục)?"}
+    Q2{"Shared / unbounded<br/>/ 1-to-many lớn?"}
+    Q3{"1-to-squillions?<br/>(log → host)"}
+
+    Q1 -- "Có" --> EMB["Embed sub-document<br/>1 read, không join (vd item trong order)"]
+    Q1 -- "Không" --> Q2
+    Q2 -- "Có" --> Q3
+    Q3 -- "Có" --> REVREF["Reference NGƯỢC<br/>con giữ parentId (log giữ hostId)"]
+    Q3 -- "Không" --> REF["Reference (lưu id, lookup)<br/>data shared 1 nguồn (vd product trong order)"]
+
+    classDef decision fill:#e9d5ff,stroke:#9333ea,color:#000
+    classDef done fill:#86efac,stroke:#16a34a,color:#000
+    class Q1,Q2,Q3 decision
+    class EMB,REF,REVREF done
+```
+
 ---
 
 ## 🔴 Vì sao EAV trong SQL là anti-pattern

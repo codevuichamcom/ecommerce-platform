@@ -62,6 +62,40 @@ Mấu chốt: **ES là derived search index, Postgres là source of truth.** Sea
 critical → eventual consistency + drift-rồi-reconcile chấp nhận được. Giữ GIN làm
 fallback → ES down không làm search 500.
 
+Topology dưới đây show 3 đường: (1) sync chính qua Kafka, (2) fallback khi ES down xuống GIN trigram (đánh dấu bằng header `X-Search-Source`), (3) reconcile loop nightly sửa drift do dual-write:
+
+```mermaid
+graph LR
+    Write[Product write<br/>create/update/delete] --> PG[(Postgres<br/>SOURCE OF TRUTH)]
+    PG -->|publish| T1[Kafka<br/>product.upserted]
+    PG -->|publish| T2[Kafka<br/>product.deleted]
+    T1 --> IDX[ProductCatalogIndexer<br/>consumer]
+    T2 --> IDX
+    IDX --> ES[(ES index<br/>derived)]
+
+    Q["GET /products/search"] --> ES
+    Q -.->|ES down: fallback| GIN[(Postgres GIN trigram<br/>Day 16 baseline)]
+    ES -.->|header| H1["X-Search-Source: elasticsearch"]
+    GIN -.->|header| H2["X-Search-Source: postgres-fallback"]
+
+    Recon[ReindexService<br/>reconcile nightly] -.->|đọc| PG
+    Recon -.->|ghi đè drift| ES
+
+    class PG done
+    class T1,T2,IDX sync
+    class ES async
+    class GIN,H2 failure
+
+    classDef done       fill:#86efac,stroke:#16a34a,color:#000
+    classDef sync       fill:#bfdbfe,stroke:#2563eb,color:#000
+    classDef async      fill:#fde68a,stroke:#d97706,color:#000
+    classDef failure    fill:#fecaca,stroke:#dc2626,color:#000
+    classDef decision   fill:#e9d5ff,stroke:#9333ea,color:#000
+    classDef planned    fill:#e5e7eb,stroke:#6b7280,color:#000
+```
+
+ES nằm ở vị trí **derived** (không phải single point trên đường ghi — mất ES chỉ mất capability search nâng cao, không mất data); query degrade tự nhiên xuống GIN trigram, client biết qua `X-Search-Source`. `ReindexService.reindexAll()` đọc lại từ Postgres sửa drift do app-level dual-write không atomic.
+
 ## Trade-offs
 
 **Accepted (chấp nhận hy sinh)**:

@@ -54,6 +54,39 @@ Bỏ 1 trong 3 = mất message hoặc duplicate trong production.
 - **Khác group = fan-out**: `notification-service` group + `analytics-service` group cùng đọc `order.created` → cả 2 nhận event.
 - Day 8 set `groupId = ${spring.application.name}` (xem [`OrderEventListener:33`](../../services/notification-service/src/main/java/com/ecommerce/notification/listener/OrderEventListener.java#L33)) → mỗi service 1 group, scale-out tự chia partition.
 
+Topology dưới đây: 1 topic `order.created` (3 partition) fan-out tới 2 consumer
+group — mỗi group nhận **full bản sao** event; partition chia cho instance trong
+cùng group (không trùng nhau).
+
+```mermaid
+graph LR
+    subgraph topic["topic order.created"]
+        P0["P0"]
+        P1["P1"]
+        P2["P2"]
+    end
+    subgraph gN["consumer group: notification-service"]
+        N0["instance 1"]
+        N1["instance 2"]
+    end
+    subgraph gA["consumer group: analytics-service"]
+        A0["instance 1"]
+        A1["instance 2"]
+    end
+
+    P0 --> N0
+    P1 --> N0
+    P2 --> N1
+    P0 --> A0
+    P1 --> A1
+    P2 --> A1
+
+    classDef sync fill:#bfdbfe,stroke:#2563eb,color:#000
+    classDef async fill:#fde68a,stroke:#d97706,color:#000
+    class P0,P1,P2 async
+    class N0,N1,A0,A1 sync
+```
+
 ### Offset + Commit
 
 - Mỗi consumer group lưu offset đã đọc đến đâu cho từng partition.

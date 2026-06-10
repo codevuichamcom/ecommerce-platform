@@ -44,6 +44,32 @@ Verdict: ✅ primary choice · 🟡 acceptable (có trade-off) · ❌ anti-patte
 > = ✅ nhưng ô (6,Mongo) = 🟡 — *"sao không Mongo luôn cho attributes?"* là câu bẫy.
 > Trả lời ở phần [Cạm bẫy](#-cạm-bẫy--3-anti-pattern) bên dưới.
 
+Decision tree dưới đây bổ trợ matrix (không thay): đi từ access pattern xuống
+1 storage khuyến nghị. Mặc định luôn bắt đầu ở Postgres, chỉ rời đi khi
+access-pattern bắt buộc.
+
+```mermaid
+graph TD
+    Q1{"Cần ACID + invariant<br/>cross-row (money/order/stock)?"}
+    Q2{"Ephemeral / hot +<br/>cần TTL tự hết hạn?"}
+    Q3{"Full-text +<br/>relevance ranking / fuzzy / facet?"}
+    Q4{"Schemaless / ghi-nhiều aggregate,<br/>đọc nguyên cục + aggregation?"}
+
+    Q1 -- "Có" --> PG["🐘 PostgreSQL<br/>source of truth"]
+    Q1 -- "Không" --> Q2
+    Q2 -- "Có" --> RD["⚡ Redis<br/>cart / cache / session / lock"]
+    Q2 -- "Không" --> Q3
+    Q3 -- "Có" --> ES["🔎 Elasticsearch<br/>derived search view"]
+    Q3 -- "Không" --> Q4
+    Q4 -- "Có" --> MG["🍃 MongoDB<br/>event store / read-model"]
+    Q4 -- "Không" --> PG2["🐘 PostgreSQL<br/>default — JSONB cân schemaless vừa phải"]
+
+    classDef decision fill:#e9d5ff,stroke:#9333ea,color:#000
+    classDef done fill:#86efac,stroke:#16a34a,color:#000
+    class Q1,Q2,Q3,Q4 decision
+    class PG,RD,ES,MG,PG2 done
+```
+
 ---
 
 ## 🧭 So sánh trên 5 axis

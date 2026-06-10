@@ -1,7 +1,7 @@
 # Day 15 — 🎤 Interview · 2-tier Cache (Caffeine L1 + Redis L2)
 
 > **Topic**: Cache-aside, 2-tier hierarchy, stampede protection, hot key, multi-instance invalidation.
-> **Related**: [Lesson 15](../lessons/15-cache-strategies.md) · [Performance 15](../performance/15-cache-aside.md) · [Performance 15b](../performance/15b-two-tier-cache.md) · [ADR 008](../decisions/008-two-tier-cache-caffeine-redis.md) · [Issue 15](../issues/15-cache-stampede.md) · [Issue 15b](../issues/15b-hot-key.md)
+> **Related**: [Lesson 15](../lessons/15-cache-strategies.md) · [Performance 15](../performance/15-cache-aside.md) · [Performance 15b](../performance/15b-two-tier-cache.md) · [ADR 012](../decisions/012-two-tier-cache-caffeine-redis.md) · [Issue 15](../issues/15-cache-stampede.md) · [Issue 15b](../issues/15b-hot-key.md)
 
 ---
 
@@ -192,5 +192,5 @@ Fix:
 - Test: [`StampedeProtectionTest`](../../services/product-service/src/test/java/com/ecom/product/cache/StampedeProtectionTest.java), [`TwoTierCacheTest`](../../services/product-service/src/test/java/com/ecom/product/cache/TwoTierCacheTest.java)
 - [Lesson 15](../lessons/15-cache-strategies.md)
 - [Performance 15 / 15b](../performance/15-cache-aside.md)
-- [ADR 008](../decisions/008-two-tier-cache-caffeine-redis.md)
+- [ADR 012](../decisions/012-two-tier-cache-caffeine-redis.md)
 - [Issue 15 / 15b](../issues/15-cache-stampede.md)

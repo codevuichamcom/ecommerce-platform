@@ -37,7 +37,7 @@ Hot key (vd `product:viral-flash-sale`) hết TTL cùng lúc đang có 1000 requ
 ## 5. Chosen — XFetch + 2-tier (Caffeine L1 + Redis L2)
 
 **Lý do gắn project**:
-- 2-tier đã chốt ở ADR-008 (latency ladder + bandwidth save). XFetch là layer protect trên cùng nó.
+- 2-tier đã chốt ở ADR 012 (latency ladder + bandwidth save). XFetch là layer protect trên cùng nó.
 - Không cần infra mới (lock cluster cần High-Availability Redis nếu mở rộng). Hiện Redis dùng chung cart-service, không muốn tăng lock contention.
 - Cluster scale 4-pod hiện tại → worst case 4 duplicate compute, vẫn ≪ N=1000 nếu không có XFetch. Acceptable.
 - L1 Caffeine absorb 80-95% hot traffic → stampede chỉ là vấn đề ở L2 expire, không phải mỗi request.

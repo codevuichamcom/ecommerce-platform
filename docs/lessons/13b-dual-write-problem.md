@@ -10,12 +10,39 @@ Khi 1 transaction phải ghi vào **2 hệ thống độc lập** (vd Postgres +
 KHÔNG có nguyên tử mặc định. 1 trong 2 commit, cái còn lại fail → silent
 inconsistency. Đó là **dual-write problem**.
 
+Hai failure scenario của dual-write — điểm crash đánh dấu đỏ, sau đó state
+divergent giữa Postgres và Kafka:
+
+**Scenario (a): Postgres COMMIT OK → Kafka publish FAIL** (DB có, Kafka không)
+
+```mermaid
+sequenceDiagram
+    participant App
+    participant PG as Postgres
+    participant K as Kafka
+    App->>PG: INSERT order
+    PG-->>App: COMMIT OK
+    rect rgb(254,202,202)
+    App->>K: publish OrderCreated
+    K--xApp: broker down / timeout → FAIL
+    end
+    Note over PG,K: DB có order, Kafka KHÔNG có event<br/>→ inventory không reserve, customer paid nhưng không có hàng
 ```
-                ┌─────────────┐    ┌──────────┐
-   App  ───►    │  Postgres   │    │  Kafka   │
-                └─────────────┘    └──────────┘
-                  COMMIT OK         publish FAIL  → DB có, Kafka không
-                  COMMIT FAIL       publish OK    → Kafka có, DB không
+
+**Scenario (b): Kafka publish OK → Postgres rollback/crash** (Kafka có, DB không)
+
+```mermaid
+sequenceDiagram
+    participant App
+    participant PG as Postgres
+    participant K as Kafka
+    App->>K: publish OrderCreated
+    K-->>App: published OK
+    rect rgb(254,202,202)
+    App->>PG: COMMIT order
+    PG--xApp: rollback / app crash → FAIL
+    end
+    Note over PG,K: Kafka có event, DB KHÔNG có order<br/>→ downstream xử lý ghost order, không tìm thấy sổ gốc
 ```
 
 ---

@@ -25,6 +25,44 @@ Không có distributed transaction giữa order-service và inventory-service.
 call. Bất kỳ thao tác cross-service nào sau call thành công đều cần
 compensation thủ công.
 
+> Diagram dưới show saga compensation thủ công của `PlaceOrderUseCase`:
+> reserve item 1,2,3 OK → item 4 FAIL → loop release 3 reservation trước đó →
+> nhánh `alt` cuối cho thấy nếu chính `releaseReservation` cũng fail thì
+> best-effort chỉ log `ORPHAN-RESERVATION`, không còn gì rollback ở caller. Khối
+> đỏ = window orphan reservation.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as Client (POST /orders)
+    participant O as order-service (PlaceOrderUseCase)
+    participant I as inventory-service (InventoryClient)
+
+    U->>O: place order (cart 5 item)
+    O->>I: reserve(item 1)
+    I-->>O: OK (reserved += item 1)
+    O->>I: reserve(item 2)
+    I-->>O: OK (reserved += item 2)
+    O->>I: reserve(item 3)
+    I-->>O: OK (reserved += item 3)
+
+    rect rgb(254,202,202)
+        O->>I: reserve(item 4)
+        I-->>O: 409 / timeout — FAIL
+        Note over O: catch RuntimeException<br/>WARN "compensating 3 prior"
+        loop release từng item đã reserved (1,2,3)
+            O->>I: releaseReservation(item)
+            alt release OK
+                I-->>O: released
+            else release cũng fail (best-effort)
+                I-->>O: error
+                Note over O: log ORPHAN-RESERVATION — manual triage
+            end
+        end
+        O-->>U: throw 409 (Order CHƯA save)
+    end
+```
+
 ## 4. Approaches compared
 
 | Approach | Pros | Cons |

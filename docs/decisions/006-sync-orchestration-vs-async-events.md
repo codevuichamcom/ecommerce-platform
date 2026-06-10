@@ -54,6 +54,33 @@ Lý do:
 - Failure handling primitive Day 9 (log warn) → tighten Day 12 DLT + compensation event.
 - Sealed `OrderStatus` state machine + `reservation_status` field = 2 dimension state → reviewer phải check không trộn lẫn.
 
+Đây là 2 **trục state độc lập** trên cùng 1 Order — KHÔNG phải 1 FSM nối tiếp. `OrderStatus` (sealed type, driven bởi payment lifecycle) và `reservation_status` (String field, driven bởi inventory event) tiến triển riêng; reviewer hay junior dễ "trộn" chúng thành 1 chuỗi (vd nghĩ `Paid` kéo theo `RESERVED`). 2 block dưới là 2 trục tách biệt:
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    state "Trục 1 — OrderStatus (sealed FSM, payment-driven)" as Axis1 {
+        [*] --> PendingPayment
+        PendingPayment --> Paid: payment.completed
+        PendingPayment --> Cancelled
+        Paid --> Shipped
+        Paid --> Cancelled
+        Shipped --> Delivered
+        Delivered --> [*]
+        Cancelled --> [*]
+    }
+
+    state "Trục 2 — reservation_status (field, inventory-event-driven)" as Axis2 {
+        [*] --> PENDING
+        PENDING --> RESERVED: inventory.reserved
+        PENDING --> FAILED: reserve fail (Day 12, retry hết)
+        RESERVED --> [*]
+        FAILED --> [*]
+    }
+```
+
+Ví dụ tổ hợp hợp lệ mà 2 trục tạo ra: `(PendingPayment, RESERVED)` = giữ hàng xong, chờ trả tiền; `(Paid, PENDING)` = đã trả tiền nhưng reserve còn trong eventual consistency window. Vì 2 trục độc lập, code transition phải tách: `markPaid()` chỉ chạm trục 1, `markReserved()` chỉ chạm trục 2.
+
 **Rejected**:
 
 - Saga orchestration: từ chối vì operational cost không proportional với scale 200k DAU. Nếu lên 5M DAU + ≥ 5 step orchestration → revisit.

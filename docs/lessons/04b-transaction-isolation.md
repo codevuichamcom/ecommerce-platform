@@ -39,6 +39,27 @@
 - **SERIALIZABLE**: business invariant kiểu "tổng < limit" mà cần check + write atomically (ví dụ: "tổng tiền rút trong ngày < 100M"). Postgres dùng SSI (Serializable Snapshot Isolation) — predicate lock thay vì pessimistic. Trade-off: throughput thấp hơn, serialization failure → retry.
 - **READ UNCOMMITTED**: Postgres không support — = READ COMMITTED. Đừng cargo-cult từ legacy SQL Server.
 
+Decision tree chọn isolation level (mặc định RC, chỉ nâng khi có lý do cụ thể):
+
+```mermaid
+graph TD
+    Q1{"Chỉ cần chống<br/>lost update?"}
+    Q2{"Cần snapshot read ổn định<br/>trong 1 tx (report/balance)?"}
+    Q3{"Invariant cross-row cần atomic<br/>tuyệt đối (tổng < limit)?"}
+
+    Q1 -- "Có" --> RC["@Version + READ COMMITTED<br/>(default — Day 4 inventory)"]
+    Q1 -- "Không" --> Q2
+    Q2 -- "Có" --> RR["REPEATABLE READ<br/>snapshot isolation (MVCC)"]
+    Q2 -- "Không" --> Q3
+    Q3 -- "Có" --> SER["SERIALIZABLE<br/>SSI predicate lock, retry on conflict"]
+    Q3 -- "Không" --> RC
+
+    classDef decision fill:#e9d5ff,stroke:#9333ea,color:#000
+    classDef done fill:#86efac,stroke:#16a34a,color:#000
+    class Q1,Q2,Q3 decision
+    class RC,RR,SER done
+```
+
 ## ⚠️ Cạm bẫy
 
 1. **`SELECT ... FOR UPDATE` không thay thế isolation level** — chỉ row lock khi SELECT, isolation vẫn chạy bình thường. 2 cơ chế độc lập.

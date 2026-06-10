@@ -47,7 +47,7 @@
 
 ## 6. Fix
 
-Day 15 partial fix — L1 absorb (đã wired qua ADR-008):
+Day 15 partial fix — L1 absorb (đã wired qua ADR 012):
 
 ```java
 // services/product-service/src/main/java/com/ecom/product/config/cache/TwoTierCache.java
@@ -94,5 +94,5 @@ public void evictSharded(String key) {
 - Code: [`TwoTierCache.java`](../../services/product-service/src/main/java/com/ecom/product/config/cache/TwoTierCache.java)
 - Related issue: [`issues/15-cache-stampede.md`](15-cache-stampede.md)
 - Performance: [`performance/15b-two-tier-cache.md`](../performance/15b-two-tier-cache.md)
-- ADR: [`decisions/008-two-tier-cache-caffeine-redis.md`](../decisions/008-two-tier-cache-caffeine-redis.md)
+- ADR: [`decisions/012-two-tier-cache-caffeine-redis.md`](../decisions/012-two-tier-cache-caffeine-redis.md)
 - Future system design: hot key sharding sẽ deep-dive ở Day 33 (Flash sale design — Week 6 system design intensive)

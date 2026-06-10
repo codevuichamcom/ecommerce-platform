@@ -31,6 +31,41 @@ chiếm lock và chạy job → A wake up vẫn nghĩ mình giữ lock, chạy t
 - Đây không phải bug Redis; là bug **giả định**: distributed lock chỉ là
   best-effort mutual exclusion, KHÔNG phải correctness guarantee.
 
+> Diagram dưới show split-brain: Instance A acquire lock (fencing=1) rồi dính GC
+> pause dài → lock TTL expire → Instance B acquire (fencing=2) ghi snapshot OK →
+> A tỉnh dậy vẫn tưởng giữ lock, ghi với token cũ → DB conditional update
+> `WHERE last_fencing_token < token` REJECT A (stale writer bị chặn). Khối đỏ =
+> đoạn GC-pause + stale-write nguy hiểm.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as Instance A (job)
+    participant B as Instance B (job)
+    participant R as Redis (lock + fence)
+    participant DB as Postgres (inventory_snapshot)
+
+    A->>R: SET NX lock:snapshot (token=uuidA, TTL=30s)
+    R-->>A: OK (acquired)
+    A->>R: INCR fence:snapshot
+    R-->>A: fencing = 1
+
+    rect rgb(254,202,202)
+        Note over A: GC pause 25s — A "đóng băng", vẫn tưởng giữ lock
+        Note over R: lock:snapshot TTL expire → key bị xoá
+        B->>R: SET NX lock:snapshot (token=uuidB, TTL=30s)
+        R-->>B: OK (acquired) — split-brain!
+        B->>R: INCR fence:snapshot
+        R-->>B: fencing = 2
+        B->>DB: upsert snapshot (last_fencing_token=2)
+        DB-->>B: 1 row affected (OK)
+        Note over A: A tỉnh dậy, KHÔNG biết lock đã mất
+        A->>DB: upsert snapshot (last_fencing_token=1)
+        Note over DB: WHERE inventory_snapshot.last_fencing_token < 1<br/>→ 1 < 1 FALSE → REJECT
+        DB-->>A: 0 row affected — STALE-WRITER blocked by fence
+    end
+```
+
 ## 4. Approaches compared
 
 | Approach | Pros | Cons |

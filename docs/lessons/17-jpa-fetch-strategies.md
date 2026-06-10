@@ -23,6 +23,31 @@
 | Nhiều collection cùng lúc, data nhỏ | JOIN FETCH (đổi Set) hoặc multi-query | tránh cartesian/MBFE |
 | Collection lớn, lazy, truy cập 1 phần | **LAZY + `@BatchSize`** | gom IN(...) giảm 1+N → 1+N/batch |
 
+Decision tree theo access pattern (khớp bảng trên): hỏi write hay read trước,
+read thì list hay detail, collection lazy lớn thì `@BatchSize`.
+
+```mermaid
+graph TD
+    Q1{"Write path —<br/>cần mutate aggregate?"}
+    Q2{"List screen,<br/>read-only?"}
+    Q3{"Detail 1 entity,<br/>cần full graph?"}
+    Q4{"Collection lazy<br/>lớn, truy cập 1 phần?"}
+
+    Q1 -- "Có" --> W["Load entity (LAZY + touch)<br/>→ vào persistence context, dirty-checking"]
+    Q1 -- "Không" --> Q2
+    Q2 -- "Có" --> P["Projection DTO<br/>1 query scalar, pagination ở DB"]
+    Q2 -- "Không" --> Q3
+    Q3 -- "Có" --> EG["@EntityGraph / JOIN FETCH<br/>1 query JOIN (KHÔNG kèm Pageable trên collection)"]
+    Q3 -- "Không" --> Q4
+    Q4 -- "Có" --> BS["LAZY + @BatchSize<br/>gom IN(...) giảm 1+N → 1+N/batch"]
+    Q4 -- "Không" --> P
+
+    classDef decision fill:#e9d5ff,stroke:#9333ea,color:#000
+    classDef done fill:#86efac,stroke:#16a34a,color:#000
+    class Q1,Q2,Q3,Q4 decision
+    class W,P,EG,BS done
+```
+
 ## 🚫 Khi nào KHÔNG dùng
 
 - ❌ KHÔNG `@EntityGraph`/`JOIN FETCH` + `Pageable` trên **collection** → in-memory pagination (`HHH000104`), OOM risk khi data lớn.
